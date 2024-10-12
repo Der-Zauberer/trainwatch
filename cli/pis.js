@@ -1,3 +1,5 @@
+//@ts-check
+
 const FileSystem = require('node:fs');
 const Path = require('path');
 
@@ -17,6 +19,7 @@ class CliService {
             branch = next;
             args = args.slice(1);
         } while (!(typeof branch === 'function'));
+        // @ts-ignore
         branch(...args);
     }
 
@@ -55,7 +58,7 @@ class ProgressLogger {
             process.stdout.moveCursor(0, -1);
             process.stdout.clearLine(1);
         }
-        console.log(`[${this.#name}] ${ parseInt((index / amount) * 100) }% (${index}/${amount}) Processing ${this.#name} ${name}`)
+        console.log(`[${this.#name}] ${ ((index / amount) * 100).toFixed(0) }% (${index}/${amount}) Processing ${this.#name} ${name}`)
         return response;
     }
 
@@ -75,14 +78,15 @@ class ProgressLogger {
 
 class FileService {
 
-    readFile(path, file) {
-        FileSystem.readFileSync(Path.join(path, file), 'utf8')
+    readFile(path, name) {
+        FileSystem.readFileSync(path ? Path.join(path, name) : name, 'utf8');
     }
 
     writeFile(path, name, content) {
-        if (path && !FileSystem.existsSync(path)) FileSystem.mkdirSync(path);
-        if (path && !path.endsWith('/')) path += '/';
-        FileSystem.writeFileSync(path ? path + name : name, content, 'utf8');
+        const filePath = path ? Path.join(path, name) : name;
+        const directory = Path.dirname(filePath);
+        if (!FileSystem.existsSync(directory)) FileSystem.mkdirSync(directory);
+        FileSystem.writeFileSync(filePath, content, 'utf8');
     }
 
 }
@@ -172,6 +176,7 @@ class DownloadService {
 
     downloadApiDBStada(clientId, apikey, path) {
         cliService.throwError(!clientId || !apikey, `Require client-id and api-key as argumnets!`);
+        const outputAsFile = path.endsWith('.json');
         const url = 'https://apis.deutschebahn.com/db-api-marketplace/apis/station-data/v2/stations'
         const headers = { 'DB-Client-Id': clientId, 'DB-Api-Key': apikey }
         const logger = new ProgressLogger('DB/Stada', 'stations');
@@ -181,6 +186,7 @@ class DownloadService {
             .then(response => response.ok ? response.json() : Promise.reject())
             .then(response => {
                 let i = 1;
+                const newStations = [];
                 for (const station of response.result) {
                     try {
                         if (station.evaNumbers.length == 0) {
@@ -239,11 +245,19 @@ class DownloadService {
                                 }
                             ]
                         }
-                        fileService.writeFile(path, newStation.id + '.json', JSON.stringify(newStation, undefined, '\t'));
+                        
+                        if (!outputAsFile) {
+                            fileService.writeFile(path, newStation.id + '.json', JSON.stringify(newStation, undefined, '\t'));
+                        } else {
+                            newStations.push(newStation);
+                        }
                         logger.progress(i++, response.result.length, newStation.name);
                     } catch (error) {
                         cliService.throwError(true, `Failed to parse ${station.id} (${error})`);
                     }
+                }
+                if (outputAsFile) {
+                    fileService.writeFile(undefined, path, JSON.stringify(newStations, undefined, '\t'));
                 }
                 logger.finish(response.result.length);
             })
