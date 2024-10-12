@@ -23,6 +23,10 @@ class CliService {
         branch(...args);
     }
 
+    /**
+     * @param { boolean } condition
+     * @param { string } error
+     */
     throwError(condition, error) {
         if (!condition) return;
         console.log(`ERROR: ${error}`);
@@ -37,11 +41,20 @@ class ProgressLogger {
     #type;
     #firstLogging = true;
 
+    /**
+     * @param { string } name
+     * @param { string } type
+     */
     constructor(name, type) {
         this.#name = name;
         this.#type = type;
     }
 
+    /**
+     * @param { string } message
+     * @param { any } [response]
+     * @returns { any }
+     */
     log(message, response) {
         if (!this.#firstLogging) {
             process.stdout.moveCursor(0, -1);
@@ -51,6 +64,13 @@ class ProgressLogger {
         return response;
     }
 
+    /**
+     * @param { number } index
+     * @param { number } amount
+     * @param { string } name
+     * @param { any } [response]
+     * @returns { any }
+     */
     progress(index, amount, name, response) {
         if (this.#firstLogging) {
             this.#firstLogging = false;
@@ -62,6 +82,9 @@ class ProgressLogger {
         return response;
     }
 
+    /**
+     * @param {number} amount
+     */
     finish(amount) {
         if (!this.#firstLogging) {
             process.stdout.moveCursor(0, -1);
@@ -78,14 +101,23 @@ class ProgressLogger {
 
 class FileService {
 
+    /**
+     * @param { string | undefined } path
+     * @param { string } name
+     */
     readFile(path, name) {
         FileSystem.readFileSync(path ? Path.join(path, name) : name, 'utf8');
     }
 
+    /**
+     * @param { string | undefined } path
+     * @param { string } name
+     * @param { string } content
+     */
     writeFile(path, name, content) {
         const filePath = path ? Path.join(path, name) : name;
         const directory = Path.dirname(filePath);
-        if (!FileSystem.existsSync(directory)) FileSystem.mkdirSync(directory);
+        if (directory && !FileSystem.existsSync(directory)) FileSystem.mkdirSync(directory);
         FileSystem.writeFileSync(filePath, content, 'utf8');
     }
 
@@ -134,6 +166,11 @@ class TestService {
 
 class SearchService {
 
+    /**
+     * @param { string } name
+     * @param { string } [seperator]
+     * @returns { string }
+     */
     normalize(name, seperator) {
         let formatted = '';
         let blank = false;
@@ -158,6 +195,11 @@ class SearchService {
         return formatted;
     }
     
+    /**
+     * @param { string } search
+     * @param {{ searchName: string; score: number; }} a
+     * @param {{ searchName: string; score: number; }} b
+     */
     beginnScoreMatching(search, a, b) {
         const aStartsWithName = a.searchName.startsWith(search);
         const bStartsWithName = b.searchName.startsWith(search);
@@ -174,9 +216,14 @@ class SearchService {
 
 class DownloadService {
 
+    /**
+     * @param { string } clientId
+     * @param { string } apikey
+     * @param { string } [path]
+     */
     downloadApiDBStada(clientId, apikey, path) {
         cliService.throwError(!clientId || !apikey, `Require client-id and api-key as argumnets!`);
-        const outputAsFile = path.endsWith('.json');
+        const outputAsFile = path?.endsWith('.json');
         const url = 'https://apis.deutschebahn.com/db-api-marketplace/apis/station-data/v2/stations'
         const headers = { 'DB-Client-Id': clientId, 'DB-Api-Key': apikey }
         const logger = new ProgressLogger('DB/Stada', 'stations');
@@ -257,7 +304,7 @@ class DownloadService {
                     }
                 }
                 if (outputAsFile) {
-                    fileService.writeFile(undefined, path, JSON.stringify(newStations, undefined, '\t'));
+                    fileService.writeFile(undefined, path || '', JSON.stringify(newStations, undefined, '\t'));
                 }
                 logger.finish(response.result.length);
             })
