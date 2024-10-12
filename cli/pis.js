@@ -1,3 +1,6 @@
+const FileSystem = require('node:fs');
+const Path = require('path');
+
 /**********
 *   Cli   *
 **********/
@@ -62,6 +65,24 @@ class ProgressLogger {
             process.stdout.clearLine(1);
         }
         console.log(`[${this.#name}] Successfully processed ${amount ? amount + ' ' : ''}${this.#type}`);
+    }
+
+}
+
+/***********
+*   File   *
+***********/
+
+class FileService {
+
+    readFile(path, file) {
+        FileSystem.readFileSync(Path.join(path, file), 'utf8')
+    }
+
+    writeFile(path, name, content) {
+        if (path && !FileSystem.existsSync(path)) FileSystem.mkdirSync(path);
+        if (path && !path.endsWith('/')) path += '/';
+        FileSystem.writeFileSync(path ? path + name : name, content, 'utf8');
     }
 
 }
@@ -149,6 +170,84 @@ class SearchService {
 
 class DownloadService {
 
+    downloadApiDBStada(clientId, apikey, path) {
+        cliService.throwError(!clientId || !apikey, `Require client-id and api-key as argumnets!`);
+        const url = 'https://apis.deutschebahn.com/db-api-marketplace/apis/station-data/v2/stations'
+        const headers = { 'DB-Client-Id': clientId, 'DB-Api-Key': apikey }
+        const logger = new ProgressLogger('DB/Stada', 'stations');
+        logger.log(`Downloading stations from ${url}`);
+        fetch(url, { headers })
+            .then(response => logger.log('Parsing stations', response))
+            .then(response => response.ok ? response.json() : Promise.reject())
+            .then(response => {
+                let i = 1;
+                for (const station of response.result) {
+                    try {
+                        if (station.evaNumbers.length == 0) {
+                            i++;
+                            continue;
+                        }
+                        const newStation = {
+                            id: searchService.normalize(station.name, '_'),
+                            name: station.name,
+                            score: station.category,
+                            location: false ? {} : {
+                                latitude: station.evaNumbers[0].geographicCoordinates.coordinates[1],
+                                longitude: station.evaNumbers[0].geographicCoordinates.coordinates[0]
+                            },
+                            address: {
+                                street: station.mailingAddress.street.replace('str.', 'straße').replace('  ', ' '),
+                                zipcode: station.mailingAddress.zipcode,
+                                city: station.mailingAddress.city,
+                                federalState: station.federalState,
+                                country: 'Deutschland'
+                            },
+                            open: !station.localServiceStaff || !station.localServiceStaff.availability ? {} : {
+                                monday: station.localServiceStaff.availability.monday ? station.localServiceStaff.availability.monday.fromTime + ' - ' + station.localServiceStaff.availability.monday.toTime : undefined,
+                                tuesday: station.localServiceStaff.availability.tuesday ? station.localServiceStaff.availability.tuesday.fromTime + ' - ' + station.localServiceStaff.availability.tuesday.toTime : undefined,
+                                wednesday: station.localServiceStaff.availability.wednesday ? station.localServiceStaff.availability.wednesday.fromTime + ' - ' + station.localServiceStaff.availability.wednesday.toTime : undefined,
+                                thursday: station.localServiceStaff.availability.thursday ? station.localServiceStaff.availability.thursday.fromTime + ' - ' + station.localServiceStaff.availability.thursday.toTime : undefined,
+                                friday: station.localServiceStaff.availability.friday ? station.localServiceStaff.availability.friday.fromTime + ' - ' + station.localServiceStaff.availability.friday.toTime : undefined,
+                                saturday: station.localServiceStaff.availability.saturday ? station.localServiceStaff.availability.saturday.fromTime + ' - ' + station.localServiceStaff.availability.saturday.toTime : undefined,
+                                sunday: station.localServiceStaff.availability.sunday ? station.localServiceStaff.availability.sunday.fromTime + ' - ' + station.localServiceStaff.availability.sunday.toTime : undefined,
+                            },
+                            services: {
+                                parking: station.hasParking,
+                                localPublicTransport: station.hasBicycleParking,
+                                carRental: station.hasCarRental,
+                                taxi: station.hasTaxiRank,
+                                publicFacilities: station.hasPublicFacilities,
+                                travelNecessities: station.hasTravelNecessities,
+                                locker: station.hasLockerSystem,
+                                wifi: station.hasWiFi,
+                                information: station.hasTravelCenter,
+                                railwayMission: station.hasRailwayMission,
+                                lostAndFound: station.hasLostAndFound,
+                                barrierFree: (station.hasSteplessAccess === true || station.hasSteplessAccess === 'yes'),
+                                mobilityService: station.hasMobilityService,
+                            },
+                            ids: {
+                                eva: station.evaNumbers[0].number,
+                                ril: station.ril100Identifiers.map(ril => ril.rilIdentifier),
+                                stada: station.number,
+                            },
+                            sources: [
+                                {
+                                    name: 'DB Stada',
+                                    url,
+                                    timestamp: new Date().toISOString()
+                                }
+                            ]
+                        }
+                        fileService.writeFile(path, newStation.id + '.json', JSON.stringify(newStation, undefined, '\t'));
+                        logger.progress(i++, response.result.length, newStation.name);
+                    } catch (error) {
+                        cliService.throwError(true, `Failed to parse ${station.id} (${error})`);
+                    }
+                }
+                logger.finish(response.result.length);
+            })
+    }
 }
 
 /**************
@@ -156,11 +255,12 @@ class DownloadService {
 **************/
 
 const cliService = new CliService();
+const fileService = new FileService();
 const testService = new TestService();
 const searchService = new SearchService();
 const downloadService = new DownloadService();
 
-const tests = [  
+const tests = [
     {
         name: "normalize() should return without seperator",
         execute: () => searchService.normalize('Fäßchen/Brücken-Straße (Brötchen)Compañía'),
@@ -199,6 +299,9 @@ const tests = [
 ]
 
 const commands = {
+    download: {
+        'DB/Stada': downloadService.downloadApiDBStada,
+    },
     test: testService.test
 }
 
