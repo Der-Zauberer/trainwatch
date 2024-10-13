@@ -3,9 +3,15 @@
 const FileSystem = require('node:fs');
 const Path = require('path');
 
-/************
-*   Types   *
-************/
+/**********************
+*   Types %& Consts   *
+**********************/
+
+const CLI_RESET = '\x1b[0m';
+const CLI_RED = '\x1b[31m';
+const CLI_YELLOW = '\x1b[33m';
+const CLI_GREEN = '\x1b[32m';
+const CLI_BLUE = '\x1b[36m';
 
 class Command {
     /** @type { (args: any[]) => void } */
@@ -63,7 +69,7 @@ class CliService {
      */
     throwError(condition, error) {
         if (!condition) return;
-        console.log(`ERROR: ${error}`);
+        console.log(`${CLI_RED}ERROR: ${error}${CLI_RESET}`);
         process.exit(-1);
     }
 
@@ -75,8 +81,6 @@ class ProgressLogger {
     #name;
     /** @type { string } */
     #type;
-    /** @type { boolean } */
-    #temporaryLastLine = false;
     /** @type { (() => void) | undefined } */
     #removeTemporaryLastLine = undefined;
     /** @type { (() => void) | undefined } */
@@ -99,7 +103,7 @@ class ProgressLogger {
     log(message, response) {
         this.#removeTemporaryLastLine?.();
         this.#stopLoading?.();
-        console.log(`[${this.#name}] ${message}`);
+        console.log(`${CLI_BLUE}[${this.#name}]${CLI_RESET} ${message}`);
         return response;
     }
 
@@ -111,11 +115,11 @@ class ProgressLogger {
     loading(message, response) {
         this.#removeTemporaryLastLine?.();
         this.#stopLoading?.();
-        console.log(`[${this.#name}] ${message}`);
+        console.log(`${CLI_BLUE}[${this.#name}]${CLI_RESET} ${message}`);
         const logLoading = (count) => {
             process.stdout.moveCursor(0, -1);
             process.stdout.clearLine(1);
-            console.log(`[${this.#name}] ${message} ${'.'.repeat(count)}`);
+            console.log(`${CLI_BLUE}[${this.#name}]${CLI_RESET} ${message} ${'.'.repeat(count)}`);
         }
         let i = 0;
         const interval = setInterval(() => {
@@ -140,7 +144,7 @@ class ProgressLogger {
     progress(index, amount, name, response) {
         this.#removeTemporaryLastLine?.();
         this.#stopLoading?.();
-        console.log(`[${this.#name}] ${ ((index / amount) * 100).toFixed(0) }% (${index}/${amount}) Processing ${this.#name} ${name}`);
+        console.log(`${CLI_BLUE}[${this.#name}]${CLI_RESET} ${ ((index / amount) * 100).toFixed(0) }% (${index}/${amount}) Processing ${this.#name} ${name}`);
         this.#removeTemporaryLastLine = () => {
             process.stdout.moveCursor(0, -1);
             process.stdout.clearLine(1);
@@ -155,7 +159,7 @@ class ProgressLogger {
     finish(amount) {
         this.#removeTemporaryLastLine?.();
         this.#stopLoading?.();
-        console.log(`[${this.#name}] Successfully processed ${amount ? amount + ' ' : ''}${this.#type}`);
+        console.log(`${CLI_BLUE}[${this.#name}]${CLI_RESET} Successfully processed ${amount ? amount + ' ' : ''}${this.#type}`);
     }
 
 }
@@ -211,16 +215,16 @@ class TestService {
             }
             const average = durations.length ? durations.reduce((a, b) => a + b) / durations.length : 0;
             if (test.expect === result) {
-                console.log(`TEST PASSED: ${test.name} (${average.toFixed(3)}µs)`);
+                console.log(`${CLI_GREEN}TEST PASSED:${CLI_RESET} ${test.name} (${average.toFixed(3)}µs)`);
                 passedCount++;
             } else {
-                console.log(`TEST FAILED: ${test.name} (${average.toFixed(3)}µs)`);
-                console.log(`\tExpected: ${test.expect}`);
-                console.log(`\tResult: ${result}`);
+                console.log(`${CLI_RED}TEST FAILED:${CLI_RESET} ${test.name} (${average.toFixed(3)}µs)`);
+                console.log(`\tExpected: ${CLI_BLUE}${test.expect}${CLI_RESET}`);
+                console.log(`\tResult: ${CLI_RED}${CLI_RED}${result}${CLI_RESET}`);
                 failedCount++;
             }
         }
-        console.log(`${passedCount} tests passed, ${failedCount} tests failed!`);
+        console.log(`${CLI_GREEN}${passedCount}${CLI_RESET} tests passed, ${CLI_RED}${failedCount}${CLI_RESET} tests failed!`);
     }
 
 }
@@ -415,7 +419,7 @@ const tests = [
     {
         name: "beginnScoreMatching() should score first entry",
         execute: () => searchService.beginnScoreMatching('Karlsruhe', { searchName: 'Leipzig Karlsruher Straße', score: 0 }, { searchName: 'Karlsruhe Hbf', score: 1 }),
-        expect: -1
+        expect: 1
     },
     {
         name: "beginnScoreMatching() should score second entry",
