@@ -46,7 +46,7 @@ class CliService {
      * @returns { Command[] }
      */
     #getHelp(branch) {
-        const /** @type {Command[]} */ list = [] 
+        const /** @type {Command[]} */ list = []; 
         for (const entry of Object.values(branch)) {
             if (entry.function) {
                 list.push(entry);
@@ -71,9 +71,16 @@ class CliService {
 
 class ProgressLogger {
 
+    /** @type { string } */
     #name;
+    /** @type { string } */
     #type;
-    #firstLogging = true;
+    /** @type { boolean } */
+    #temporaryLastLine = false;
+    /** @type { (() => void) | undefined } */
+    #removeTemporaryLastLine = undefined;
+    /** @type { (() => void) | undefined } */
+    #stopLoading = undefined;
 
     /**
      * @param { string } name
@@ -90,11 +97,36 @@ class ProgressLogger {
      * @returns { any }
      */
     log(message, response) {
-        if (!this.#firstLogging) {
+        this.#removeTemporaryLastLine?.();
+        this.#stopLoading?.();
+        console.log(`[${this.#name}] ${message}`);
+        return response;
+    }
+
+    /**
+     * @param { string } message
+     * @param { any } [response]
+     * @returns { any }
+     */
+    loading(message, response) {
+        this.#removeTemporaryLastLine?.();
+        this.#stopLoading?.();
+        console.log(`[${this.#name}] ${message}`);
+        const logLoading = (count) => {
             process.stdout.moveCursor(0, -1);
             process.stdout.clearLine(1);
+            console.log(`[${this.#name}] ${message} ${'.'.repeat(count)}`);
         }
-        console.log(`[${this.#name}] ${message}`);
+        let i = 0;
+        const interval = setInterval(() => {
+            if (i === 4) i = 0;
+            logLoading(i++);
+        }, 250);
+        this.#stopLoading = () => {
+            clearInterval(interval);
+            logLoading(0);
+            this.#stopLoading = undefined;
+        }
         return response;
     }
 
@@ -106,13 +138,14 @@ class ProgressLogger {
      * @returns { any }
      */
     progress(index, amount, name, response) {
-        if (this.#firstLogging) {
-            this.#firstLogging = false;
-        } else {
+        this.#removeTemporaryLastLine?.();
+        this.#stopLoading?.();
+        console.log(`[${this.#name}] ${ ((index / amount) * 100).toFixed(0) }% (${index}/${amount}) Processing ${this.#name} ${name}`);
+        this.#removeTemporaryLastLine = () => {
             process.stdout.moveCursor(0, -1);
             process.stdout.clearLine(1);
+            this.#removeTemporaryLastLine = undefined;
         }
-        console.log(`[${this.#name}] ${ ((index / amount) * 100).toFixed(0) }% (${index}/${amount}) Processing ${this.#name} ${name}`)
         return response;
     }
 
@@ -120,10 +153,8 @@ class ProgressLogger {
      * @param {number} amount
      */
     finish(amount) {
-        if (!this.#firstLogging) {
-            process.stdout.moveCursor(0, -1);
-            process.stdout.clearLine(1);
-        }
+        this.#removeTemporaryLastLine?.();
+        this.#stopLoading?.();
         console.log(`[${this.#name}] Successfully processed ${amount ? amount + ' ' : ''}${this.#type}`);
     }
 
@@ -261,9 +292,9 @@ class DownloadService {
         const url = 'https://apis.deutschebahn.com/db-api-marketplace/apis/station-data/v2/stations'
         const headers = { 'DB-Client-Id': clientId, 'DB-Api-Key': apikey }
         const logger = new ProgressLogger('DB/Stada', 'stations');
-        logger.log(`Downloading stations from ${url}`);
+        logger.loading(`Downloading stations from ${url}`);
         fetch(url, { headers })
-            .then(response => logger.log('Parsing stations', response))
+            .then(response => logger.loading('Parsing stations', response))
             .then(response => response.ok ? response.json() : Promise.reject())
             .then(response => {
                 let i = 1;
