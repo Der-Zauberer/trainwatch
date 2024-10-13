@@ -3,6 +3,19 @@
 const FileSystem = require('node:fs');
 const Path = require('path');
 
+/************
+*   Types   *
+************/
+
+class Command {
+    /** @type { (args: any[]) => void } */
+    function;
+    /** @type { string } */
+    usage;
+    /** @type { string } */
+    description;
+}
+
 /**********
 *   Cli   *
 **********/
@@ -14,13 +27,34 @@ class CliService {
         let args = process.argv.slice(2);
         do {
             this.throwError(args.length === 0, `Not enough arguments! Possible arguments: ${Object.keys(branch)}`);
+            if (args[0] === 'help') {
+                for (const entry of this.#getHelp(branch)) {
+                    console.log(`${entry.usage}\t\t${entry.description}`)
+                }
+                return;
+            }
             const next = branch[args[0]];
             this.throwError(!next, `Command branch "${args[0]}" doesn't exists!`);
             branch = next;
             args = args.slice(1);
-        } while (!(typeof branch === 'function'));
-        // @ts-ignore
-        branch(...args);
+        } while (!(typeof branch.function === 'function'));
+        branch.function(...args);
+    }
+
+    /**
+     * @param { object | Command } branch
+     * @returns { Command[] }
+     */
+    #getHelp(branch) {
+        const /** @type {Command[]} */ list = [] 
+        for (const entry of Object.values(branch)) {
+            if (entry.function) {
+                list.push(entry);
+            } else {
+                list.push(...this.#getHelp(entry));
+            }
+        }
+        return list;
     }
 
     /**
@@ -281,7 +315,7 @@ class DownloadService {
                             },
                             ids: {
                                 eva: station.evaNumbers[0].number,
-                                ril: station.ril100Identifiers.map(ril => ril.rilIdentifier),
+                                ril: station.ril100Identifiers.map((/** @type {{ rilIdentifier: any; }} */ ril) => ril.rilIdentifier),
                                 stada: station.number,
                             },
                             sources: [
@@ -361,9 +395,17 @@ const tests = [
 
 const commands = {
     download: {
-        'DB/Stada': downloadService.downloadApiDBStada,
+        'DB/Stada': { 
+            function: downloadService.downloadApiDBStada,
+            usage: 'download DB/Stada <client-id> <api-key> [path|file]',
+            description: 'Downloads station from the DB Stada API to multible or a single file'
+        }
     },
-    test: testService.test
+    test: { 
+        function: testService.test,
+        usage: 'test',
+        description: 'Runs all tests'
+    }
 }
 
 cliService.executeCommand();
