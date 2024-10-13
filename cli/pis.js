@@ -108,7 +108,7 @@ class CliService {
         this.#removeTemporaryLastLine?.();
         this.#stopLoading?.();
         console.log(`${this.#constructName(this.#name)} ${message}`);
-        const logLoading = (count) => {
+        const logLoading = (/** @type {number} */ count) => {
             process.stdout.moveCursor(0, -1);
             process.stdout.clearLine(1);
             console.log(`${this.#constructName(this.#name)} ${message} ${'.'.repeat(count)}`);
@@ -176,9 +176,10 @@ class FileService {
     /**
      * @param { string | undefined } path
      * @param { string } name
+     * @returns { string }
      */
     readFile(path, name) {
-        FileSystem.readFileSync(path ? Path.join(path, name) : name, 'utf8');
+        return FileSystem.readFileSync(path ? Path.join(path, name) : name, 'utf8');
     }
 
     /**
@@ -191,6 +192,13 @@ class FileService {
         const directory = Path.dirname(filePath);
         if (directory && !FileSystem.existsSync(directory)) FileSystem.mkdirSync(directory);
         FileSystem.writeFileSync(filePath, content, 'utf8');
+    }
+
+    /**
+     * @param { FileSystem.PathLike } path
+     */
+    listDirectoryFiles(path) {
+        return FileSystem.readdirSync(path);
     }
 
 }
@@ -316,6 +324,7 @@ class DownloadService {
                             id: searchService.normalize(station.name, '_'),
                             name: station.name,
                             score: station.category,
+                            platforms: [],
                             location: false ? {} : {
                                 latitude: station.evaNumbers[0].geographicCoordinates.coordinates[1],
                                 longitude: station.evaNumbers[0].geographicCoordinates.coordinates[0]
@@ -360,7 +369,7 @@ class DownloadService {
                                 {
                                     name: 'DB Stada',
                                     url,
-                                    timestamp: new Date().toISOString()
+                                    used: new Date().toISOString().split('T')[0]
                                 }
                             ]
                         }
