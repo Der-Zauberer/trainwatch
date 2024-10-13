@@ -3,15 +3,9 @@
 const FileSystem = require('node:fs');
 const Path = require('path');
 
-/**********************
-*   Types %& Consts   *
-**********************/
-
-const CLI_RESET = '\x1b[0m';
-const CLI_RED = '\x1b[31m';
-const CLI_YELLOW = '\x1b[33m';
-const CLI_GREEN = '\x1b[32m';
-const CLI_BLUE = '\x1b[36m';
+/************
+*   Types   *
+************/
 
 class Command {
     /** @type { (args: any[]) => void } */
@@ -28,11 +22,32 @@ class Command {
 
 class CliService {
 
+    static CLI_RESET = '\x1b[0m';
+    static CLI_RED = '\x1b[31m';
+    static CLI_YELLOW = '\x1b[33m';
+    static CLI_GREEN = '\x1b[32m';
+    static CLI_BLUE = '\x1b[36m';
+
+    /** @type { string | undefined } */
+    #name;
+
+    /** @type { (() => void) | undefined } */
+    #removeTemporaryLastLine = undefined;
+    /** @type { (() => void) | undefined } */
+    #stopLoading = undefined;
+
+    /**
+     * @param { string } [name] 
+     */
+    constructor(name) {
+        this.#name = name;
+    }
+
     executeCommand() {
         let branch = commands;
         let args = process.argv.slice(2);
         do {
-            this.throwError(args.length === 0, `Not enough arguments! Possible arguments: ${Object.keys(branch)}`);
+            this.printError(args.length === 0, `Not enough arguments! Possible arguments: ${Object.keys(branch)}`);
             if (args[0] === 'help') {
                 for (const entry of this.#getHelp(branch)) {
                     console.log(`${entry.usage}\t\t${entry.description}`)
@@ -40,7 +55,7 @@ class CliService {
                 return;
             }
             const next = branch[args[0]];
-            this.throwError(!next, `Command branch "${args[0]}" doesn't exists!`);
+            this.printError(!next, `Command branch "${args[0]}" doesn't exists!`);
             branch = next;
             args = args.slice(1);
         } while (!(typeof branch.function === 'function'));
@@ -64,35 +79,11 @@ class CliService {
     }
 
     /**
-     * @param { boolean } condition
-     * @param { string } error
+     * @param { string } [name] 
+     * @returns { string }
      */
-    throwError(condition, error) {
-        if (!condition) return;
-        console.log(`${CLI_RED}ERROR: ${error}${CLI_RESET}`);
-        process.exit(-1);
-    }
-
-}
-
-class ProgressLogger {
-
-    /** @type { string } */
-    #name;
-    /** @type { string } */
-    #type;
-    /** @type { (() => void) | undefined } */
-    #removeTemporaryLastLine = undefined;
-    /** @type { (() => void) | undefined } */
-    #stopLoading = undefined;
-
-    /**
-     * @param { string } name
-     * @param { string } type
-     */
-    constructor(name, type) {
-        this.#name = name;
-        this.#type = type;
+    #constructName(name) {
+        return name ? `${CliService.CLI_BLUE}[${this.#name}]${CliService.CLI_RESET}` : '';
     }
 
     /**
@@ -100,10 +91,10 @@ class ProgressLogger {
      * @param { any } [response]
      * @returns { any }
      */
-    log(message, response) {
+    print(message, response) {
         this.#removeTemporaryLastLine?.();
         this.#stopLoading?.();
-        console.log(`${CLI_BLUE}[${this.#name}]${CLI_RESET} ${message}`);
+        console.log(`${this.#constructName(this.#name)} ${message}`);
         return response;
     }
 
@@ -112,14 +103,14 @@ class ProgressLogger {
      * @param { any } [response]
      * @returns { any }
      */
-    loading(message, response) {
+    printLoading(message, response) {
         this.#removeTemporaryLastLine?.();
         this.#stopLoading?.();
-        console.log(`${CLI_BLUE}[${this.#name}]${CLI_RESET} ${message}`);
+        console.log(`${this.#constructName(this.#name)} ${message}`);
         const logLoading = (count) => {
             process.stdout.moveCursor(0, -1);
             process.stdout.clearLine(1);
-            console.log(`${CLI_BLUE}[${this.#name}]${CLI_RESET} ${message} ${'.'.repeat(count)}`);
+            console.log(`${this.#constructName(this.#name)} ${message} ${'.'.repeat(count)}`);
         }
         let i = 0;
         const interval = setInterval(() => {
@@ -141,10 +132,10 @@ class ProgressLogger {
      * @param { any } [response]
      * @returns { any }
      */
-    progress(index, amount, name, response) {
+    printProgress(index, amount, name, response) {
         this.#removeTemporaryLastLine?.();
         this.#stopLoading?.();
-        console.log(`${CLI_BLUE}[${this.#name}]${CLI_RESET} ${ ((index / amount) * 100).toFixed(0) }% (${index}/${amount}) Processing ${this.#name} ${name}`);
+        console.log(`${this.#constructName(this.#name)} ${ ((index / amount) * 100).toFixed(0) }% (${index}/${amount}) Processing ${this.#name} ${name}`);
         this.#removeTemporaryLastLine = () => {
             process.stdout.moveCursor(0, -1);
             process.stdout.clearLine(1);
@@ -154,12 +145,23 @@ class ProgressLogger {
     }
 
     /**
-     * @param {number} amount
+     * @param { string } type
+     * @param { number } [amount]
      */
-    finish(amount) {
+    printFinish(type, amount) {
         this.#removeTemporaryLastLine?.();
         this.#stopLoading?.();
-        console.log(`${CLI_BLUE}[${this.#name}]${CLI_RESET} Successfully processed ${amount ? amount + ' ' : ''}${this.#type}`);
+        console.log(`${this.#constructName(this.#name)} Successfully processed ${amount ? amount + ' ' : ''}${type}`);
+    }
+
+    /**
+     * @param { boolean } condition
+     * @param { string } error
+     */
+    printError(condition, error) {
+        if (!condition) return;
+        console.log(`${CliService.CLI_RED}ERROR: ${error}${CliService.CLI_RESET}`);
+        process.exit(-1);
     }
 
 }
@@ -215,16 +217,16 @@ class TestService {
             }
             const average = durations.length ? durations.reduce((a, b) => a + b) / durations.length : 0;
             if (test.expect === result) {
-                console.log(`${CLI_GREEN}TEST PASSED:${CLI_RESET} ${test.name} (${average.toFixed(3)}µs)`);
+                console.log(`${CliService.CLI_GREEN}TEST PASSED:${CliService.CLI_RESET} ${test.name} (${average.toFixed(3)}µs)`);
                 passedCount++;
             } else {
-                console.log(`${CLI_RED}TEST FAILED:${CLI_RESET} ${test.name} (${average.toFixed(3)}µs)`);
-                console.log(`\tExpected: ${CLI_BLUE}${test.expect}${CLI_RESET}`);
-                console.log(`\tResult: ${CLI_RED}${CLI_RED}${result}${CLI_RESET}`);
+                console.log(`${CliService.CLI_RED}TEST FAILED:${CliService.CLI_RESET} ${test.name} (${average.toFixed(3)}µs)`);
+                console.log(`\tExpected: ${CliService.CLI_BLUE}${test.expect}${CliService.CLI_RESET}`);
+                console.log(`\tResult: ${CliService.CLI_RED}${CliService.CLI_RED}${result}${CliService.CLI_RESET}`);
                 failedCount++;
             }
         }
-        console.log(`${CLI_GREEN}${passedCount}${CLI_RESET} tests passed, ${CLI_RED}${failedCount}${CLI_RESET} tests failed!`);
+        console.log(`${CliService.CLI_GREEN}${passedCount}${CliService.CLI_RESET} tests passed, ${CliService.CLI_RED}${failedCount}${CliService.CLI_RESET} tests failed!`);
     }
 
 }
@@ -291,14 +293,14 @@ class DownloadService {
      * @param { string } [path]
      */
     downloadApiDBStada(clientId, apikey, path) {
-        cliService.throwError(!clientId || !apikey, `Require client-id and api-key as argumnets!`);
+        const cliService = new CliService('DB/Stada');
+        cliService.printError(!clientId || !apikey, `Require client-id and api-key as argumnets!`);
         const outputAsFile = path?.endsWith('.json');
         const url = 'https://apis.deutschebahn.com/db-api-marketplace/apis/station-data/v2/stations'
         const headers = { 'DB-Client-Id': clientId, 'DB-Api-Key': apikey }
-        const logger = new ProgressLogger('DB/Stada', 'stations');
-        logger.loading(`Downloading stations from ${url}`);
+        cliService.printLoading(`Downloading stations from ${url}`);
         fetch(url, { headers })
-            .then(response => logger.loading('Parsing stations', response))
+            .then(response => cliService.printLoading('Parsing stations', response))
             .then(response => response.ok ? response.json() : Promise.reject())
             .then(response => {
                 let i = 1;
@@ -367,15 +369,15 @@ class DownloadService {
                         } else {
                             newStations.push(newStation);
                         }
-                        logger.progress(i++, response.result.length, newStation.name);
+                        cliService.printProgress(i++, response.result.length, newStation.name);
                     } catch (error) {
-                        cliService.throwError(true, `Failed to parse ${station.id} (${error})`);
+                        cliService.printError(true, `Failed to parse ${station.id} (${error})`);
                     }
                 }
                 if (outputAsFile) {
                     fileService.writeFile(undefined, path || '', JSON.stringify(newStations, undefined, '\t'));
                 }
-                logger.finish(response.result.length);
+                cliService.printFinish('stations', response.result.length);
             })
     }
 }
@@ -384,9 +386,7 @@ class DownloadService {
 *   General   *
 **************/
 
-const cliService = new CliService();
 const fileService = new FileService();
-const testService = new TestService();
 const searchService = new SearchService();
 const downloadService = new DownloadService();
 
@@ -437,10 +437,10 @@ const commands = {
         }
     },
     test: { 
-        function: testService.test,
+        function: () => new TestService().test(),
         usage: 'test',
         description: 'Runs all tests'
     }
 }
 
-cliService.executeCommand();
+new CliService().executeCommand();
