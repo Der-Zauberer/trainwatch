@@ -23,6 +23,7 @@ class Command {
 class CliService {
 
     static CLI_RESET = '\x1b[0m';
+    static CLI_GREY = '\x1b[90m';
     static CLI_RED = '\x1b[31m';
     static CLI_YELLOW = '\x1b[33m';
     static CLI_GREEN = '\x1b[32m';
@@ -50,7 +51,7 @@ class CliService {
             this.printError(args.length === 0, `Not enough arguments! Possible arguments: ${Object.keys(branch)}`);
             if (args[0] === 'help') {
                 for (const entry of this.#getHelp(branch)) {
-                    console.log(`${entry.usage}\t\t${entry.description}`)
+                    console.log(`${entry.usage} ${CliService.CLI_GREY}${entry.description}${CliService.CLI_RESET}`)
                 }
                 return;
             }
