@@ -1,4 +1,6 @@
-DEFINE TABLE IF NOT EXISTS TransportationType SCHEMAFULL;
+DEFINE TABLE IF NOT EXISTS TransportationType SCHEMAFULL
+	PERMISSIONS
+		FOR select FULL;
 DEFINE FIELD OVERWRITE id ON TABLE TransportationType;
 DEFINE FIELD OVERWRITE name ON TABLE TransportationType TYPE string;
 DEFINE FIELD OVERWRITE description ON TABLE TransportationType TYPE string;
