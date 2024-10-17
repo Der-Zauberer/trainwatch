@@ -16,6 +16,13 @@ class Command {
     description;
 }
 
+class Entity {
+    /** @type { string } */
+    id;
+    /** @type { string } */
+    name;
+}
+
 /**********
 *   Cli   *
 **********/
@@ -32,6 +39,9 @@ class CliService {
     /** @type { string | undefined } */
     #name;
 
+    /** @type { string | undefined } */
+    #type;
+
     /** @type { (() => void) | undefined } */
     #removeTemporaryLastLine = undefined;
     /** @type { (() => void) | undefined } */
@@ -39,10 +49,15 @@ class CliService {
 
     /**
      * @param { string } [name] 
+     * @param { string } [type] 
      */
-    constructor(name) {
+    constructor(name, type) {
         this.#name = name;
+        this.#type = type;
     }
+
+    get name() { return this.#name }
+    get type() { return this.#type }
 
     executeCommand() {
         let branch = commands;
@@ -79,12 +94,11 @@ class CliService {
         return list;
     }
 
-    /**
-     * @param { string } [name] 
+    /** 
      * @returns { string }
      */
-    #constructName(name) {
-        return name ? `${CliService.CLI_BLUE}[${this.#name}]${CliService.CLI_RESET}` : '';
+    #constructName() {
+        return `${CliService.CLI_BLUE}[${this.#name}]${CliService.CLI_RESET}`;
     }
 
     /**
@@ -95,7 +109,7 @@ class CliService {
     print(message, response) {
         this.#removeTemporaryLastLine?.();
         this.#stopLoading?.();
-        console.log(`${this.#constructName(this.#name)} ${message}`);
+        console.log(`${this.#constructName()} ${message}`);
         return response;
     }
 
@@ -107,11 +121,11 @@ class CliService {
     printLoading(message, response) {
         this.#removeTemporaryLastLine?.();
         this.#stopLoading?.();
-        console.log(`${this.#constructName(this.#name)} ${message}`);
+        console.log(`${this.#constructName()} ${message}`);
         const logLoading = (/** @type {number} */ count) => {
             process.stdout.moveCursor(0, -1);
             process.stdout.clearLine(1);
-            console.log(`${this.#constructName(this.#name)} ${message} ${'.'.repeat(count)}`);
+            console.log(`${this.#constructName()} ${message} ${'.'.repeat(count)}`);
         }
         let i = 0;
         const interval = setInterval(() => {
@@ -129,14 +143,15 @@ class CliService {
     /**
      * @param { number } index
      * @param { number } amount
+     * @param { string } progressiveVerb
      * @param { string } name
      * @param { any } [response]
      * @returns { any }
      */
-    printProgress(index, amount, name, response) {
+    printProgress(index, amount, progressiveVerb, name, response) {
         this.#removeTemporaryLastLine?.();
         this.#stopLoading?.();
-        console.log(`${this.#constructName(this.#name)} ${ ((index / amount) * 100).toFixed(0) }% (${index}/${amount}) Processing ${this.#name} ${name}`);
+        console.log(`${this.#constructName()} ${ ((index / amount) * 100).toFixed(0) }% (${index}/${amount}) ${progressiveVerb} ${this.#type} ${name}`);
         this.#removeTemporaryLastLine = () => {
             process.stdout.moveCursor(0, -1);
             process.stdout.clearLine(1);
@@ -146,13 +161,13 @@ class CliService {
     }
 
     /**
-     * @param { string } type
-     * @param { number } [amount]
+     * @param { string } pastVerb
+     * @param { number } amount
      */
-    printFinish(type, amount) {
+    printFinish(pastVerb, amount) {
         this.#removeTemporaryLastLine?.();
         this.#stopLoading?.();
-        console.log(`${this.#constructName(this.#name)} Successfully processed ${amount ? amount + ' ' : ''}${type}`);
+        console.log(`${this.#constructName()} Successfully ${pastVerb} ${amount ? amount + ' ' : ''}${this.#type}`);
     }
 
     /**
@@ -199,6 +214,56 @@ class FileService {
      */
     listDirectoryFiles(path) {
         return FileSystem.readdirSync(path);
+    }
+
+    /**
+     * @param { String } path 
+     * @param { CliService } cliService
+     * @param { string } type
+     * @returns { Map<string, Entity> }
+     */
+    loadEntities(path, cliService, type) {
+        const pathAsFile = path?.endsWith('.json');
+        const entities = new Map();
+        if (pathAsFile) {
+            cliService.printLoading(`Reading ${type} from file`);
+            try {
+                JSON.parse(path).forEach(entity => entities.set(entity.id, entity));
+            } catch (error) {}
+        } else {
+            let i = 1
+            const files = this.listDirectoryFiles(path).filter(file => file.endsWith('json'))
+            try {
+                for (const file of files) {
+                    cliService.printProgress(i++, files.length, 'Reading', file.substring(file.length - 'json'.length));
+                    try {
+                        JSON.parse(this.readFile(path, file)).forEach(entity => entities.set(entity.id, entity));
+                    } catch (error) {}
+                }
+                cliService.printFinish('Read', entities.size);
+            } catch (error) {}
+        }
+        return entities;
+    }
+
+    /**
+     * @param { Map<string, Entity> } entities
+     * @param { string } path 
+     * @param { CliService } cliService
+     */
+    saveEntities(entities, path, cliService) {
+        const pathAsFile = path?.endsWith('.json');
+        if (pathAsFile) {
+            cliService.printLoading(`Writing ${cliService.type} to file`);
+            this.writeFile(undefined, path || '', JSON.stringify(entities, undefined, '\t'));
+        } else {
+            let i = 1
+            for (const [id, entity] of entities) {
+                cliService.printProgress(i++, entities.size, 'Writing', id);
+                this.writeFile(path, id + '.json', JSON.stringify(entity, undefined, '\t'));
+            }
+            cliService.printFinish('written', entities.size);
+        }
     }
 
 }
@@ -299,21 +364,20 @@ class DownloadService {
     /**
      * @param { string } clientId
      * @param { string } apikey
-     * @param { string } [path]
+     * @param { string } path
      */
     downloadApiDBStada(clientId, apikey, path) {
-        const cliService = new CliService('DB/Stada');
-        cliService.printError(!clientId || !apikey, `Require client-id and api-key as argumnets!`);
-        const outputAsFile = path?.endsWith('.json');
+        const cliService = new CliService('DB/Stada', 'stations');
+        cliService.printError(!clientId || !apikey, `Require client-id, api-key and path as arguments!`);
         const url = 'https://apis.deutschebahn.com/db-api-marketplace/apis/station-data/v2/stations'
         const headers = { 'DB-Client-Id': clientId, 'DB-Api-Key': apikey }
+        const stations = fileService.loadEntities(path, cliService, 'stations')
         cliService.printLoading(`Downloading stations from ${url}`);
         fetch(url, { headers })
             .then(response => cliService.printLoading('Parsing stations', response))
             .then(response => response.ok ? response.json() : Promise.reject())
             .then(response => {
                 let i = 1;
-                const newStations = [];
                 for (const station of response.result) {
                     try {
                         if (station.evaNumbers.length == 0) {
@@ -373,21 +437,14 @@ class DownloadService {
                                 }
                             ]
                         }
-                        
-                        if (!outputAsFile) {
-                            fileService.writeFile(path, newStation.id + '.json', JSON.stringify(newStation, undefined, '\t'));
-                        } else {
-                            newStations.push(newStation);
-                        }
-                        cliService.printProgress(i++, response.result.length, newStation.name);
+                        stations.set(newStation.id, { ...stations.get(newStation.id), ...newStation });
+                        cliService.printProgress(i++, response.result.length, 'Downloading', station.id);
                     } catch (error) {
                         cliService.printError(true, `Failed to parse ${station.id} (${error})`);
                     }
                 }
-                if (outputAsFile) {
-                    fileService.writeFile(undefined, path || '', JSON.stringify(newStations, undefined, '\t'));
-                }
-                cliService.printFinish('stations', response.result.length);
+                cliService.printFinish('downloaded', response.result.length);
+                fileService.saveEntities(stations, path, cliService)
             })
     }
 }
