@@ -276,31 +276,38 @@ class TestService {
 
     test() {
         const WARMUP_CYCLES = 100;
-        const EXECUTION_CYCLES = 10000;
+        const EXECUTION_CYCLES = 5000;
         let passedCount = 0;
         let failedCount = 0;
         for (const test of tests) {
-            const result = test.execute();
-            for (let i = 0; i < WARMUP_CYCLES; i++) test.execute();
-            const durations = []
-            for (let i = 0; i < EXECUTION_CYCLES; i++) {
-                const startTime = performance.now();
-                test.execute();
-                const endTime = performance.now();
-                durations.push((endTime - startTime) * 1e3);
-            }
-            const average = durations.length ? durations.reduce((a, b) => a + b) / durations.length : 0;
-            if (test.expect === result) {
-                console.log(`${CliService.CLI_GREEN}TEST PASSED:${CliService.CLI_RESET} ${test.name} (${average.toFixed(3)}µs)`);
-                passedCount++;
-            } else {
-                console.log(`${CliService.CLI_RED}TEST FAILED:${CliService.CLI_RESET} ${test.name} (${average.toFixed(3)}µs)`);
-                console.log(`\tExpected: ${CliService.CLI_BLUE}${test.expect}${CliService.CLI_RESET}`);
-                console.log(`\tResult: ${CliService.CLI_RED}${CliService.CLI_RED}${result}${CliService.CLI_RESET}`);
+            try { 
+                const result = test.execute();
+                for (let i = 0; i < WARMUP_CYCLES; i++) test.execute();
+                const durations = []
+                for (let i = 0; i < EXECUTION_CYCLES; i++) {
+                    const startTime = performance.now();
+                    test.execute();
+                    const endTime = performance.now();
+                    durations.push((endTime - startTime) * 1e3);
+                }
+                const average = durations.length ? durations.reduce((a, b) => a + b) / durations.length : 0;
+                if (JSON.stringify(test.expect) === JSON.stringify(result)) {
+                    console.log(`${CliService.CLI_GREEN}TEST PASSED:${CliService.CLI_RESET} ${test.name} (${average.toFixed(3)}µs)`);
+                    passedCount++;
+                } else {
+                    console.log(`${CliService.CLI_RED}TEST FAILED:${CliService.CLI_RESET} ${test.name} (${average.toFixed(3)}µs)`);
+                    console.log(`\tExpected: ${CliService.CLI_BLUE}${JSON.stringify(test.expect)}${CliService.CLI_RESET}`);
+                    console.log(`\t  Result: ${CliService.CLI_RED}${CliService.CLI_RED}${JSON.stringify(result)}${CliService.CLI_RESET}`);
+                    failedCount++;
+                }
+            } catch (error) {
                 failedCount++;
+                console.log(`${CliService.CLI_RED}TEST FAILED:${CliService.CLI_RESET} ${test.name}`);
+                console.log(`\tError: ${CliService.CLI_RED}${error.stack.replaceAll('\n', '\n\t')}${CliService.CLI_RESET}`);
             }
         }
         console.log(`${CliService.CLI_GREEN}${passedCount}${CliService.CLI_RESET} tests passed, ${CliService.CLI_RED}${failedCount}${CliService.CLI_RESET} tests failed!`);
+        if (failedCount > 0) process.exit(-1);
     }
 
 }
@@ -339,18 +346,48 @@ class SearchService {
         }
         return formatted;
     }
+
+    /**
+     * @param { string } name 
+     * @returns { string [] }
+     */
+    nWordEdgeNgram(name) {
+        const parts = [];
+        let currentName = ''
+        for (let i = name.length -1; i >= 0; i--) {
+            if (name[i] !== ' ') currentName = name[i] + currentName;
+            else parts.unshift(currentName);
+        }
+        parts.unshift(currentName);
+        const result = []
+        for (const part of parts) {
+            for (let i = 1; i <= part.length; i++) {
+                result.push(part.slice(0, i));
+            }
+        }
+        return result;
+    }
     
     /**
      * @param { string } search
-     * @param {{ searchName: string; score: number; }} a
-     * @param {{ searchName: string; score: number; }} b
+     * @param {{ search: string; score: number; }} a
+     * @param {{ search: string; score: number; }} b
      */
     beginnScoreMatching(search, a, b) {
-        const aStartsWithName = a.searchName.startsWith(search);
-        const bStartsWithName = b.searchName.startsWith(search);
+        if (a.score !== b.score) return b.score - a.score;
+        const aStartsWithName = a.search.startsWith(search);
+        const bStartsWithName = b.search.startsWith(search);
         if (aStartsWithName && !bStartsWithName) return 1;
         else if (!aStartsWithName && bStartsWithName) return -1;
-        else return b.score - a.score;
+        else return 0;
+    }
+
+    /**
+     * @param { string } search
+     * @param { { search: string; score: number; }[] } entities
+     */
+    sortBeginnScoreMatching(search, entities) {
+        return entities.sort((a, b) => this.beginnScoreMatching(search, a, b));
     }
 
 }
@@ -475,23 +512,28 @@ const tests = [
     },
     {
         name: "beginnScoreMatching() should match first entry",
-        execute: () => searchService.beginnScoreMatching('Karlsruhe', { searchName: 'Karlsruhe Hbf', score: 0 }, { searchName: 'Leipzig Karlsruher Straße', score: 0 }),
+        execute: () => searchService.beginnScoreMatching('Karlsruhe', { search: 'Karlsruhe Hbf', score: 0 }, { search: 'Leipzig Karlsruher Straße', score: 0 }),
         expect: 1
     },
     {
         name: "beginnScoreMatching() should match second entry",
-        execute: () => searchService.beginnScoreMatching('Karlsruhe', { searchName: 'Leipzig Karlsruher Straße', score: 0 }, { searchName: 'Karlsruhe Hbf', score: 0 }),
+        execute: () => searchService.beginnScoreMatching('Karlsruhe', { search: 'Leipzig Karlsruher Straße', score: 0 }, { search: 'Karlsruhe Hbf', score: 0 }),
         expect: -1
     },
     {
         name: "beginnScoreMatching() should score first entry",
-        execute: () => searchService.beginnScoreMatching('Karlsruhe', { searchName: 'Leipzig Karlsruher Straße', score: 0 }, { searchName: 'Karlsruhe Hbf', score: 1 }),
+        execute: () => searchService.beginnScoreMatching('Karlsruhe', { search: 'Leipzig Karlsruher Straße', score: 0 }, { search: 'Karlsruhe Hbf', score: 1 }),
         expect: 1
     },
     {
         name: "beginnScoreMatching() should score second entry",
-        execute: () => searchService.beginnScoreMatching('Karlsruhe', { searchName: 'Karlsruhe Hbf', score: 1 }, { searchName: 'Leipzig Karlsruher Straße', score: 0 }),
-        expect: 1
+        execute: () => searchService.beginnScoreMatching('Karlsruhe', { search: 'Karlsruhe Hbf', score: 1 }, { search: 'Leipzig Karlsruher Straße', score: 0 }),
+        expect: -1
+    },
+    {
+        name: "nWordEgeNgram() should return N-Word-Edge-Ngram",
+        execute: () => searchService.nWordEdgeNgram('What why'),
+        expect: ['W', 'Wh', 'Wha', 'What', 'Whatw', 'Whatwh', 'Whatwhy', 'w', 'wh', 'why']
     }
 ]
 
