@@ -348,8 +348,24 @@ class SearchService {
     }
 
     /**
+     * @param { { [key: string]: string | number | string[] | number[] } } object
+     * @returns { string[] }
+     */
+    extractIds(object) {
+        const ids = [];
+        for (const [key, value] of Object.entries(object)) {
+            if (Array.isArray(value)) {
+                value.forEach(id => ids.push(id.toString().toLowerCase()))
+            } else {
+                ids.push(value.toString().toString().toLowerCase())
+            }
+        }
+        return ids;
+    }
+
+    /**
      * @param { string } name 
-     * @returns { string [] }
+     * @returns { string[] }
      */
     nWordEdgeNgram(name) {
         const parts = [];
@@ -374,12 +390,13 @@ class SearchService {
      * @param {{ search: string; score: number; }} b
      */
     beginnScoreMatching(search, a, b) {
-        if (a.score !== b.score) return a.score - b.score;
+        const size = (number) => number === 0 ? 1 : Math.floor(Math.log10(number)) + 1;
+        if (size(a.score) !== size(b.score)) return a.score - b.score;
         const aStartsWithName = a.search.startsWith(search);
         const bStartsWithName = b.search.startsWith(search);
         if (aStartsWithName && !bStartsWithName) return -1;
         else if (!aStartsWithName && bStartsWithName) return 1;
-        else return 0;
+        else return a.score - b.score;
     }
 
     /**
@@ -511,6 +528,11 @@ const tests = [
         expect: 'faesschen_bruecken_strasse_broetchen_compania'
     },
     {
+        name: "extractIds() should extract ids",
+        execute: () => searchService.extractIds({ eva: 8011160, stada: 1071, ril: [ 'BHBF', 'BL', 'BLS' ] }),
+        expect: [ "8011160", "1071", 'bhbf', 'bl', 'bls' ]
+    },
+    {
         name: "beginnScoreMatching() should match first entry",
         execute: () => searchService.beginnScoreMatching('Karlsruhe', { search: 'Karlsruhe Hbf', score: 0 }, { search: 'Leipzig Karlsruher Straße', score: 0 }),
         expect: -1
@@ -521,14 +543,19 @@ const tests = [
         expect: 1
     },
     {
-        name: "beginnScoreMatching() should score first entry",
+        name: "beginnScoreMatching() should score second entry",
         execute: () => searchService.beginnScoreMatching('Karlsruhe', { search: 'Leipzig Karlsruher Straße', score: 0 }, { search: 'Karlsruhe Hbf', score: 1 }),
-        expect: -1
+        expect: 1
     },
     {
         name: "beginnScoreMatching() should score second entry",
-        execute: () => searchService.beginnScoreMatching('Karlsruhe', { search: 'Karlsruhe Hbf', score: 1 }, { search: 'Leipzig Karlsruher Straße', score: 0 }),
+        execute: () => searchService.beginnScoreMatching('Karlsruhe', { search: 'Leipzig Karlsruher Straße', score: 1 }, { search: 'Karlsruhe Hbf', score: 0 }),
         expect: 1
+    },
+    {
+        name: "beginnScoreMatching() should rank first entry",
+        execute: () => searchService.beginnScoreMatching('Karlsruhe', { search: 'Karlsruhe Hbf', score: 10 }, { search: 'Leipzig Karlsruher Straße', score: 1 }),
+        expect: 9
     },
     {
         name: "nWordEgeNgram() should return N-Word-Edge-Ngram",
