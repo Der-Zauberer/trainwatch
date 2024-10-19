@@ -92,7 +92,6 @@ DEFINE FIELD OVERWRITE name ON TABLE Stop TYPE string;
 DEFINE FIELD OVERWRITE score ON TABLE Stop TYPE int;
 DEFINE FIELD OVERWRITE platforms ON TABLE Stop TYPE array<object>;
 DEFINE FIELD OVERWRITE platforms.*.name ON TABLE Stop TYPE string;
-DEFINE FIELD OVERWRITE platforms.*.name ON TABLE Stop TYPE string;
 DEFINE FIELD OVERWRITE platforms.*.length ON TABLE Stop TYPE int;
 DEFINE FIELD OVERWRITE platforms.*.linkedPlatforms ON TABLE Stop TYPE array<int>;
 DEFINE FIELD OVERWRITE location ON TABLE Stop TYPE object;
