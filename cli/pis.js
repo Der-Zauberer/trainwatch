@@ -374,11 +374,11 @@ class SearchService {
      * @param {{ search: string; score: number; }} b
      */
     beginnScoreMatching(search, a, b) {
-        if (a.score !== b.score) return b.score - a.score;
+        if (a.score !== b.score) return a.score - b.score;
         const aStartsWithName = a.search.startsWith(search);
         const bStartsWithName = b.search.startsWith(search);
-        if (aStartsWithName && !bStartsWithName) return 1;
-        else if (!aStartsWithName && bStartsWithName) return -1;
+        if (aStartsWithName && !bStartsWithName) return -1;
+        else if (!aStartsWithName && bStartsWithName) return 1;
         else return 0;
     }
 
@@ -513,22 +513,22 @@ const tests = [
     {
         name: "beginnScoreMatching() should match first entry",
         execute: () => searchService.beginnScoreMatching('Karlsruhe', { search: 'Karlsruhe Hbf', score: 0 }, { search: 'Leipzig Karlsruher Straße', score: 0 }),
-        expect: 1
+        expect: -1
     },
     {
         name: "beginnScoreMatching() should match second entry",
         execute: () => searchService.beginnScoreMatching('Karlsruhe', { search: 'Leipzig Karlsruher Straße', score: 0 }, { search: 'Karlsruhe Hbf', score: 0 }),
-        expect: -1
+        expect: 1
     },
     {
         name: "beginnScoreMatching() should score first entry",
         execute: () => searchService.beginnScoreMatching('Karlsruhe', { search: 'Leipzig Karlsruher Straße', score: 0 }, { search: 'Karlsruhe Hbf', score: 1 }),
-        expect: 1
+        expect: -1
     },
     {
         name: "beginnScoreMatching() should score second entry",
         execute: () => searchService.beginnScoreMatching('Karlsruhe', { search: 'Karlsruhe Hbf', score: 1 }, { search: 'Leipzig Karlsruher Straße', score: 0 }),
-        expect: -1
+        expect: 1
     },
     {
         name: "nWordEgeNgram() should return N-Word-Edge-Ngram",
