@@ -1,5 +1,7 @@
 //@ts-check
 
+// @ts-ignore
+const { error } = require('node:console');
 const FileSystem = require('node:fs');
 const Path = require('path');
 
@@ -174,6 +176,17 @@ class CliService {
      * @param { boolean } condition
      * @param { string } error
      */
+    printWarning(condition, error) {
+        if (!condition) return;
+        this.#removeTemporaryLastLine?.();
+        this.#stopLoading?.();
+        console.log(`${CliService.CLI_YELLOW}WARNING: ${error}${CliService.CLI_RESET}`);
+    }
+
+    /**
+     * @param { boolean } condition
+     * @param { string } error
+     */
     printError(condition, error) {
         if (!condition) return;
         console.log(`${CliService.CLI_RED}ERROR: ${error}${CliService.CLI_RESET}`);
@@ -219,16 +232,15 @@ class FileService {
     /**
      * @param { String } path 
      * @param { CliService } cliService
-     * @param { string } type
      * @returns { Map<string, Entity> }
      */
-    loadEntities(path, cliService, type) {
+    loadEntities(path, cliService) {
         const pathAsFile = path?.endsWith('.json');
         const entities = new Map();
         if (pathAsFile) {
-            cliService.printLoading(`Reading ${type} from file`);
+            cliService.printLoading(`Reading ${cliService.type} from file`);
             try {
-                JSON.parse(path).forEach(entity => entities.set(entity.id, entity));
+                JSON.parse(this.readFile(undefined, path)).forEach(entity => entities.set(entity.id, entity));
             } catch (error) {}
         } else {
             let i = 1
@@ -255,15 +267,16 @@ class FileService {
         const pathAsFile = path?.endsWith('.json');
         if (pathAsFile) {
             cliService.printLoading(`Writing ${cliService.type} to file`);
-            this.writeFile(undefined, path || '', JSON.stringify(entities, undefined, '\t'));
+            const content = Array.from(entities.values()).sort((a, b) => a.name.localeCompare(b.name));
+            this.writeFile(undefined, path || '', JSON.stringify(content, undefined, '\t'));
         } else {
             let i = 1
             for (const [id, entity] of entities) {
                 cliService.printProgress(i++, entities.size, 'Writing', id);
                 this.writeFile(path, id + '.json', JSON.stringify(entity, undefined, '\t'));
             }
-            cliService.printFinish('written', entities.size);
         }
+        cliService.printFinish('written', entities.size);
     }
 
 }
@@ -353,6 +366,8 @@ class SearchService {
      */
     extractIds(object) {
         const ids = [];
+        // @ts-ignore
+        // @ts-ignore
         for (const [key, value] of Object.entries(object)) {
             if (Array.isArray(value)) {
                 value.forEach(id => ids.push(id.toString().toLowerCase()))
@@ -423,9 +438,9 @@ class DownloadService {
     downloadApiDBStada(clientId, apikey, path) {
         const cliService = new CliService('DB/Stada', 'stations');
         cliService.printError(!clientId || !apikey, `Require client-id, api-key and path as arguments!`);
-        const url = 'https://apis.deutschebahn.com/db-api-marketplace/apis/station-data/v2/stations'
-        const headers = { 'DB-Client-Id': clientId, 'DB-Api-Key': apikey }
-        const stations = fileService.loadEntities(path, cliService, 'stations')
+        const url = 'https://apis.deutschebahn.com/db-api-marketplace/apis/station-data/v2/stations';
+        const headers = { 'DB-Client-Id': clientId, 'DB-Api-Key': apikey };
+        const stations = fileService.loadEntities(path, cliService);
         cliService.printLoading(`Downloading stations from ${url}`);
         fetch(url, { headers })
             .then(response => cliService.printLoading('Parsing stations', response))
@@ -482,25 +497,102 @@ class DownloadService {
                                 eva: station.evaNumbers[0].number,
                                 ril: station.ril100Identifiers.map((/** @type {{ rilIdentifier: any; }} */ ril) => ril.rilIdentifier),
                                 stada: station.number,
-                            },
-                            sources: [
-                                {
-                                    name: 'DB Stada',
-                                    url,
-                                    used: new Date().toISOString().split('T')[0]
-                                }
-                            ]
+                            }
                         }
-                        stations.set(newStation.id, { ...stations.get(newStation.id), ...newStation });
+                        if (!station.sources) station.sources = [];
+                        station.sources = station.sources.filter(source => source.name !== 'DB Ris::Stations (Platforms)');
+                        station.sources.push({
+                            name: 'DB Ris::Stations (Platforms)',
+                            license: 'Creative Commons Attribution 4.0 International (CC BY 4.0)',
+                            url,
+                            used: new Date().toISOString().split('T')[0]
+                        });
+                        const mergedStation = { ...stations.get(newStation.id), ...newStation };
+                        // @ts-ignore
+                        if (!mergedStation.sources) mergedStation.sources = [];
+                        // @ts-ignore
+                        mergedStation.sources = mergedStation.sources.filter(source => source.name !== 'DB Ris::Stations (Platforms)');
+                        // @ts-ignore
+                        mergedStation.sources.push({
+                            name: 'DB Ris::Stations (Platforms)',
+                            license: 'Creative Commons Attribution 4.0 International (CC BY 4.0)',
+                            url,
+                            used: new Date().toISOString().split('T')[0]
+                        });
+                        stations.set(newStation.id, mergedStation);
                         cliService.printProgress(i++, response.result.length, 'Downloading', station.id);
                     } catch (error) {
                         cliService.printError(true, `Failed to parse ${station.id} (${error})`);
                     }
                 }
                 cliService.printFinish('downloaded', response.result.length);
-                fileService.saveEntities(stations, path, cliService)
-            })
+                fileService.saveEntities(stations, path, cliService);
+            });
     }
+
+    /**
+     * @param { string } clientId
+     * @param { string } apikey
+     * @param { string } path
+     */
+    async downloadApiDBRisStationsPlatform(clientId, apikey, path) {
+        const cliService = new CliService('DB/Ris::Stations', 'stations');
+        cliService.printError(!clientId || !apikey, `Require client-id, api-key and path as arguments!`);
+        const headers = { 'DB-Client-Id': clientId, 'DB-Api-Key': apikey };
+        const stations = fileService.loadEntities(path, cliService);
+        const stationQueue = Array.from(stations.keys());
+        cliService.printLoading(`Downloading stations from https://apis.deutschebahn.com/db-api-marketplace/apis/ris-stations/v1/platforms`);
+        let i = 1;
+        for (const [id, station] of stations) {
+            // @ts-ignore
+            const eva = station?.ids?.eva;
+            if (!eva) return;
+            try {
+                const url = `https://apis.deutschebahn.com/db-api-marketplace/apis/ris-stations/v1/platforms/${eva}`;
+                const response = await fetch(url, { headers }).then(response => response.ok ? response.json() : Promise.reject());
+                const platforms = []
+                for (const platform of response.platforms) {
+                    const heights = platform.heights;
+                    const lengthMap = heights.reduce((accumulator, { start, end, height }) => {
+                        const length = end - start;
+                        accumulator[height] = (accumulator[height] || 0) + length;
+                        return accumulator;
+                    }, {});
+                    const height = +Object.keys(lengthMap).reduce((a, b) => 
+                        lengthMap[a] > lengthMap[b] ? a : b
+                    );
+                    platforms.push({
+                        name: platform.name,
+                        length: platform.length || 0,
+                        height,
+                        linkedPlatforms: platform.linkedPlatforms
+                    })
+                }
+                // @ts-ignore
+                station.platforms = platforms;
+                // @ts-ignore
+                if (!station.sources) station.sources = [];
+                // @ts-ignore
+                station.sources = station.sources.filter(source => source.name !== 'DB Ris::Stations (Platforms)');
+                // @ts-ignore
+                station.sources.push({
+                    name: 'DB Ris::Stations (Platforms)',
+                    license: 'Creative Commons Attribution 4.0 International (CC BY 4.0)',
+                    url,
+                    used: new Date().toISOString().split('T')[0]
+                });
+                stations.set(station.id, station);
+                cliService.printProgress(i++, stations.size, 'Downloading', station.id);
+                await new Promise(resolve => setTimeout(resolve, 110));
+                if (i == 3) break;
+            } catch(error) {
+                cliService.printWarning(false, error);
+            }
+        }
+        cliService.printFinish('downloaded', i);
+        fileService.saveEntities(stations, path, cliService);
+    }
+
 }
 
 /**************
@@ -570,6 +662,11 @@ const commands = {
             function: downloadService.downloadApiDBStada,
             usage: 'download DB/Stada <client-id> <api-key> [path|file]',
             description: 'Downloads station from the DB Stada API to multible or a single file'
+        },
+        'DB/RIS/Stations': { 
+            function: downloadService.downloadApiDBRisStationsPlatform,
+            usage: 'download DB/RIS/Stations <client-id> <api-key> [path|file]',
+            description: 'Downloads platforms for already downloaded stations from the DB Ris::Stations API to multible or a single file'
         }
     },
     test: { 
