@@ -3,6 +3,7 @@
 // @ts-ignore
 const { error } = require('node:console');
 const FileSystem = require('node:fs');
+const { emit } = require('node:process');
 const Path = require('path');
 
 /************
@@ -23,6 +24,19 @@ class Entity {
     id;
     /** @type { string } */
     name;
+    /** @type { Source[] | undefined } */
+    sources;
+}
+
+class Source {
+    /** @type { string } */
+    name;
+    /** @type { string } */
+    license;
+    /** @type { string } */
+    url;
+    /** @type { string } */
+    used;
 }
 
 /**********
@@ -499,27 +513,14 @@ class DownloadService {
                                 stada: station.number,
                             }
                         }
-                        if (!station.sources) station.sources = [];
-                        station.sources = station.sources.filter(source => source.name !== 'DB Ris::Stations (Platforms)');
-                        station.sources.push({
+                        const source = {
                             name: 'DB Ris::Stations (Platforms)',
                             license: 'Creative Commons Attribution 4.0 International (CC BY 4.0)',
                             url,
                             used: new Date().toISOString().split('T')[0]
-                        });
-                        const mergedStation = { ...stations.get(newStation.id), ...newStation };
-                        // @ts-ignore
-                        if (!mergedStation.sources) mergedStation.sources = [];
-                        // @ts-ignore
-                        mergedStation.sources = mergedStation.sources.filter(source => source.name !== 'DB Ris::Stations (Platforms)');
-                        // @ts-ignore
-                        mergedStation.sources.push({
-                            name: 'DB Ris::Stations (Platforms)',
-                            license: 'Creative Commons Attribution 4.0 International (CC BY 4.0)',
-                            url,
-                            used: new Date().toISOString().split('T')[0]
-                        });
-                        stations.set(newStation.id, mergedStation);
+                        }
+                        const mergedStation = { sources: [], ...stations.get(newStation.id), ...newStation }
+                        stations.set(newStation.id, this.addSource( mergedStation, source));
                         cliService.printProgress(i++, response.result.length, 'Downloading', station.id);
                     } catch (error) {
                         cliService.printError(true, `Failed to parse ${station.id} (${error})`);
@@ -570,18 +571,13 @@ class DownloadService {
                 }
                 // @ts-ignore
                 station.platforms = platforms;
-                // @ts-ignore
-                if (!station.sources) station.sources = [];
-                // @ts-ignore
-                station.sources = station.sources.filter(source => source.name !== 'DB Ris::Stations (Platforms)');
-                // @ts-ignore
-                station.sources.push({
+                const source = {
                     name: 'DB Ris::Stations (Platforms)',
                     license: 'Creative Commons Attribution 4.0 International (CC BY 4.0)',
                     url,
                     used: new Date().toISOString().split('T')[0]
-                });
-                stations.set(station.id, station);
+                }
+                stations.set(station.id, this.addSource(station, source));
                 cliService.printProgress(i++, stations.size, 'Downloading', station.id);
                 await new Promise(resolve => setTimeout(resolve, 110));
                 if (i == 3) break;
@@ -591,6 +587,19 @@ class DownloadService {
         }
         cliService.printFinish('downloaded', i);
         fileService.saveEntities(stations, path, cliService);
+    }
+
+    /**
+     * 
+     * @param { Entity } entity
+     * @param { Source } source
+     * @returns { Entity }
+     */
+    addSource(entity, source) {
+        if (!entity.sources) entity.sources = [];
+        entity.sources = entity.sources.filter(entry => entry.name !== source.name);
+        entity.sources.push(source);
+        return entity;
     }
 
 }
