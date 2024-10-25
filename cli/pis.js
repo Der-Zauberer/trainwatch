@@ -351,14 +351,15 @@ class SearchService {
      * @returns { string }
      */
     normalize(name, seperator) {
-        let formatted = '';
-        let blank = false;
         const replacements = { 'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'ß': 'ss' };
+        const isWhitespace = (char) => char === ' ' || char === '/' || char === '-' || char === '(' || char === ')';
+        let formatted = '';
+        let blank = name.length > 0 && isWhitespace(name[0]);
         for (let char of name.toLowerCase()) {
             if (replacements[char]) {
                 formatted += replacements[char];
                 blank = false;
-            } else if (char === ' ' || char === '/' || char === '-' || char === '(' || char === ')') {
+            } else if (isWhitespace(char)) {
                 if (!blank) {
                     if (seperator) formatted += seperator;
                     blank = true;
@@ -370,6 +371,9 @@ class SearchService {
                 const normalized = char.normalize('NFD');
                 if (char !== normalized) formatted += normalized[0];
             }
+        }
+        if (blank && seperator) {
+            return formatted.slice(0, -1);
         }
         return formatted;
     }
@@ -449,7 +453,7 @@ class DownloadService {
      * @param { string } apikey
      * @param { string } path
      */
-    downloadApiDBStada(clientId, apikey, path) {
+    downloadApiDBStada = (clientId, apikey, path) => {
         const cliService = new CliService('DB/Stada', 'stations');
         cliService.printError(!clientId || !apikey, `Require client-id, api-key and path as arguments!`);
         const url = 'https://apis.deutschebahn.com/db-api-marketplace/apis/station-data/v2/stations';
@@ -536,7 +540,7 @@ class DownloadService {
      * @param { string } apikey
      * @param { string } path
      */
-    async downloadApiDBRisStationsPlatform(clientId, apikey, path) {
+    downloadApiDBRisStationsPlatform = async (clientId, apikey, path) => {
         const cliService = new CliService('DB/Ris::Stations', 'stations');
         cliService.printError(!clientId || !apikey, `Require client-id, api-key and path as arguments!`);
         const headers = { 'DB-Client-Id': clientId, 'DB-Api-Key': apikey };
@@ -615,17 +619,17 @@ const downloadService = new DownloadService();
 const tests = [
     {
         name: "normalize() should return without seperator",
-        execute: () => searchService.normalize('Fäßchen/Brücken-Straße (Brötchen)Compañía'),
+        execute: () => searchService.normalize(' Fäßchen/Brücken-Straße (Brötchen)Compañía '),
         expect: 'faesschenbrueckenstrassebroetchencompania'
     },
     {
         name: "normalize() should return with blank seperator",
-        execute: () => searchService.normalize('Fäßchen/Brücken-Straße (Brötchen)Compañía', ' '),
+        execute: () => searchService.normalize(' Fäßchen/Brücken-Straße (Brötchen)Compañía ', ' '),
         expect: 'faesschen bruecken strasse broetchen compania'
     },
     {
         name: "normalize() should return with underscore seperator",
-        execute: () => searchService.normalize('Fäßchen/Brücken-Straße (Brötchen)Compañía', '_'),
+        execute: () => searchService.normalize(' Fäßchen/Brücken-Straße (Brötchen)Compañía ', '_'),
         expect: 'faesschen_bruecken_strasse_broetchen_compania'
     },
     {

@@ -5,14 +5,15 @@
 DEFINE FUNCTION OVERWRITE fn::name::normalize($name: string, $seperator: option<string>) {
     RETURN function($name, $seperator) {
         const [name, seperator] = arguments;
-        let formatted = '';
-        let blank = false;
         const replacements = { 'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'ß': 'ss' };
+        const isWhitespace = (char) => char === ' ' || char === '/' || char === '-' || char === '(' || char === ')';
+        let formatted = '';
+        let blank = name.length > 0 && isWhitespace(name[0]);
         for (let char of name.toLowerCase()) {
             if (replacements[char]) {
                 formatted += replacements[char];
                 blank = false;
-            } else if (char === ' ' || char === '/' || char === '-' || char === '(' || char === ')') {
+            } else if (isWhitespace(char)) {
                 if (!blank) {
                     if (seperator) formatted += seperator;
                     blank = true;
@@ -24,6 +25,9 @@ DEFINE FUNCTION OVERWRITE fn::name::normalize($name: string, $seperator: option<
                 const normalized = char.normalize('NFD');
                 if (char !== normalized) formatted += normalized[0];
             }
+        }
+        if (blank && seperator) {
+            return formatted.slice(0, -1);
         }
         return formatted;
     } 
