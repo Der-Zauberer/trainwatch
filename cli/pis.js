@@ -1,9 +1,6 @@
 //@ts-check
 
-// @ts-ignore
-const { error } = require('node:console');
 const FileSystem = require('node:fs');
-const { emit } = require('node:process');
 const Path = require('path');
 
 /************
@@ -54,10 +51,8 @@ class CliService {
 
     /** @type { string | undefined } */
     #name;
-
     /** @type { string | undefined } */
     #type;
-
     /** @type { (() => void) | undefined } */
     #removeTemporaryLastLine = undefined;
     /** @type { (() => void) | undefined } */
@@ -237,13 +232,6 @@ class FileService {
     }
 
     /**
-     * @param { FileSystem.PathLike } path
-     */
-    listDirectoryFiles(path) {
-        return FileSystem.readdirSync(path);
-    }
-
-    /**
      * @param { String } path 
      * @param { CliService } cliService
      * @returns { Map<string, Entity> }
@@ -258,7 +246,7 @@ class FileService {
             } catch (error) {}
         } else {
             let i = 1
-            const files = this.listDirectoryFiles(path).filter(file => file.endsWith('json'))
+            const files = FileSystem.readdirSync(path).filter(file => file.endsWith('json'))
             try {
                 for (const file of files) {
                     cliService.printProgress(i++, files.length, 'Reading', file.substring(file.length - 'json'.length));
