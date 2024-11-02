@@ -86,13 +86,13 @@ DEFINE FUNCTION OVERWRITE fn::search::sort_beginn_score_matching($search: string
 
 DEFINE FUNCTION OVERWRITE fn::search::search($name: string) {
     RETURN array::flatten(SELECT VALUE entries.*.id.{id, name} AS result FROM type::thing('search', $name));
-}
+};
 
 ----------
 -- stop --
 ----------
 
-DEFINE TABLE IF NOT EXISTS stop SCHEMAFULL
+DEFINE TABLE OVERWRITE stop SCHEMAFULL
 	PERMISSIONS
 		FOR select FULL;
 DEFINE FIELD OVERWRITE id ON TABLE stop;
@@ -143,7 +143,7 @@ DEFINE FIELD OVERWRITE sources.*.license ON TABLE stop TYPE string;
 DEFINE FIELD OVERWRITE sources.*.url ON TABLE stop TYPE string ASSERT string::is::url($value);
 DEFINE FIELD OVERWRITE sources.*.used ON TABLE stop TYPE string;
 
-DEFINE TABLE IF NOT EXISTS search SCHEMAFULL
+DEFINE TABLE OVERWRITE search SCHEMAFULL
 	PERMISSIONS
 		FOR select FULL;
 DEFINE FIELD OVERWRITE entries ON TABLE search TYPE array<object>;
@@ -165,11 +165,12 @@ DEFINE EVENT OVERWRITE stop_update ON TABLE stop WHEN $before.name != $after.nam
     IF $after THEN {
         FOR $entry IN fn::name::extract_ids($after.ids) {
             UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $after.id, search: $entry, score: $after.score };
+            UPDATE ONLY type::thing('search', $entry) SET entries = fn::search::sort_beginn_score_matching($entry, entries);
         };
         LET $search = fn::name::normalize($after.name);
         FOR $entry IN fn::search::n_word_edge_ngram(fn::name::normalize($after.name, ' ')) {
             UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $after.id, search: $search, score: $after.score + 10 };
-            UPDATE ONLY type::thing('search', $entry) SET entries = fn::search::sort_beginn_score_matching($search, entries);
+            UPDATE ONLY type::thing('search', $entry) SET entries = fn::search::sort_beginn_score_matching($entry, entries);
         };
     } END;
 };
@@ -192,7 +193,7 @@ DEFINE FUNCTION OVERWRITE fn::stop::index() {
 -- type --
 ----------
 
-DEFINE TABLE IF NOT EXISTS type SCHEMAFULL
+DEFINE TABLE OVERWRITE type SCHEMAFULL
 	PERMISSIONS
 		FOR select FULL;
 DEFINE FIELD OVERWRITE id ON TABLE type;
