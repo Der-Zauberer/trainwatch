@@ -1,5 +1,5 @@
 ---------------
--- Functions --
+-- functions --
 ---------------
 
 DEFINE FUNCTION OVERWRITE fn::name::normalize($name: string, $seperator: option<string>) {
@@ -85,7 +85,7 @@ DEFINE FUNCTION OVERWRITE fn::search::sort_beginn_score_matching($search: string
 };
 
 ----------
--- Stop --
+-- stop --
 ----------
 
 DEFINE TABLE IF NOT EXISTS stop SCHEMAFULL
@@ -184,9 +184,9 @@ DEFINE FUNCTION OVERWRITE fn::stop::index() {
     UPDATE search SET entries = fn::search::sort_beginn_score_matching(record::id(id), entries);
 };
 
-------------------------
--- TransportationType --
-------------------------
+----------
+-- type --
+----------
 
 DEFINE TABLE IF NOT EXISTS type SCHEMAFULL
 	PERMISSIONS
@@ -611,7 +611,7 @@ DEFINE FIELD OVERWRITE live.departure.time ON TABLE stops TYPE datetime;
 DEFINE FIELD OVERWRITE live.departure.platform ON TABLE stops TYPE string;
 
 ----------
--- User --
+-- user --
 ----------
 
 DEFINE TABLE OVERWRITE user SCHEMAFULL
