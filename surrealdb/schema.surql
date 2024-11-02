@@ -552,6 +552,64 @@ INSERT INTO type [
     }
 ];
 
+-----------
+-- route --
+-----------
+
+DEFINE TABLE OVERWRITE route TYPE NORMAL SCHEMAFULL
+	PERMISSIONS
+		FOR select FULL;
+DEFINE FIELD OVERWRITE id ON TABLE route;
+DEFINE FIELD OVERWRITE name ON TABLE route TYPE string;
+DEFINE FIELD OVERWRITE types ON TABLE route TYPE array<object>;
+DEFINE FIELD OVERWRITE types.*.number ON TABLE route TYPE int;
+DEFINE FIELD OVERWRITE types.*.type ON TABLE type TYPE record<type>;
+
+-----------
+-- line --
+-----------
+
+DEFINE TABLE OVERWRITE line SCHEMAFULL
+	PERMISSIONS
+		FOR select FULL;
+DEFINE FIELD OVERWRITE id ON TABLE line;
+DEFINE FIELD OVERWRITE route ON TABLE line TYPE record<route>;
+
+-------------
+-- journey --
+-------------
+
+DEFINE TABLE OVERWRITE journey SCHEMAFULL
+	PERMISSIONS
+		FOR select FULL;
+DEFINE FIELD OVERWRITE id ON TABLE journey;
+DEFINE FIELD OVERWRITE line ON TABLE journey TYPE record<line>;
+
+-----------
+-- stops --
+-----------
+
+DEFINE TABLE OVERWRITE stops SCHEMAFULL TYPE RELATION
+    PERMISSIONS
+        FOR select FULL;
+DEFINE FIELD OVERWRITE id ON TABLE stops;
+DEFINE FIELD OVERWRITE in ON TABLE stops TYPE record<journey>;
+DEFINE FIELD OVERWRITE out ON TABLE stops TYPE record<stop>;
+DEFINE FIELD OVERWRITE sceduled ON TABLE stops TYPE object;
+DEFINE FIELD OVERWRITE sceduled.arrival ON TABLE stops TYPE object;
+DEFINE FIELD OVERWRITE sceduled.arrival.time ON TABLE stops TYPE datetime;
+DEFINE FIELD OVERWRITE sceduled.arrival.platform ON TABLE stops TYPE string;
+DEFINE FIELD OVERWRITE sceduled.departure ON TABLE stops TYPE object;
+DEFINE FIELD OVERWRITE sceduled.departure.time ON TABLE stops TYPE datetime;
+DEFINE FIELD OVERWRITE sceduled.departure.platform ON TABLE stops TYPE string;
+DEFINE FIELD OVERWRITE live ON TABLE stops TYPE object;
+DEFINE FIELD OVERWRITE live.arrival ON TABLE stops TYPE object;
+DEFINE FIELD OVERWRITE live.arrival.time ON TABLE stops TYPE datetime;
+DEFINE FIELD OVERWRITE live.arrival.platform ON TABLE stops TYPE string;
+DEFINE FIELD OVERWRITE live.departure ON TABLE stops TYPE object;
+DEFINE FIELD OVERWRITE live.departure.time ON TABLE stops TYPE datetime;
+DEFINE FIELD OVERWRITE live.departure.platform ON TABLE stops TYPE string;
+
 ----------
 -- User --
 ----------
