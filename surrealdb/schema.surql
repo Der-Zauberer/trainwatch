@@ -84,6 +84,10 @@ DEFINE FUNCTION OVERWRITE fn::search::sort_beginn_score_matching($search: string
     }
 };
 
+DEFINE FUNCTION OVERWRITE fn::search::search($name: string) {
+    RETURN array::flatten(SELECT VALUE entries.*.id.{id, name} AS result FROM type::thing('search', $name));
+}
+
 ----------
 -- stop --
 ----------
