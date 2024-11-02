@@ -88,120 +88,120 @@ DEFINE FUNCTION OVERWRITE fn::search::sort_beginn_score_matching($search: string
 -- Stop --
 ----------
 
-DEFINE TABLE IF NOT EXISTS Stop SCHEMAFULL
+DEFINE TABLE IF NOT EXISTS stop SCHEMAFULL
 	PERMISSIONS
 		FOR select FULL;
-DEFINE FIELD OVERWRITE id ON TABLE Stop;
-DEFINE FIELD OVERWRITE name ON TABLE Stop TYPE string;
-DEFINE FIELD OVERWRITE score ON TABLE Stop TYPE int;
-DEFINE FIELD OVERWRITE platforms ON TABLE Stop TYPE array<object>;
-DEFINE FIELD OVERWRITE platforms.*.name ON TABLE Stop TYPE string;
-DEFINE FIELD OVERWRITE platforms.*.length ON TABLE Stop TYPE float;
-DEFINE FIELD OVERWRITE platforms.*.height ON TABLE Stop TYPE int;
-DEFINE FIELD OVERWRITE platforms.*.linkedPlatforms ON TABLE Stop TYPE array<string>;
-DEFINE FIELD OVERWRITE location ON TABLE Stop TYPE object;
-DEFINE FIELD OVERWRITE location.latitude ON TABLE Stop TYPE option<float>;
-DEFINE FIELD OVERWRITE location.longitude ON TABLE Stop TYPE option<float>;
-DEFINE FIELD OVERWRITE address ON TABLE Stop TYPE object;
-DEFINE FIELD OVERWRITE address.street ON TABLE Stop TYPE option<string>;
-DEFINE FIELD OVERWRITE address.zipcode ON TABLE Stop TYPE option<string>;
-DEFINE FIELD OVERWRITE address.city ON TABLE Stop TYPE option<string>;
-DEFINE FIELD OVERWRITE address.federalState ON TABLE Stop TYPE option<string>;
-DEFINE FIELD OVERWRITE address.country ON TABLE Stop TYPE option<string>;
-DEFINE FIELD OVERWRITE open.monday ON TABLE Stop TYPE option<string>;
-DEFINE FIELD OVERWRITE open.tuesday ON TABLE Stop TYPE option<string>;
-DEFINE FIELD OVERWRITE open.wednesday ON TABLE Stop TYPE option<string>;
-DEFINE FIELD OVERWRITE open.thursday ON TABLE Stop TYPE option<string>;
-DEFINE FIELD OVERWRITE open.friday ON TABLE Stop TYPE option<string>;
-DEFINE FIELD OVERWRITE open.saturday ON TABLE Stop TYPE option<string>;
-DEFINE FIELD OVERWRITE open.sunday ON TABLE Stop TYPE option<string>;
-DEFINE FIELD OVERWRITE services ON TABLE Stop TYPE object;
-DEFINE FIELD OVERWRITE services.parking ON TABLE Stop TYPE bool VALUE false;
-DEFINE FIELD OVERWRITE services.localPublicTransport ON TABLE Stop TYPE bool VALUE false;
-DEFINE FIELD OVERWRITE services.carRental ON TABLE Stop TYPE bool VALUE false;
-DEFINE FIELD OVERWRITE services.taxi ON TABLE Stop TYPE bool VALUE false;
-DEFINE FIELD OVERWRITE services.publicFacilities ON TABLE Stop TYPE bool VALUE false;
-DEFINE FIELD OVERWRITE services.travelNecessities ON TABLE Stop TYPE bool VALUE false;
-DEFINE FIELD OVERWRITE services.locker ON TABLE Stop TYPE bool VALUE false;
-DEFINE FIELD OVERWRITE services.wifi ON TABLE Stop TYPE bool VALUE false;
-DEFINE FIELD OVERWRITE services.information ON TABLE Stop TYPE bool VALUE false;
-DEFINE FIELD OVERWRITE services.railwayMission ON TABLE Stop TYPE bool VALUE false;
-DEFINE FIELD OVERWRITE services.lostAndFound ON TABLE Stop TYPE bool VALUE false;
-DEFINE FIELD OVERWRITE services.barrierFree ON TABLE Stop TYPE bool VALUE false;
-DEFINE FIELD OVERWRITE services.mobilityService ON TABLE Stop TYPE option<string>;
-DEFINE FIELD OVERWRITE ids ON TABLE Stop TYPE object;
-DEFINE FIELD OVERWRITE ids.eva ON TABLE Stop TYPE option<int>;
-DEFINE FIELD OVERWRITE ids.ril ON TABLE Stop TYPE option<array<string>>;
-DEFINE FIELD OVERWRITE ids.stada ON TABLE Stop TYPE option<int>;
-DEFINE FIELD OVERWRITE sources ON TABLE Stop TYPE array<object>;
-DEFINE FIELD OVERWRITE sources.*.name ON TABLE Stop TYPE string;
-DEFINE FIELD OVERWRITE sources.*.license ON TABLE Stop TYPE string;
-DEFINE FIELD OVERWRITE sources.*.url ON TABLE Stop TYPE string ASSERT string::is::url($value);
-DEFINE FIELD OVERWRITE sources.*.used ON TABLE Stop TYPE string;
+DEFINE FIELD OVERWRITE id ON TABLE stop;
+DEFINE FIELD OVERWRITE name ON TABLE stop TYPE string;
+DEFINE FIELD OVERWRITE score ON TABLE stop TYPE int;
+DEFINE FIELD OVERWRITE platforms ON TABLE stop TYPE array<object>;
+DEFINE FIELD OVERWRITE platforms.*.name ON TABLE stop TYPE string;
+DEFINE FIELD OVERWRITE platforms.*.length ON TABLE stop TYPE float;
+DEFINE FIELD OVERWRITE platforms.*.height ON TABLE stop TYPE int;
+DEFINE FIELD OVERWRITE platforms.*.linkedPlatforms ON TABLE stop TYPE array<string>;
+DEFINE FIELD OVERWRITE location ON TABLE stop TYPE object;
+DEFINE FIELD OVERWRITE location.latitude ON TABLE stop TYPE option<float>;
+DEFINE FIELD OVERWRITE location.longitude ON TABLE stop TYPE option<float>;
+DEFINE FIELD OVERWRITE address ON TABLE stop TYPE object;
+DEFINE FIELD OVERWRITE address.street ON TABLE stop TYPE option<string>;
+DEFINE FIELD OVERWRITE address.zipcode ON TABLE stop TYPE option<string>;
+DEFINE FIELD OVERWRITE address.city ON TABLE stop TYPE option<string>;
+DEFINE FIELD OVERWRITE address.federalState ON TABLE stop TYPE option<string>;
+DEFINE FIELD OVERWRITE address.country ON TABLE stop TYPE option<string>;
+DEFINE FIELD OVERWRITE open.monday ON TABLE stop TYPE option<string>;
+DEFINE FIELD OVERWRITE open.tuesday ON TABLE stop TYPE option<string>;
+DEFINE FIELD OVERWRITE open.wednesday ON TABLE stop TYPE option<string>;
+DEFINE FIELD OVERWRITE open.thursday ON TABLE stop TYPE option<string>;
+DEFINE FIELD OVERWRITE open.friday ON TABLE stop TYPE option<string>;
+DEFINE FIELD OVERWRITE open.saturday ON TABLE stop TYPE option<string>;
+DEFINE FIELD OVERWRITE open.sunday ON TABLE stop TYPE option<string>;
+DEFINE FIELD OVERWRITE services ON TABLE stop TYPE object;
+DEFINE FIELD OVERWRITE services.parking ON TABLE stop TYPE bool VALUE false;
+DEFINE FIELD OVERWRITE services.localPublicTransport ON TABLE stop TYPE bool VALUE false;
+DEFINE FIELD OVERWRITE services.carRental ON TABLE stop TYPE bool VALUE false;
+DEFINE FIELD OVERWRITE services.taxi ON TABLE stop TYPE bool VALUE false;
+DEFINE FIELD OVERWRITE services.publicFacilities ON TABLE stop TYPE bool VALUE false;
+DEFINE FIELD OVERWRITE services.travelNecessities ON TABLE stop TYPE bool VALUE false;
+DEFINE FIELD OVERWRITE services.locker ON TABLE stop TYPE bool VALUE false;
+DEFINE FIELD OVERWRITE services.wifi ON TABLE stop TYPE bool VALUE false;
+DEFINE FIELD OVERWRITE services.information ON TABLE stop TYPE bool VALUE false;
+DEFINE FIELD OVERWRITE services.railwayMission ON TABLE stop TYPE bool VALUE false;
+DEFINE FIELD OVERWRITE services.lostAndFound ON TABLE stop TYPE bool VALUE false;
+DEFINE FIELD OVERWRITE services.barrierFree ON TABLE stop TYPE bool VALUE false;
+DEFINE FIELD OVERWRITE services.mobilityService ON TABLE stop TYPE option<string>;
+DEFINE FIELD OVERWRITE ids ON TABLE stop TYPE object;
+DEFINE FIELD OVERWRITE ids.eva ON TABLE stop TYPE option<int>;
+DEFINE FIELD OVERWRITE ids.ril ON TABLE stop TYPE option<array<string>>;
+DEFINE FIELD OVERWRITE ids.stada ON TABLE stop TYPE option<int>;
+DEFINE FIELD OVERWRITE sources ON TABLE stop TYPE array<object>;
+DEFINE FIELD OVERWRITE sources.*.name ON TABLE stop TYPE string;
+DEFINE FIELD OVERWRITE sources.*.license ON TABLE stop TYPE string;
+DEFINE FIELD OVERWRITE sources.*.url ON TABLE stop TYPE string ASSERT string::is::url($value);
+DEFINE FIELD OVERWRITE sources.*.used ON TABLE stop TYPE string;
 
-DEFINE TABLE IF NOT EXISTS StopSearch SCHEMAFULL
+DEFINE TABLE IF NOT EXISTS search SCHEMAFULL
 	PERMISSIONS
 		FOR select FULL;
-DEFINE FIELD OVERWRITE entries ON TABLE StopSearch TYPE array<object>;
-DEFINE FIELD OVERWRITE entries.*.id ON TABLE StopSearch TYPE record<Stop>;
-DEFINE FIELD OVERWRITE entries.*.search ON TABLE StopSearch TYPE string;
-DEFINE FIELD OVERWRITE entries.*.score ON TABLE StopSearch TYPE number;
+DEFINE FIELD OVERWRITE entries ON TABLE search TYPE array<object>;
+DEFINE FIELD OVERWRITE entries.*.id ON TABLE search TYPE record<stop>;
+DEFINE FIELD OVERWRITE entries.*.search ON TABLE search TYPE string;
+DEFINE FIELD OVERWRITE entries.*.score ON TABLE search TYPE number;
 
-DEFINE EVENT OVERWRITE stop_update ON TABLE Stop WHEN $before.name != $after.name || $before.ids != $after.ids THEN {
+DEFINE EVENT OVERWRITE stop_update ON TABLE stop WHEN $before.name != $after.name || $before.ids != $after.ids THEN {
     IF $before THEN {
         FOR $entry IN fn::name::extract_ids($before.ids) {
-            UPDATE type::thing('StopSearch', $entry) SET entries = entries.filter(|$v| $v.id = $before.id);
-            DELETE type::thing('StopSearch', $entry) WHERE array::is_empty(entries);
+            UPDATE type::thing('search', $entry) SET entries = entries.filter(|$v| $v.id = $before.id);
+            DELETE type::thing('search', $entry) WHERE array::is_empty(entries);
         };
         FOR $entry IN fn::search::n_word_edge_ngram(fn::name::normalize($before.name, ' ')) {
-            UPDATE type::thing('StopSearch', $entry) SET entries = entries.filter(|$v| $v.id = $before.id);
-            DELETE type::thing('StopSearch', $entry) WHERE array::is_empty(entries);
+            UPDATE type::thing('search', $entry) SET entries = entries.filter(|$v| $v.id = $before.id);
+            DELETE type::thing('search', $entry) WHERE array::is_empty(entries);
         };
     } END;
     IF $after THEN {
         FOR $entry IN fn::name::extract_ids($after.ids) {
-            UPSERT ONLY type::thing('StopSearch', $entry) SET id = $entry, entries += { id: $after.id, search: $entry, score: $after.score };
+            UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $after.id, search: $entry, score: $after.score };
         };
         LET $search = fn::name::normalize($after.name);
         FOR $entry IN fn::search::n_word_edge_ngram(fn::name::normalize($after.name, ' ')) {
-            UPSERT ONLY type::thing('StopSearch', $entry) SET id = $entry, entries += { id: $after.id, search: $search, score: $after.score + 10 };
-            UPDATE ONLY type::thing('StopSearch', $entry) SET entries = fn::search::sort_beginn_score_matching($search, entries);
+            UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $after.id, search: $search, score: $after.score + 10 };
+            UPDATE ONLY type::thing('search', $entry) SET entries = fn::search::sort_beginn_score_matching($search, entries);
         };
     } END;
 };
 
 DEFINE FUNCTION OVERWRITE fn::stop::index() {
-    DELETE StopSearch;
-    FOR $stop IN (SELECT * FROM Stop) {
+    DELETE search;
+    FOR $stop IN (SELECT * FROM stop) {
         FOR $entry IN fn::name::extract_ids($stop.ids) {
-            UPSERT ONLY type::thing('StopSearch', $entry) SET id = $entry, entries += { id: $stop.id, search: $entry, score: $stop.score };
+            UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $stop.id, search: $entry, score: $stop.score };
         };
         LET $search = fn::name::normalize($stop.name);
         FOR $entry IN fn::search::n_word_edge_ngram(fn::name::normalize($stop.name, ' ')) {
-            UPSERT ONLY type::thing('StopSearch', $entry) SET id = $entry, entries += { id: $stop.id, search: $search, score: $stop.score + 10 };
+            UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $stop.id, search: $search, score: $stop.score + 10 };
         };
     };
-    UPDATE StopSearch SET entries = fn::search::sort_beginn_score_matching(record::id(id), entries);
+    UPDATE search SET entries = fn::search::sort_beginn_score_matching(record::id(id), entries);
 };
 
 ------------------------
 -- TransportationType --
 ------------------------
 
-DEFINE TABLE IF NOT EXISTS TransportationType SCHEMAFULL
+DEFINE TABLE IF NOT EXISTS type SCHEMAFULL
 	PERMISSIONS
 		FOR select FULL;
-DEFINE FIELD OVERWRITE id ON TABLE TransportationType;
-DEFINE FIELD OVERWRITE name ON TABLE TransportationType TYPE string;
-DEFINE FIELD OVERWRITE description ON TABLE TransportationType TYPE string;
-DEFINE FIELD OVERWRITE priority ON TABLE TransportationType TYPE int;
-DEFINE FIELD OVERWRITE color ON TABLE TransportationType TYPE object;
-DEFINE FIELD OVERWRITE color.textColor ON TABLE TransportationType TYPE string;
-DEFINE FIELD OVERWRITE color.backgroundColor ON TABLE TransportationType TYPE string;
-DEFINE FIELD OVERWRITE vehicle ON TABLE TransportationType TYPE 'TRAIN' | 'BUS' | 'SHIP' | 'PLANE';
-DEFINE FIELD OVERWRITE classification ON TABLE TransportationType TYPE 'REGIONAL' | 'LONG_DISTANCE';
+DEFINE FIELD OVERWRITE id ON TABLE type;
+DEFINE FIELD OVERWRITE name ON TABLE type TYPE string;
+DEFINE FIELD OVERWRITE description ON TABLE type TYPE string;
+DEFINE FIELD OVERWRITE priority ON TABLE type TYPE int;
+DEFINE FIELD OVERWRITE color ON TABLE type TYPE object;
+DEFINE FIELD OVERWRITE color.text ON TABLE type TYPE string;
+DEFINE FIELD OVERWRITE color.background ON TABLE type TYPE string;
+DEFINE FIELD OVERWRITE vehicle ON TABLE type TYPE 'TRAIN' | 'BUS' | 'SHIP' | 'PLANE';
+DEFINE FIELD OVERWRITE classification ON TABLE type TYPE 'REGIONAL' | 'LONG_DISTANCE';
 
-INSERT INTO TransportationType [
+INSERT INTO type [
     {
         "id": "ast",
         "name": "AST",
@@ -210,8 +210,8 @@ INSERT INTO TransportationType [
         "vehicle": "BUS",
         "classification": "REGIONAL",
         "color": {
-            "textColor": "#ffffff",
-            "backgroundColor": "#808000"
+            "text": "#ffffff",
+            "background": "#808000"
         }
     },
     {
@@ -222,8 +222,8 @@ INSERT INTO TransportationType [
         "vehicle": "BUS",
         "classification": "REGIONAL",
         "color": {
-            "textColor": "#ffffff",
-            "backgroundColor": "#7f7f7f"
+            "text": "#ffffff",
+            "background": "#7f7f7f"
         }
     },
     {
@@ -234,8 +234,8 @@ INSERT INTO TransportationType [
         "vehicle": "BUS",
         "classification": "REGIONAL",
         "color": {
-            "textColor": "#ffffff",
-            "backgroundColor": "#808000"
+            "text": "#ffffff",
+            "background": "#808000"
         }
     },
     {
@@ -246,8 +246,8 @@ INSERT INTO TransportationType [
         "vehicle": "TRAIN",
         "classification": "REGIONAL",
         "color": {
-            "textColor": "#ffffff",
-            "backgroundColor": "#ff0000"
+            "text": "#ffffff",
+            "background": "#ff0000"
         }
     },
     { 
@@ -258,8 +258,8 @@ INSERT INTO TransportationType [
         "vehicle": "TRAIN",
         "classification": "LONG_DISTANCE",
         "color": {
-            "textColor": "#ffff00",
-            "backgroundColor": "#0000ff"
+            "text": "#ffff00",
+            "background": "#0000ff"
         }
     },
     {
@@ -270,8 +270,8 @@ INSERT INTO TransportationType [
         "vehicle": "TRAIN",
         "classification": "LONG_DISTANCE",
         "color": {
-            "textColor": "#ffff00",
-            "backgroundColor": "#0000ff"
+            "text": "#ffff00",
+            "background": "#0000ff"
         }
     },
     {
@@ -282,8 +282,8 @@ INSERT INTO TransportationType [
         "vehicle": "TRAIN",
         "classification": "LONG_DISTANCE",
         "color": {
-            "textColor": "#ffffff",
-            "backgroundColor": "#0000ff"
+            "text": "#ffffff",
+            "background": "#0000ff"
         }
     },
     { 
@@ -294,8 +294,8 @@ INSERT INTO TransportationType [
         "priority": 21,
         "classification": "REGIONAL",
         "color": {
-            "textColor": "#ffffff",
-            "backgroundColor": "#ff0000"
+            "text": "#ffffff",
+            "background": "#ff0000"
         }
     },
     {
@@ -306,8 +306,8 @@ INSERT INTO TransportationType [
         "vehicle": "TRAIN",
         "classification": "LONG_DISTANCE",
         "color": {
-            "textColor": "#ffffff",
-            "backgroundColor": "#7f7f7f"
+            "text": "#ffffff",
+            "background": "#7f7f7f"
         }
     },
     {
@@ -318,8 +318,8 @@ INSERT INTO TransportationType [
         "vehicle": "TRAIN",
         "classification": "LONG_DISTANCE",
         "color": {
-            "textColor": "#ffffff",
-            "backgroundColor": "#0000ff"
+            "text": "#ffffff",
+            "background": "#0000ff"
         }
     },
     {
@@ -330,8 +330,8 @@ INSERT INTO TransportationType [
         "vehicle": "TRAIN",
         "classification": "LONG_DISTANCE",
         "color": {
-            "textColor": "#ff0000",
-            "backgroundColor": "#ffffff"
+            "text": "#ff0000",
+            "background": "#ffffff"
         }
     },
     {
@@ -342,8 +342,8 @@ INSERT INTO TransportationType [
         "vehicle": "TRAIN",
         "classification": "LONG_DISTANCE",
         "color": {
-            "textColor": "#ff0000",
-            "backgroundColor": "#ffffff"
+            "text": "#ff0000",
+            "background": "#ffffff"
         }
     },
     {
@@ -354,8 +354,8 @@ INSERT INTO TransportationType [
         "vehicle": "TRAIN",
         "classification": "LONG_DISTANCE",
         "color": {
-            "textColor": "#ff0000",
-            "backgroundColor": "#ffffff"
+            "text": "#ff0000",
+            "background": "#ffffff"
         }
     },
     {
@@ -366,8 +366,8 @@ INSERT INTO TransportationType [
         "vehicle": "TRAIN",
         "classification": "REGIONAL",
         "color": {
-            "textColor": "#ffffff",
-            "backgroundColor": "#0080ff"
+            "text": "#ffffff",
+            "background": "#0080ff"
         }
     },
     {
@@ -378,8 +378,8 @@ INSERT INTO TransportationType [
         "vehicle": "TRAIN",
         "classification": "REGIONAL",
         "color": {
-            "textColor": "#ffffff",
-            "backgroundColor": "#ff0000"
+            "text": "#ffffff",
+            "background": "#ff0000"
         }
     },
     {
@@ -390,8 +390,8 @@ INSERT INTO TransportationType [
         "vehicle": "TRAIN",
         "classification": "LONG_DISTANCE",
         "color": {
-            "textColor": "#ffffff",
-            "backgroundColor": "#0000ff"
+            "text": "#ffffff",
+            "background": "#0000ff"
         }
     },
     {
@@ -402,8 +402,8 @@ INSERT INTO TransportationType [
         "vehicle": "TRAIN",
         "classification": "REGIONAL",
         "color": {
-            "textColor": "#ffffff",
-            "backgroundColor": "#0000ff"
+            "text": "#ffffff",
+            "background": "#0000ff"
         }
     },
     {
@@ -414,8 +414,8 @@ INSERT INTO TransportationType [
         "vehicle": "TRAIN",
         "classification": "REGIONAL",
         "color": {
-            "textColor": "#ffffff",
-            "backgroundColor": "#ff0000"
+            "text": "#ffffff",
+            "background": "#ff0000"
         }
     },
     {
@@ -426,8 +426,8 @@ INSERT INTO TransportationType [
         "vehicle": "TRAIN",
         "classification": "LONG_DISTANCE",
         "color": {
-            "textColor": "#ffff00",
-            "backgroundColor": "#ff0000"
+            "text": "#ffff00",
+            "background": "#ff0000"
         }
     },
     {
@@ -438,8 +438,8 @@ INSERT INTO TransportationType [
         "vehicle": "TRAIN",
         "classification": "LONG_DISTANCE",
         "color": {
-            "textColor": "#ffffff",
-            "backgroundColor": "#cd3030"
+            "text": "#ffffff",
+            "background": "#cd3030"
         }
     },
     {
@@ -450,8 +450,8 @@ INSERT INTO TransportationType [
         "vehicle": "TRAIN",
         "classification": "LONG_DISTANCE",
         "color": {
-            "textColor": "#ffffff",
-            "backgroundColor": "#cd3030"
+            "text": "#ffffff",
+            "background": "#cd3030"
         }
     },
     {
@@ -462,8 +462,8 @@ INSERT INTO TransportationType [
         "vehicle": "TRAIN",
         "classification": "REGIONAL",
         "color": {
-            "textColor": "#ffffff",
-            "backgroundColor": "#ff0000"
+            "text": "#ffffff",
+            "background": "#ff0000"
         }
     },
     {
@@ -474,8 +474,8 @@ INSERT INTO TransportationType [
         "vehicle": "TRAIN",
         "classification": "REGIONAL",
         "color": {
-            "textColor": "#ffffff",
-            "backgroundColor": "#ff0000"
+            "text": "#ffffff",
+            "background": "#ff0000"
         }
     },
     {
@@ -486,8 +486,8 @@ INSERT INTO TransportationType [
         "vehicle": "TRAIN",
         "classification": "REGIONAL",
         "color": {
-            "textColor": "#ffffff",
-            "backgroundColor": "#ff0000"
+            "text": "#ffffff",
+            "background": "#ff0000"
         }
     },
     {
@@ -498,8 +498,8 @@ INSERT INTO TransportationType [
         "vehicle": "BUS",
         "classification": "REGIONAL",
         "color": {
-            "textColor": "#ffffff",
-            "backgroundColor": "#808000"
+            "text": "#ffffff",
+            "background": "#808000"
         }
     },
     {
@@ -510,8 +510,8 @@ INSERT INTO TransportationType [
         "vehicle": "TRAIN",
         "classification": "REGIONAL",
         "color": {
-            "textColor": "#ffffff",
-            "backgroundColor": "#008000"
+            "text": "#ffffff",
+            "background": "#008000"
         }
     },
     {
@@ -522,8 +522,8 @@ INSERT INTO TransportationType [
         "vehicle": "TRAIN",
         "classification": "REGIONAL",
         "color": {
-            "textColor": "#ffffff",
-            "backgroundColor": "#808000"
+            "text": "#ffffff",
+            "background": "#808000"
         }
     },
     {
@@ -534,8 +534,8 @@ INSERT INTO TransportationType [
         "vehicle": "TRAIN",
         "classification": "LONG_DISTANCE",
         "color": {
-            "textColor": "#ffffff",
-            "backgroundColor": "#811863"
+            "text": "#ffffff",
+            "background": "#811863"
         }
     },
     {
@@ -546,8 +546,8 @@ INSERT INTO TransportationType [
         "vehicle": "TRAIN",
         "classification": "REGIONAL",
         "color": {
-            "textColor": "#ffffff",
-            "backgroundColor": "#0000a0"
+            "text": "#ffffff",
+            "background": "#0000a0"
         }
     }
 ];
@@ -556,30 +556,30 @@ INSERT INTO TransportationType [
 -- User --
 ----------
 
-DEFINE TABLE OVERWRITE User SCHEMAFULL
+DEFINE TABLE OVERWRITE user SCHEMAFULL
 	PERMISSIONS
 		FOR select, update, delete WHERE id = $auth.id;
 
-DEFINE FIELD OVERWRITE name ON User TYPE string;
-DEFINE FIELD OVERWRITE email ON User TYPE string ASSERT string::is::email($value);
-DEFINE FIELD OVERWRITE password ON User TYPE string VALUE crypto::argon2::generate($value);
+DEFINE FIELD OVERWRITE name ON user TYPE string;
+DEFINE FIELD OVERWRITE email ON user TYPE string ASSERT string::is::email($value);
+DEFINE FIELD OVERWRITE password ON user TYPE string VALUE crypto::argon2::generate($value);
 
-DEFINE INDEX OVERWRITE name ON User FIELDS name UNIQUE;
-DEFINE INDEX OVERWRITE email ON User FIELDS email UNIQUE;
+DEFINE INDEX OVERWRITE name ON user FIELDS name UNIQUE;
+DEFINE INDEX OVERWRITE email ON user FIELDS email UNIQUE;
 
-DEFINE ACCESS OVERWRITE User ON DATABASE TYPE RECORD
+DEFINE ACCESS OVERWRITE user ON DATABASE TYPE RECORD
 	SIGNIN (
-		SELECT * FROM User WHERE name = $name AND crypto::argon2::compare(password, $password)
+		SELECT * FROM user WHERE name = $name AND crypto::argon2::compare(password, $password)
 	)
 	SIGNUP (
-		CREATE User CONTENT {
+		CREATE user CONTENT {
 			name: $name,
 			email: $email,
 			password: crypto::argon2::generate($password)
 		}
 	);
 
-INSERT INTO User [
+INSERT INTO user [
     {
         "name": 'guest',
         "email": 'guest@pis.derzauberer.eu',
