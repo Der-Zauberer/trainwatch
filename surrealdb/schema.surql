@@ -580,6 +580,19 @@ DEFINE TABLE OVERWRITE line SCHEMAFULL
 DEFINE FIELD OVERWRITE id ON TABLE line;
 DEFINE FIELD OVERWRITE route ON TABLE line TYPE record<route>;
 
+DEFINE TABLE OVERWRITE connects SCHEMAFULL TYPE RELATION
+    PERMISSIONS
+        FOR select FULL;
+DEFINE FIELD OVERWRITE id ON TABLE connects;
+DEFINE FIELD OVERWRITE in ON TABLE connects TYPE record<line>;
+DEFINE FIELD OVERWRITE out ON TABLE connects TYPE record<stop>;
+DEFINE FIELD OVERWRITE arrival ON TABLE connects TYPE object;
+DEFINE FIELD OVERWRITE arrival.time ON TABLE connects TYPE datetime;
+DEFINE FIELD OVERWRITE arrival.platform ON TABLE connects TYPE string;
+DEFINE FIELD OVERWRITE departure ON TABLE connects TYPE object;
+DEFINE FIELD OVERWRITE departure.time ON TABLE connects TYPE datetime;
+DEFINE FIELD OVERWRITE departure.platform ON TABLE connects TYPE string;
+
 -------------
 -- journey --
 -------------
@@ -590,30 +603,20 @@ DEFINE TABLE OVERWRITE journey SCHEMAFULL
 DEFINE FIELD OVERWRITE id ON TABLE journey;
 DEFINE FIELD OVERWRITE line ON TABLE journey TYPE record<line>;
 
------------
--- stops --
------------
-
-DEFINE TABLE OVERWRITE stops SCHEMAFULL TYPE RELATION
+DEFINE TABLE OVERWRITE visits SCHEMAFULL TYPE RELATION
     PERMISSIONS
         FOR select FULL;
-DEFINE FIELD OVERWRITE id ON TABLE stops;
-DEFINE FIELD OVERWRITE in ON TABLE stops TYPE record<journey>;
-DEFINE FIELD OVERWRITE out ON TABLE stops TYPE record<stop>;
-DEFINE FIELD OVERWRITE sceduled ON TABLE stops TYPE object;
-DEFINE FIELD OVERWRITE sceduled.arrival ON TABLE stops TYPE object;
-DEFINE FIELD OVERWRITE sceduled.arrival.time ON TABLE stops TYPE datetime;
-DEFINE FIELD OVERWRITE sceduled.arrival.platform ON TABLE stops TYPE string;
-DEFINE FIELD OVERWRITE sceduled.departure ON TABLE stops TYPE object;
-DEFINE FIELD OVERWRITE sceduled.departure.time ON TABLE stops TYPE datetime;
-DEFINE FIELD OVERWRITE sceduled.departure.platform ON TABLE stops TYPE string;
-DEFINE FIELD OVERWRITE live ON TABLE stops TYPE object;
-DEFINE FIELD OVERWRITE live.arrival ON TABLE stops TYPE object;
-DEFINE FIELD OVERWRITE live.arrival.time ON TABLE stops TYPE datetime;
-DEFINE FIELD OVERWRITE live.arrival.platform ON TABLE stops TYPE string;
-DEFINE FIELD OVERWRITE live.departure ON TABLE stops TYPE object;
-DEFINE FIELD OVERWRITE live.departure.time ON TABLE stops TYPE datetime;
-DEFINE FIELD OVERWRITE live.departure.platform ON TABLE stops TYPE string;
+DEFINE FIELD OVERWRITE id ON TABLE visits;
+DEFINE FIELD OVERWRITE in ON TABLE visits TYPE record<journey>;
+DEFINE FIELD OVERWRITE out ON TABLE visits TYPE record<stop>;
+DEFINE FIELD OVERWRITE sceduled ON TABLE visits TYPE record<connects>;
+DEFINE FIELD OVERWRITE realtime ON TABLE visits TYPE object;
+DEFINE FIELD OVERWRITE realtime.arrival ON TABLE visits TYPE object;
+DEFINE FIELD OVERWRITE realtime.arrival.time ON TABLE visits TYPE datetime;
+DEFINE FIELD OVERWRITE realtime.arrival.platform ON TABLE visits TYPE string;
+DEFINE FIELD OVERWRITE realtime.departure ON TABLE visits TYPE object;
+DEFINE FIELD OVERWRITE realtime.departure.time ON TABLE visits TYPE datetime;
+DEFINE FIELD OVERWRITE realtime.departure.platform ON TABLE visits TYPE string;
 
 ----------
 -- user --
