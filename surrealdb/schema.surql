@@ -99,10 +99,10 @@ DEFINE FIELD OVERWRITE id ON TABLE stop;
 DEFINE FIELD OVERWRITE name ON TABLE stop TYPE string;
 DEFINE FIELD OVERWRITE score ON TABLE stop TYPE int;
 DEFINE FIELD OVERWRITE platforms ON TABLE stop TYPE array<object>;
-DEFINE FIELD OVERWRITE platforms.*.name ON TABLE stop TYPE string;
-DEFINE FIELD OVERWRITE platforms.*.length ON TABLE stop TYPE float;
-DEFINE FIELD OVERWRITE platforms.*.height ON TABLE stop TYPE int;
-DEFINE FIELD OVERWRITE platforms.*.linkedPlatforms ON TABLE stop TYPE array<string>;
+DEFINE FIELD OVERWRITE platforms[*].name ON TABLE stop TYPE string;
+DEFINE FIELD OVERWRITE platforms[*].length ON TABLE stop TYPE float;
+DEFINE FIELD OVERWRITE platforms[*].height ON TABLE stop TYPE int;
+DEFINE FIELD OVERWRITE platforms[*].linkedPlatforms ON TABLE stop TYPE array<string>;
 DEFINE FIELD OVERWRITE location ON TABLE stop TYPE object;
 DEFINE FIELD OVERWRITE location.latitude ON TABLE stop TYPE option<float>;
 DEFINE FIELD OVERWRITE location.longitude ON TABLE stop TYPE option<float>;
@@ -138,18 +138,18 @@ DEFINE FIELD OVERWRITE ids.eva ON TABLE stop TYPE option<int>;
 DEFINE FIELD OVERWRITE ids.ril ON TABLE stop TYPE option<array<string>>;
 DEFINE FIELD OVERWRITE ids.stada ON TABLE stop TYPE option<int>;
 DEFINE FIELD OVERWRITE sources ON TABLE stop TYPE array<object>;
-DEFINE FIELD OVERWRITE sources.*.name ON TABLE stop TYPE string;
-DEFINE FIELD OVERWRITE sources.*.license ON TABLE stop TYPE string;
-DEFINE FIELD OVERWRITE sources.*.url ON TABLE stop TYPE string ASSERT string::is::url($value);
-DEFINE FIELD OVERWRITE sources.*.used ON TABLE stop TYPE string;
+DEFINE FIELD OVERWRITE sources[*].name ON TABLE stop TYPE string;
+DEFINE FIELD OVERWRITE sources[*].license ON TABLE stop TYPE string;
+DEFINE FIELD OVERWRITE sources[*].url ON TABLE stop TYPE string ASSERT string::is::url($value);
+DEFINE FIELD OVERWRITE sources[*].used ON TABLE stop TYPE string;
 
 DEFINE TABLE OVERWRITE search SCHEMAFULL
 	PERMISSIONS
 		FOR select FULL;
 DEFINE FIELD OVERWRITE entries ON TABLE search TYPE array<object>;
-DEFINE FIELD OVERWRITE entries.*.id ON TABLE search TYPE record<stop>;
-DEFINE FIELD OVERWRITE entries.*.search ON TABLE search TYPE string;
-DEFINE FIELD OVERWRITE entries.*.score ON TABLE search TYPE number;
+DEFINE FIELD OVERWRITE entries[*].id ON TABLE search TYPE record<stop>;
+DEFINE FIELD OVERWRITE entries[*].search ON TABLE search TYPE string;
+DEFINE FIELD OVERWRITE entries[*].score ON TABLE search TYPE number;
 
 DEFINE EVENT OVERWRITE stop_update ON TABLE stop WHEN $before.name != $after.name || $before.ids != $after.ids THEN {
     IF $before THEN {
@@ -566,9 +566,9 @@ DEFINE TABLE OVERWRITE route TYPE NORMAL SCHEMAFULL
 		FOR select FULL;
 DEFINE FIELD OVERWRITE id ON TABLE route;
 DEFINE FIELD OVERWRITE name ON TABLE route TYPE string;
-DEFINE FIELD OVERWRITE types ON TABLE route TYPE array<object>;
-DEFINE FIELD OVERWRITE types.*.number ON TABLE route TYPE int;
-DEFINE FIELD OVERWRITE types.*.type ON TABLE type TYPE record<type>;
+DEFINE FIELD OVERWRITE designations ON TABLE route TYPE array<object>;
+DEFINE FIELD OVERWRITE designations[*].number ON TABLE route TYPE int;
+DEFINE FIELD OVERWRITE designations[*].type ON TABLE route TYPE record<type>;
 
 -----------
 -- line --
