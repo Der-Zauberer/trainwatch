@@ -19,5 +19,5 @@ Import the scripts from the surrealdb folder with the [Surreal Cli](https://surr
 Start Vue Frontent:
 ```bash
 npm install
-npm run start
+npm run dev
 ```

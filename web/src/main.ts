@@ -1,5 +1,5 @@
-import './assets/swd/style.min.css'
-import './assets/swd/script.min.js'
+import './assets/swd/swd.min.css'
+import './assets/swd/swd.min.js'
 
 import { createApp } from 'vue'
 import App from './App.vue'
