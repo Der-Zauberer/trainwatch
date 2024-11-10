@@ -648,7 +648,7 @@ DEFINE ACCESS OVERWRITE user ON DATABASE TYPE RECORD
 INSERT INTO user [
     {
         "name": 'guest',
-        "email": 'guest@pis.derzauberer.eu',
+        "email": 'guest@trainwatch.derzauberer.eu',
         "password": 'guest'
     }
 ];

@@ -1,4 +1,4 @@
-# PassengerInformationSystem
+# trainwatch
 
 ## Development
 
@@ -15,3 +15,9 @@ docker run always -p 8080:8080 -v surrealdb:/data surrealdb start --log info --u
 ```
 
 Import the scripts from the surrealdb folder with the [Surreal Cli](https://surrealdb.com/docs/surrealdb/cli/import) or with [Curl](https://surrealdb.com/docs/surrealdb/integration/http#ml-import)
+
+Start Vue Frontent:
+```bash
+npm install
+npm run start
+```

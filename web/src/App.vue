@@ -5,7 +5,7 @@ import HelloWorld from './components/HelloWorld.vue'
 
 <template>
   <swd-menu>
-    <a class="swd-menu-title">PassengerInformationSystem</a>
+    <a class="swd-menu-title">trainwatch</a>
     <RouterLink to="/">Home</RouterLink>
   </swd-menu>
   <RouterView />
