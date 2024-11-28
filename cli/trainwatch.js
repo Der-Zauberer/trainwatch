@@ -1,207 +1,31 @@
 //@ts-check
 
-const FileSystem = require('node:fs');
-const Path = require('path');
+const { executeCommand, test, Logger, printWarning, printError } = require('./clilib')
+const FileSystem = require('node:fs')
+const Path = require('path')
 
 /************
 *   Types   *
 ************/
 
-class Command {
-    /** @type { (args: any[]) => void } */
-    function;
-    /** @type { string } */
-    usage;
-    /** @type { string } */
-    description;
-}
-
 class Entity {
     /** @type { string } */
-    id;
+    id
     /** @type { string } */
-    name;
+    name
     /** @type { Source[] | undefined } */
-    sources;
+    sources
 }
 
 class Source {
     /** @type { string } */
-    name;
+    name
     /** @type { string } */
-    license;
+    license
     /** @type { string } */
-    url;
+    url
     /** @type { string } */
-    used;
-}
-
-/**********
-*   Cli   *
-**********/
-
-class CliService {
-
-    static CLI_RESET = '\x1b[0m';
-    static CLI_GREY = '\x1b[90m';
-    static CLI_RED = '\x1b[31m';
-    static CLI_YELLOW = '\x1b[33m';
-    static CLI_GREEN = '\x1b[32m';
-    static CLI_BLUE = '\x1b[36m';
-
-    /** @type { string | undefined } */
-    #name;
-    /** @type { string | undefined } */
-    #type;
-    /** @type { (() => void) | undefined } */
-    #removeTemporaryLastLine = undefined;
-    /** @type { (() => void) | undefined } */
-    #stopLoading = undefined;
-
-    /**
-     * @param { string } [name] 
-     * @param { string } [type] 
-     */
-    constructor(name, type) {
-        this.#name = name;
-        this.#type = type;
-    }
-
-    get name() { return this.#name }
-    get type() { return this.#type }
-
-    executeCommand() {
-        let branch = commands;
-        let args = process.argv.slice(2);
-        do {
-            this.printError(args.length === 0, `Not enough arguments! Possible arguments: ${Object.keys(branch)}`);
-            if (args[0] === 'help') {
-                for (const entry of this.#getHelp(branch)) {
-                    console.log(`${entry.usage} ${CliService.CLI_GREY}${entry.description}${CliService.CLI_RESET}`)
-                }
-                return;
-            }
-            const next = branch[args[0]];
-            this.printError(!next, `Command branch "${args[0]}" doesn't exists!`);
-            branch = next;
-            args = args.slice(1);
-        } while (!(typeof branch.function === 'function'));
-        branch.function(...args);
-    }
-
-    /**
-     * @param { object | Command } branch
-     * @returns { Command[] }
-     */
-    #getHelp(branch) {
-        const /** @type {Command[]} */ list = []; 
-        for (const entry of Object.values(branch)) {
-            if (entry.function) {
-                list.push(entry);
-            } else {
-                list.push(...this.#getHelp(entry));
-            }
-        }
-        return list;
-    }
-
-    /** 
-     * @returns { string }
-     */
-    #constructName() {
-        return `${CliService.CLI_BLUE}[${this.#name}]${CliService.CLI_RESET}`;
-    }
-
-    /**
-     * @param { string } message
-     * @param { any } [response]
-     * @returns { any }
-     */
-    print(message, response) {
-        this.#removeTemporaryLastLine?.();
-        this.#stopLoading?.();
-        console.log(`${this.#constructName()} ${message}`);
-        return response;
-    }
-
-    /**
-     * @param { string } message
-     * @param { any } [response]
-     * @returns { any }
-     */
-    printLoading(message, response) {
-        this.#removeTemporaryLastLine?.();
-        this.#stopLoading?.();
-        console.log(`${this.#constructName()} ${message}`);
-        const logLoading = (/** @type {number} */ count) => {
-            process.stdout.moveCursor(0, -1);
-            process.stdout.clearLine(1);
-            console.log(`${this.#constructName()} ${message} ${'.'.repeat(count)}`);
-        }
-        let i = 0;
-        const interval = setInterval(() => {
-            if (i === 4) i = 0;
-            logLoading(i++);
-        }, 250);
-        this.#stopLoading = () => {
-            clearInterval(interval);
-            logLoading(0);
-            this.#stopLoading = undefined;
-        }
-        return response;
-    }
-
-    /**
-     * @param { number } index
-     * @param { number } amount
-     * @param { string } progressiveVerb
-     * @param { string } name
-     * @param { any } [response]
-     * @returns { any }
-     */
-    printProgress(index, amount, progressiveVerb, name, response) {
-        this.#removeTemporaryLastLine?.();
-        this.#stopLoading?.();
-        console.log(`${this.#constructName()} ${ ((index / amount) * 100).toFixed(0) }% (${index}/${amount}) ${progressiveVerb} ${this.#type} ${name}`);
-        this.#removeTemporaryLastLine = () => {
-            process.stdout.moveCursor(0, -1);
-            process.stdout.clearLine(1);
-            this.#removeTemporaryLastLine = undefined;
-        }
-        return response;
-    }
-
-    /**
-     * @param { string } pastVerb
-     * @param { number } amount
-     */
-    printFinish(pastVerb, amount) {
-        this.#removeTemporaryLastLine?.();
-        this.#stopLoading?.();
-        console.log(`${this.#constructName()} Successfully ${pastVerb} ${amount ? amount + ' ' : ''}${this.#type}`);
-    }
-
-    /**
-     * @param { boolean } condition
-     * @param { string } error
-     */
-    printWarning(condition, error) {
-        if (!condition) return;
-        this.#removeTemporaryLastLine?.();
-        this.#stopLoading?.();
-        console.log(`${CliService.CLI_YELLOW}WARNING: ${error}${CliService.CLI_RESET}`);
-    }
-
-    /**
-     * @param { boolean } condition
-     * @param { string } error
-     */
-    printError(condition, error) {
-        if (!condition) return;
-        console.log(`${CliService.CLI_RED}ERROR: ${error}${CliService.CLI_RESET}`);
-        process.exit(-1);
-    }
-
+    used
 }
 
 /***********
@@ -216,7 +40,7 @@ class FileService {
      * @returns { string }
      */
     readFile(path, name) {
-        return FileSystem.readFileSync(path ? Path.join(path, name) : name, 'utf8');
+        return FileSystem.readFileSync(path ? Path.join(path, name) : name, 'utf8')
     }
 
     /**
@@ -225,104 +49,60 @@ class FileService {
      * @param { string } content
      */
     writeFile(path, name, content) {
-        const filePath = path ? Path.join(path, name) : name;
-        const directory = Path.dirname(filePath);
-        if (directory && !FileSystem.existsSync(directory)) FileSystem.mkdirSync(directory);
-        FileSystem.writeFileSync(filePath, content, 'utf8');
+        const filePath = path ? Path.join(path, name) : name
+        const directory = Path.dirname(filePath)
+        if (directory && !FileSystem.existsSync(directory)) FileSystem.mkdirSync(directory)
+        FileSystem.writeFileSync(filePath, content, 'utf8')
     }
 
     /**
      * @param { String } path 
-     * @param { CliService } cliService
+     * @param { Logger } logger
      * @returns { Map<string, Entity> }
      */
-    loadEntities(path, cliService) {
-        const pathAsFile = path?.endsWith('.json');
-        const entities = new Map();
+    loadEntities(path, logger) {
+        const pathAsFile = path?.endsWith('.json')
+        const entities = new Map()
         if (pathAsFile) {
-            cliService.printLoading(`Reading ${cliService.type} from file`);
+            logger.printLoading(`Reading ${logger.type} from file`)
             try {
-                JSON.parse(this.readFile(undefined, path)).forEach(entity => entities.set(entity.id, entity));
+                JSON.parse(this.readFile(undefined, path)).forEach(entity => entities.set(entity.id, entity))
             } catch (error) {}
         } else {
             let i = 1
             const files = FileSystem.readdirSync(path).filter(file => file.endsWith('json'))
             try {
                 for (const file of files) {
-                    cliService.printProgress(i++, files.length, 'Reading', file.substring(file.length - 'json'.length));
+                    logger.printProgress(i++, files.length, 'Reading', file.substring(file.length - 'json'.length))
                     try {
-                        JSON.parse(this.readFile(path, file)).forEach(entity => entities.set(entity.id, entity));
+                        JSON.parse(this.readFile(path, file)).forEach(entity => entities.set(entity.id, entity))
                     } catch (error) {}
                 }
-                cliService.printFinish('Read', entities.size);
+                logger.printFinish('Read', entities.size)
             } catch (error) {}
         }
-        return entities;
+        return entities
     }
 
     /**
      * @param { Map<string, Entity> } entities
      * @param { string } path 
-     * @param { CliService } cliService
+     * @param { Logger } logger
      */
-    saveEntities(entities, path, cliService) {
-        const pathAsFile = path?.endsWith('.json');
+    saveEntities(entities, path, logger) {
+        const pathAsFile = path?.endsWith('.json')
         if (pathAsFile) {
-            cliService.printLoading(`Writing ${cliService.type} to file`);
-            const content = Array.from(entities.values()).sort((a, b) => a.name.localeCompare(b.name));
-            this.writeFile(undefined, path || '', JSON.stringify(content, undefined, '\t'));
+            logger.printLoading(`Writing ${logger.type} to file`)
+            const content = Array.from(entities.values()).sort((a, b) => a.name.localeCompare(b.name))
+            this.writeFile(undefined, path || '', JSON.stringify(content, undefined, '\t'))
         } else {
             let i = 1
             for (const [id, entity] of entities) {
-                cliService.printProgress(i++, entities.size, 'Writing', id);
-                this.writeFile(path, id + '.json', JSON.stringify(entity, undefined, '\t'));
+                logger.printProgress(i++, entities.size, 'Writing', id)
+                this.writeFile(path, id + '.json', JSON.stringify(entity, undefined, '\t'))
             }
         }
-        cliService.printFinish('written', entities.size);
-    }
-
-}
-
-/***********
-*   Test   *
-***********/
-
-class TestService {
-
-    test() {
-        const WARMUP_CYCLES = 100;
-        const EXECUTION_CYCLES = 5000;
-        let passedCount = 0;
-        let failedCount = 0;
-        for (const test of tests) {
-            try { 
-                const result = test.execute();
-                for (let i = 0; i < WARMUP_CYCLES; i++) test.execute();
-                const durations = []
-                for (let i = 0; i < EXECUTION_CYCLES; i++) {
-                    const startTime = performance.now();
-                    test.execute();
-                    const endTime = performance.now();
-                    durations.push((endTime - startTime) * 1e3);
-                }
-                const average = durations.length ? durations.reduce((a, b) => a + b) / durations.length : 0;
-                if (JSON.stringify(test.expect) === JSON.stringify(result)) {
-                    console.log(`${CliService.CLI_GREEN}TEST PASSED:${CliService.CLI_RESET} ${test.name} (${average.toFixed(3)}µs)`);
-                    passedCount++;
-                } else {
-                    console.log(`${CliService.CLI_RED}TEST FAILED:${CliService.CLI_RESET} ${test.name} (${average.toFixed(3)}µs)`);
-                    console.log(`\tExpected: ${CliService.CLI_BLUE}${JSON.stringify(test.expect)}${CliService.CLI_RESET}`);
-                    console.log(`\t  Result: ${CliService.CLI_RED}${CliService.CLI_RED}${JSON.stringify(result)}${CliService.CLI_RESET}`);
-                    failedCount++;
-                }
-            } catch (error) {
-                failedCount++;
-                console.log(`${CliService.CLI_RED}TEST FAILED:${CliService.CLI_RESET} ${test.name}`);
-                console.log(`\tError: ${CliService.CLI_RED}${error.stack.replaceAll('\n', '\n\t')}${CliService.CLI_RESET}`);
-            }
-        }
-        console.log(`${CliService.CLI_GREEN}${passedCount}${CliService.CLI_RESET} tests passed, ${CliService.CLI_RED}${failedCount}${CliService.CLI_RESET} tests failed!`);
-        if (failedCount > 0) process.exit(-1);
+        logger.printFinish('written', entities.size)
     }
 
 }
@@ -339,31 +119,31 @@ class SearchService {
      * @returns { string }
      */
     normalize(name, seperator) {
-        const replacements = { 'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'ß': 'ss' };
-        const isWhitespace = (char) => char === ' ' || char === '/' || char === '-' || char === '(' || char === ')';
-        let formatted = '';
-        let blank = name.length > 0 && isWhitespace(name[0]);
+        const replacements = { 'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'ß': 'ss' }
+        const isWhitespace = (char) => char === ' ' || char === '/' || char === '-' || char === '(' || char === ')'
+        let formatted = ''
+        let blank = name.length > 0 && isWhitespace(name[0])
         for (let char of name.toLowerCase()) {
             if (replacements[char]) {
-                formatted += replacements[char];
-                blank = false;
+                formatted += replacements[char]
+                blank = false
             } else if (isWhitespace(char)) {
                 if (!blank) {
-                    if (seperator) formatted += seperator;
-                    blank = true;
+                    if (seperator) formatted += seperator
+                    blank = true
                 }
             } else if ((char >= 'a' && char <= 'z') || (char >= '0' && char <= '9')) {
-                formatted += char;
-                blank = false;
+                formatted += char
+                blank = false
             } else if (char.charCodeAt(0) > 127) {
-                const normalized = char.normalize('NFD');
-                if (char !== normalized) formatted += normalized[0];
+                const normalized = char.normalize('NFD')
+                if (char !== normalized) formatted += normalized[0]
             }
         }
         if (blank && seperator) {
-            return formatted.slice(0, -1);
+            return formatted.slice(0, -1)
         }
-        return formatted;
+        return formatted
     }
 
     /**
@@ -371,7 +151,7 @@ class SearchService {
      * @returns { string[] }
      */
     extractIds(object) {
-        const ids = [];
+        const ids = []
         // @ts-ignore
         // @ts-ignore
         for (const [key, value] of Object.entries(object)) {
@@ -381,7 +161,7 @@ class SearchService {
                 ids.push(value.toString().toString().toLowerCase())
             }
         }
-        return ids;
+        return ids
     }
 
     /**
@@ -389,43 +169,43 @@ class SearchService {
      * @returns { string[] }
      */
     nWordEdgeNgram(name) {
-        const parts = [];
+        const parts = []
         let currentName = ''
         for (let i = name.length -1; i >= 0; i--) {
-            if (name[i] !== ' ') currentName = name[i] + currentName;
-            else parts.unshift(currentName);
+            if (name[i] !== ' ') currentName = name[i] + currentName
+            else parts.unshift(currentName)
         }
-        parts.unshift(currentName);
+        parts.unshift(currentName)
         const result = []
         for (const part of parts) {
             for (let i = 1; i <= part.length; i++) {
-                result.push(part.slice(0, i));
+                result.push(part.slice(0, i))
             }
         }
-        return result;
+        return result
     }
     
     /**
      * @param { string } search
-     * @param {{ search: string; score: number; }} a
-     * @param {{ search: string; score: number; }} b
+     * @param {{ search: string score: number }} a
+     * @param {{ search: string score: number }} b
      */
     beginnScoreMatching(search, a, b) {
-        const size = (number) => number === 0 ? 1 : Math.floor(Math.log10(number)) + 1;
-        if (size(a.score) !== size(b.score)) return a.score - b.score;
-        const aStartsWithName = a.search.startsWith(search);
-        const bStartsWithName = b.search.startsWith(search);
-        if (aStartsWithName && !bStartsWithName) return -1;
-        else if (!aStartsWithName && bStartsWithName) return 1;
-        else return a.score - b.score;
+        const size = (number) => number === 0 ? 1 : Math.floor(Math.log10(number)) + 1
+        if (size(a.score) !== size(b.score)) return a.score - b.score
+        const aStartsWithName = a.search.startsWith(search)
+        const bStartsWithName = b.search.startsWith(search)
+        if (aStartsWithName && !bStartsWithName) return -1
+        else if (!aStartsWithName && bStartsWithName) return 1
+        else return a.score - b.score
     }
 
     /**
      * @param { string } search
-     * @param { { search: string; score: number; }[] } entities
+     * @param { { search: string score: number }[] } entities
      */
     sortBeginnScoreMatching(search, entities) {
-        return entities.sort((a, b) => this.beginnScoreMatching(search, a, b));
+        return entities.sort((a, b) => this.beginnScoreMatching(search, a, b))
     }
 
 }
@@ -442,22 +222,22 @@ class DownloadService {
      * @param { string } path
      */
     downloadApiDBStada = (clientId, apikey, path) => {
-        const cliService = new CliService('DB/Stada', 'stations');
-        cliService.printError(!clientId || !apikey, `Require client-id, api-key and path as arguments!`);
-        const url = 'https://apis.deutschebahn.com/db-api-marketplace/apis/station-data/v2/stations';
-        const headers = { 'DB-Client-Id': clientId, 'DB-Api-Key': apikey };
-        const stations = fileService.loadEntities(path, cliService);
-        cliService.printLoading(`Downloading stations from ${url}`);
+        const logger = new Logger('DB/Stada', 'stations')
+        printError(`Require client-id, api-key and path as arguments!`, !clientId || !apikey || !path)
+        const url = 'https://apis.deutschebahn.com/db-api-marketplace/apis/station-data/v2/stations'
+        const headers = { 'DB-Client-Id': clientId, 'DB-Api-Key': apikey }
+        const stations = fileService.loadEntities(path, logger)
+        logger.printLoading(`Downloading stations from ${url}`)
         fetch(url, { headers })
-            .then(response => cliService.printLoading('Parsing stations', response))
+            .then(response => (logger.printLoading('Parsing stations'), response))
             .then(response => response.ok ? response.json() : Promise.reject())
             .then(response => {
-                let i = 1;
+                let i = 1
                 for (const station of response.result) {
                     try {
                         if (station.evaNumbers.length == 0) {
-                            i++;
-                            continue;
+                            i++
+                            continue
                         }
                         const newStation = {
                             id: searchService.normalize(station.name, '_'),
@@ -501,7 +281,7 @@ class DownloadService {
                             },
                             ids: {
                                 eva: station.evaNumbers[0].number,
-                                ril: station.ril100Identifiers.map((/** @type {{ rilIdentifier: any; }} */ ril) => ril.rilIdentifier),
+                                ril: station.ril100Identifiers.map((/** @type {{ rilIdentifier: any }} */ ril) => ril.rilIdentifier),
                                 stada: station.number,
                             }
                         }
@@ -512,15 +292,15 @@ class DownloadService {
                             used: new Date().toISOString().split('T')[0]
                         }
                         const mergedStation = { sources: [], ...stations.get(newStation.id), ...newStation }
-                        stations.set(newStation.id, this.addSource( mergedStation, source));
-                        cliService.printProgress(i++, response.result.length, 'Downloading', station.id);
+                        stations.set(newStation.id, this.addSource( mergedStation, source))
+                        logger.printProgress(i++, response.result.length, 'Downloading', station.id)
                     } catch (error) {
-                        cliService.printError(true, `Failed to parse ${station.id} (${error})`);
+                        printError(`Failed to parse ${station.id} (${error})`)
                     }
                 }
-                cliService.printFinish('downloaded', response.result.length);
-                fileService.saveEntities(stations, path, cliService);
-            });
+                logger.printFinish('downloaded', response.result.length)
+                fileService.saveEntities(stations, path, logger)
+            })
     }
 
     /**
@@ -529,31 +309,31 @@ class DownloadService {
      * @param { string } path
      */
     downloadApiDBRisStationsPlatform = async (clientId, apikey, path) => {
-        const cliService = new CliService('DB/Ris::Stations', 'stations');
-        cliService.printError(!clientId || !apikey, `Require client-id, api-key and path as arguments!`);
-        const headers = { 'DB-Client-Id': clientId, 'DB-Api-Key': apikey };
-        const stations = fileService.loadEntities(path, cliService);
-        const stationQueue = Array.from(stations.keys());
-        cliService.printLoading(`Downloading stations from https://apis.deutschebahn.com/db-api-marketplace/apis/ris-stations/v1/platforms`);
-        let i = 1;
+        const logger = new Logger('DB/Ris::Stations', 'stations')
+        printError(`Require client-id, api-key and path as arguments!`, !clientId || !apikey || !path)
+        const headers = { 'DB-Client-Id': clientId, 'DB-Api-Key': apikey }
+        const stations = fileService.loadEntities(path, logger)
+        const stationQueue = Array.from(stations.keys())
+        logger.printLoading(`Downloading stations from https://apis.deutschebahn.com/db-api-marketplace/apis/ris-stations/v1/platforms`)
+        let i = 1
         for (const [id, station] of stations) {
             // @ts-ignore
-            const eva = station?.ids?.eva;
-            if (!eva) return;
+            const eva = station?.ids?.eva
+            if (!eva) return
             try {
-                const url = `https://apis.deutschebahn.com/db-api-marketplace/apis/ris-stations/v1/platforms/${eva}`;
-                const response = await fetch(url, { headers }).then(response => response.ok ? response.json() : Promise.reject());
+                const url = `https://apis.deutschebahn.com/db-api-marketplace/apis/ris-stations/v1/platforms/${eva}`
+                const response = await fetch(url, { headers }).then(response => response.ok ? response.json() : Promise.reject())
                 const platforms = []
                 for (const platform of response.platforms) {
-                    const heights = platform.heights;
+                    const heights = platform.heights
                     const lengthMap = heights.reduce((accumulator, { start, end, height }) => {
-                        const length = end - start;
-                        accumulator[height] = (accumulator[height] || 0) + length;
-                        return accumulator;
-                    }, {});
+                        const length = end - start
+                        accumulator[height] = (accumulator[height] || 0) + length
+                        return accumulator
+                    }, {})
                     const height = +Object.keys(lengthMap).reduce((a, b) => 
                         lengthMap[a] > lengthMap[b] ? a : b
-                    );
+                    )
                     platforms.push({
                         name: platform.name,
                         length: platform.length || 0,
@@ -562,23 +342,23 @@ class DownloadService {
                     })
                 }
                 // @ts-ignore
-                station.platforms = platforms;
+                station.platforms = platforms
                 const source = {
                     name: 'DB Ris::Stations (Platforms)',
                     license: 'Creative Commons Attribution 4.0 International (CC BY 4.0)',
                     url,
                     used: new Date().toISOString().split('T')[0]
                 }
-                stations.set(station.id, this.addSource(station, source));
-                cliService.printProgress(i++, stations.size, 'Downloading', station.id);
-                await new Promise(resolve => setTimeout(resolve, 110));
-                if (i == 3) break;
+                stations.set(station.id, this.addSource(station, source))
+                logger.printProgress(i++, stations.size, 'Downloading', station.id)
+                await new Promise(resolve => setTimeout(resolve, 110))
+                if (i == 3) break
             } catch(error) {
-                cliService.printWarning(false, error);
+                printWarning(error)
             }
         }
-        cliService.printFinish('downloaded', i);
-        fileService.saveEntities(stations, path, cliService);
+        logger.printFinish('downloaded', i)
+        fileService.saveEntities(stations, path, logger)
     }
 
     /**
@@ -588,10 +368,10 @@ class DownloadService {
      * @returns { Entity }
      */
     addSource(entity, source) {
-        if (!entity.sources) entity.sources = [];
-        entity.sources = entity.sources.filter(entry => entry.name !== source.name);
-        entity.sources.push(source);
-        return entity;
+        if (!entity.sources) entity.sources = []
+        entity.sources = entity.sources.filter(entry => entry.name !== source.name)
+        entity.sources.push(source)
+        return entity
     }
 
 }
@@ -600,9 +380,9 @@ class DownloadService {
 *   General   *
 **************/
 
-const fileService = new FileService();
-const searchService = new SearchService();
-const downloadService = new DownloadService();
+const fileService = new FileService()
+const searchService = new SearchService()
+const downloadService = new DownloadService()
 
 const tests = [
     {
@@ -660,21 +440,21 @@ const tests = [
 const commands = {
     download: {
         'DB/Stada': { 
-            function: downloadService.downloadApiDBStada,
+            execute: downloadService.downloadApiDBStada,
             usage: 'download DB/Stada <client-id> <api-key> [path|file]',
             description: 'Downloads station from the DB Stada API to multible or a single file'
         },
         'DB/RIS/Stations': { 
-            function: downloadService.downloadApiDBRisStationsPlatform,
+            execute: downloadService.downloadApiDBRisStationsPlatform,
             usage: 'download DB/RIS/Stations <client-id> <api-key> [path|file]',
             description: 'Downloads platforms for already downloaded stations from the DB Ris::Stations API to multible or a single file'
         }
     },
     test: { 
-        function: () => new TestService().test(),
+        execute: () => test(tests),
         usage: 'test',
         description: 'Runs all tests'
     }
 }
 
-new CliService().executeCommand();
+executeCommand(commands)
