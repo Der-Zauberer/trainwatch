@@ -141,7 +141,7 @@ DEFINE FIELD OVERWRITE sources ON TABLE stop TYPE array<object>;
 DEFINE FIELD OVERWRITE sources[*].name ON TABLE stop TYPE string;
 DEFINE FIELD OVERWRITE sources[*].license ON TABLE stop TYPE string;
 DEFINE FIELD OVERWRITE sources[*].url ON TABLE stop TYPE string ASSERT string::is::url($value);
-DEFINE FIELD OVERWRITE sources[*].used ON TABLE stop TYPE string;
+DEFINE FIELD OVERWRITE sources[*].updated ON TABLE stop TYPE string;
 
 DEFINE TABLE OVERWRITE search SCHEMAFULL
 	PERMISSIONS

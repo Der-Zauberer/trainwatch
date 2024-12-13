@@ -25,7 +25,7 @@ class Source {
     /** @type { string } */
     url
     /** @type { string } */
-    used
+    updated
 }
 
 /***********
@@ -187,8 +187,8 @@ class SearchService {
     
     /**
      * @param { string } search
-     * @param {{ search: string score: number }} a
-     * @param {{ search: string score: number }} b
+     * @param {{ search: string, score: number }} a
+     * @param {{ search: string, score: number }} b
      */
     beginnScoreMatching(search, a, b) {
         const size = (number) => number === 0 ? 1 : Math.floor(Math.log10(number)) + 1
@@ -202,7 +202,7 @@ class SearchService {
 
     /**
      * @param { string } search
-     * @param { { search: string score: number }[] } entities
+     * @param { { search: string, score: number }[] } entities
      */
     sortBeginnScoreMatching(search, entities) {
         return entities.sort((a, b) => this.beginnScoreMatching(search, a, b))
@@ -221,86 +221,84 @@ class DownloadService {
      * @param { string } apikey
      * @param { string } path
      */
-    downloadApiDBStada = (clientId, apikey, path) => {
+    downloadApiDBStada = async (clientId, apikey, path) => {
         const logger = new Logger('DB/Stada', 'stations')
         printError(`Require client-id, api-key and path as arguments!`, !clientId || !apikey || !path)
         const url = 'https://apis.deutschebahn.com/db-api-marketplace/apis/station-data/v2/stations'
         const headers = { 'DB-Client-Id': clientId, 'DB-Api-Key': apikey }
         const stations = fileService.loadEntities(path, logger)
         logger.printLoading(`Downloading stations from ${url}`)
-        fetch(url, { headers })
+        const response = await fetch(url, { headers })
             .then(response => (logger.printLoading('Parsing stations'), response))
             .then(response => response.ok ? response.json() : Promise.reject())
-            .then(response => {
-                let i = 1
-                for (const station of response.result) {
-                    try {
-                        if (station.evaNumbers.length == 0) {
-                            i++
-                            continue
-                        }
-                        const newStation = {
-                            id: searchService.normalize(station.name, '_'),
-                            name: station.name,
-                            score: station.category,
-                            platforms: [],
-                            location: false ? {} : {
-                                latitude: station.evaNumbers[0].geographicCoordinates.coordinates[1],
-                                longitude: station.evaNumbers[0].geographicCoordinates.coordinates[0]
-                            },
-                            address: {
-                                street: station.mailingAddress.street.replace('str.', 'straße').replace('  ', ' '),
-                                zipcode: station.mailingAddress.zipcode,
-                                city: station.mailingAddress.city,
-                                federalState: station.federalState,
-                                country: 'Deutschland'
-                            },
-                            open: !station.localServiceStaff || !station.localServiceStaff.availability ? {} : {
-                                monday: station.localServiceStaff.availability.monday ? station.localServiceStaff.availability.monday.fromTime + ' - ' + station.localServiceStaff.availability.monday.toTime : undefined,
-                                tuesday: station.localServiceStaff.availability.tuesday ? station.localServiceStaff.availability.tuesday.fromTime + ' - ' + station.localServiceStaff.availability.tuesday.toTime : undefined,
-                                wednesday: station.localServiceStaff.availability.wednesday ? station.localServiceStaff.availability.wednesday.fromTime + ' - ' + station.localServiceStaff.availability.wednesday.toTime : undefined,
-                                thursday: station.localServiceStaff.availability.thursday ? station.localServiceStaff.availability.thursday.fromTime + ' - ' + station.localServiceStaff.availability.thursday.toTime : undefined,
-                                friday: station.localServiceStaff.availability.friday ? station.localServiceStaff.availability.friday.fromTime + ' - ' + station.localServiceStaff.availability.friday.toTime : undefined,
-                                saturday: station.localServiceStaff.availability.saturday ? station.localServiceStaff.availability.saturday.fromTime + ' - ' + station.localServiceStaff.availability.saturday.toTime : undefined,
-                                sunday: station.localServiceStaff.availability.sunday ? station.localServiceStaff.availability.sunday.fromTime + ' - ' + station.localServiceStaff.availability.sunday.toTime : undefined,
-                            },
-                            services: {
-                                parking: station.hasParking,
-                                localPublicTransport: station.hasBicycleParking,
-                                carRental: station.hasCarRental,
-                                taxi: station.hasTaxiRank,
-                                publicFacilities: station.hasPublicFacilities,
-                                travelNecessities: station.hasTravelNecessities,
-                                locker: station.hasLockerSystem,
-                                wifi: station.hasWiFi,
-                                information: station.hasTravelCenter,
-                                railwayMission: station.hasRailwayMission,
-                                lostAndFound: station.hasLostAndFound,
-                                barrierFree: (station.hasSteplessAccess === true || station.hasSteplessAccess === 'yes'),
-                                mobilityService: station.hasMobilityService,
-                            },
-                            ids: {
-                                eva: station.evaNumbers[0].number,
-                                ril: station.ril100Identifiers.map((/** @type {{ rilIdentifier: any }} */ ril) => ril.rilIdentifier),
-                                stada: station.number,
-                            }
-                        }
-                        const source = {
-                            name: 'DB Ris::Stations (Platforms)',
-                            license: 'Creative Commons Attribution 4.0 International (CC BY 4.0)',
-                            url,
-                            used: new Date().toISOString().split('T')[0]
-                        }
-                        const mergedStation = { sources: [], ...stations.get(newStation.id), ...newStation }
-                        stations.set(newStation.id, this.addSource( mergedStation, source))
-                        logger.printProgress(i++, response.result.length, 'Downloading', station.id)
-                    } catch (error) {
-                        printError(`Failed to parse ${station.id} (${error})`)
+        let i = 1
+        for (const station of response.result) {
+            try {
+                if (station.evaNumbers.length == 0) {
+                    i++
+                    continue
+                }
+                const newStation = {
+                    id: searchService.normalize(station.name, '_'),
+                    name: station.name,
+                    score: station.category,
+                    platforms: [],
+                    location: false ? {} : {
+                        latitude: station.evaNumbers[0].geographicCoordinates.coordinates[1],
+                        longitude: station.evaNumbers[0].geographicCoordinates.coordinates[0]
+                    },
+                    address: {
+                        street: station.mailingAddress.street.replace('str.', 'straße').replace('  ', ' '),
+                        zipcode: station.mailingAddress.zipcode,
+                        city: station.mailingAddress.city,
+                        federalState: station.federalState,
+                        country: 'Deutschland'
+                    },
+                    open: !station.localServiceStaff || !station.localServiceStaff.availability ? {} : {
+                        monday: station.localServiceStaff.availability.monday ? station.localServiceStaff.availability.monday.fromTime + ' - ' + station.localServiceStaff.availability.monday.toTime : undefined,
+                        tuesday: station.localServiceStaff.availability.tuesday ? station.localServiceStaff.availability.tuesday.fromTime + ' - ' + station.localServiceStaff.availability.tuesday.toTime : undefined,
+                        wednesday: station.localServiceStaff.availability.wednesday ? station.localServiceStaff.availability.wednesday.fromTime + ' - ' + station.localServiceStaff.availability.wednesday.toTime : undefined,
+                        thursday: station.localServiceStaff.availability.thursday ? station.localServiceStaff.availability.thursday.fromTime + ' - ' + station.localServiceStaff.availability.thursday.toTime : undefined,
+                        friday: station.localServiceStaff.availability.friday ? station.localServiceStaff.availability.friday.fromTime + ' - ' + station.localServiceStaff.availability.friday.toTime : undefined,
+                        saturday: station.localServiceStaff.availability.saturday ? station.localServiceStaff.availability.saturday.fromTime + ' - ' + station.localServiceStaff.availability.saturday.toTime : undefined,
+                        sunday: station.localServiceStaff.availability.sunday ? station.localServiceStaff.availability.sunday.fromTime + ' - ' + station.localServiceStaff.availability.sunday.toTime : undefined,
+                    },
+                    services: {
+                        parking: station.hasParking,
+                        localPublicTransport: station.hasBicycleParking,
+                        carRental: station.hasCarRental,
+                        taxi: station.hasTaxiRank,
+                        publicFacilities: station.hasPublicFacilities,
+                        travelNecessities: station.hasTravelNecessities,
+                        locker: station.hasLockerSystem,
+                        wifi: station.hasWiFi,
+                        information: station.hasTravelCenter,
+                        railwayMission: station.hasRailwayMission,
+                        lostAndFound: station.hasLostAndFound,
+                        barrierFree: (station.hasSteplessAccess === true || station.hasSteplessAccess === 'yes'),
+                        mobilityService: station.hasMobilityService,
+                    },
+                    ids: {
+                        eva: station.evaNumbers[0].number,
+                        ril: station.ril100Identifiers.map((/** @type {{ rilIdentifier: any }} */ ril) => ril.rilIdentifier),
+                        stada: station.number,
                     }
                 }
-                logger.printFinish('downloaded', response.result.length)
-                fileService.saveEntities(stations, path, logger)
-            })
+                const source = {
+                    name: 'DB Ris::Stations (Platforms)',
+                    license: 'Creative Commons Attribution 4.0 International (CC BY 4.0)',
+                    url,
+                    updated: new Date().toISOString().split('T')[0]
+                }
+                const mergedStation = { sources: [], ...stations.get(newStation.id), ...newStation }
+                stations.set(newStation.id, this.addSource( mergedStation, source))
+                logger.printProgress(i++, response.result.length, 'Downloading', station.id)
+            } catch (error) {
+                printError(`Failed to parse ${station.id} (${error})`)
+            }
+        }
+        logger.printFinish('downloaded', response.result.length)
+        fileService.saveEntities(stations, path, logger)
     }
 
     /**
@@ -347,7 +345,7 @@ class DownloadService {
                     name: 'DB Ris::Stations (Platforms)',
                     license: 'Creative Commons Attribution 4.0 International (CC BY 4.0)',
                     url,
-                    used: new Date().toISOString().split('T')[0]
+                    updated: new Date().toISOString().split('T')[0]
                 }
                 stations.set(station.id, this.addSource(station, source))
                 logger.printProgress(i++, stations.size, 'Downloading', station.id)
