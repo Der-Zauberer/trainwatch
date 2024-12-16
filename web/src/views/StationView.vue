@@ -2,7 +2,7 @@
 <template>
 	<div class="container-md">
 
-		<SearchComponent @search="search($event)"/>
+		<SearchComponent @search="nameId = $event"/>
 
 		<swd-card>
 			<h3>
@@ -59,30 +59,20 @@
 </template>
 
 <script setup lang="ts">
-import { inject, ref, onMounted } from 'vue'
-import type Surreal from 'surrealdb';
-import { RecordId, StringRecordId } from 'surrealdb';
-import SearchComponent from '@/components/SearchComponent.vue'
+import SearchComponent from '@/components/SearchComponent.vue';
 import type { Stop } from '@/types';
+import { xref } from '@/xref';
+import type Surreal from 'surrealdb';
+import { RecordId } from 'surrealdb';
+import { inject, ref } from 'vue';
 
 const surrealdb = inject('surrealdb') as Surreal
-const stop = ref<Stop>()
 
-onMounted(async () => {
-	try {
-		const result = await surrealdb.select<Stop>(new StringRecordId('stop:singen_hohentwiel'))
-		stop.value = result
-	} catch (error) {
-		console.error('Error fetching data:', error)
-	}
+const nameId = ref('singen_hohentwiel')
+
+const stop = xref({
+	parameter: [nameId],
+	loader: () => surrealdb.select<Stop>(new RecordId('stop', nameId.value))
 })
 
-const search = async (name: string) => {
-	try {
-		const result = await surrealdb.select<Stop>(new RecordId('stop', name))
-		stop.value = result
-	} catch (error) {
-		console.error('Error fetching data:', error)
-	}
-}
 </script>

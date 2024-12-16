@@ -1,11 +1,11 @@
 import type { RecordId } from "surrealdb";
 
-export interface Search {
+export type Search = {
     id: RecordId
     name: string
 }
 
-export interface Stop {
+export type Stop = {
     id: RecordId
     name: string
     score: number
@@ -19,19 +19,19 @@ export interface Stop {
     [key: string]: unknown
 }
 
-export interface Platform {
+export type Platform = {
     name: string
     length: number
     height: number
     linkedPlatforms: string[]
 }
 
-export interface Location {
+export type Location = {
     latitude: number
     longitude: number
 }
 
-export interface Address {
+export type Address = {
     street: string | undefined
     zipcode: string | undefined
     city: string | undefined
@@ -39,7 +39,7 @@ export interface Address {
     country: string | undefined
 }
 
-export interface Open {
+export type Open = {
     monday: string | undefined
     tuesday: string | undefined
     wednesday: string | undefined
@@ -49,7 +49,7 @@ export interface Open {
     sunday: string | undefined
 }
 
-export interface Services {
+export type Services = {
     parking: boolean
     localPublicTransport: boolean
     carRental: boolean
@@ -65,7 +65,7 @@ export interface Services {
     mobilityService: string | undefined
 }
 
-export interface Source {
+export type Source = {
     name: string
     license: string
     url: string
