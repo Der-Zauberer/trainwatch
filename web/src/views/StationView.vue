@@ -71,7 +71,7 @@ const surrealdb = inject('surrealdb') as Surreal
 const nameId = ref('singen_hohentwiel')
 
 const stop = xref({
-	parameter: [nameId],
+	parameter: { nameId },
 	loader: () => surrealdb.select<Stop>(new RecordId('stop', nameId.value))
 })
 
