@@ -2,9 +2,27 @@ import './assets/swd/swd.min.css'
 import './assets/swd/swd.min.js'
 
 import { createApp } from 'vue'
+import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
-import router from './router'
 import surrealdb from './services/surrealdb.service'
+import HomeView from './views/HomeView.vue'
+import StationView from './views/StationView.vue'
+
+const router = createRouter({
+    history: createWebHistory(import.meta.env.BASE_URL),
+    routes: [
+        {
+            path: '/',
+            name: 'home',
+            component: HomeView,
+        },
+        {
+            path: '/stations',
+            name: 'station',
+            component: StationView,
+        }
+    ],
+})
 
 const app = createApp(App)
 app.use(router)

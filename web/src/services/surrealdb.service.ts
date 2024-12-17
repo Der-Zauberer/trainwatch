@@ -3,10 +3,14 @@ import type { App } from 'vue';
 
 const surrealdb = new Surreal();
 
-await surrealdb.connect('ws://localhost:8080/rpc', {
-	namespace: "pis.derzauberer.eu",
-	database: "develop"
-});
+try {
+    await surrealdb.connect('ws://localhost:8080/rpc', {
+        namespace: "pis.derzauberer.eu",
+        database: "develop"
+    });
+} catch (error) {
+    console.error(error)
+}
 
 export default {
     install(app: App) {
