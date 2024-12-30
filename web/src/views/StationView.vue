@@ -14,7 +14,7 @@
 				<div>{{ stop?.address?.zipcode }} {{ stop?.address?.city }}</div>
 			</div>
 			<div class="margin-bottom">
-				<label>Öffnungszeiten</label>
+				<label i18n="stop.openingHours"></label>
 				<div>Montag: {{ stop?.open?.monday }} </div>
 				<div>Dienstag: {{ stop?.open?.tuesday }} </div>
 				<div>Mittwoch: {{ stop?.open?.monday }} </div>
@@ -24,16 +24,16 @@
 				<div>Sonntag: {{ stop?.open?.monday }} </div>
 			</div>
 			<div class="margin-bottom">
-				<label>Sevices</label>
+				<label i18n="stop.services"></label>
 				<div v-if="stop?.services" class="flex flex-wrap">
 					<swd-chip v-for="service of Object.entries(stop.services).filter(entry => entry[1] === true).map(entry => entry[0])" :key="service">
-						<swd-icon class="done"></swd-icon> {{ service }}
+						<swd-icon class="done"/> {{ service }}
 					</swd-chip>
 				</div>
 			</div>
 			<div class="flex flex-end">
-				<a href="#" class="button grey">Zu bahnhof.de</a>
-				<a href="#" class="button grey">Zu Google Maps</a>
+				<a href="#" class="button grey">bahnhof.de&nbsp;&nbsp;<swd-icon class="external"/></a>
+				<a href="#" class="button grey">Google Maps&nbsp;&nbsp;<swd-icon class="external"/></a>
 			</div>
 		</swd-card>
 		   

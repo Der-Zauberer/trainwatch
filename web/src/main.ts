@@ -24,6 +24,17 @@ const router = createRouter({
     ],
 })
 
+// @ts-expect-error define language
+window.swd.configureLanguages({
+    languages: [
+        { locale: 'en', src: '/i18n/en.properties' },
+        { locale: 'de', src: '/i18n/de.properties' }
+    ],
+    fallback: 'en'
+})
+// @ts-expect-error set default language
+await window.swd.setLanguage(navigator.language);
+
 const app = createApp(App)
 app.use(router)
 app.use(surrealdb)

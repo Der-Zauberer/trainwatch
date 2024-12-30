@@ -1,8 +1,10 @@
 <template>
     <swd-dropdown>
-        <input id="search-input" @input="name = (<any>$event.target).value">
-        <input hidden @select="select((<any>$event.target).value)">
-        <swd-icon class="search" onclick="this.parentElement.querySelector('input').focus()"></swd-icon>
+        <swd-input>
+            <input id="search-input" @input="name = (<any>$event.target).value">
+            <input hidden @select="select((<any>$event.target).value)">
+            <swd-icon class="search" onclick="this.parentElement.querySelector('input').focus()"/>
+        </swd-input>
         <swd-dropdown-content>
             <swd-selection onfilter="event.preventDefault();">
                 <a v-for="result of results" :key="result.id.id.toString()" v-bind:value="result.id.id">{{ result.name }}</a>
@@ -10,6 +12,13 @@
         </swd-dropdown-content>
     </swd-dropdown>
 </template>
+
+<style>
+swd-dropdown {
+    display: block;
+    margin-bottom: var(--theme-element-spacing);
+}
+</style>
   
 <script setup lang="ts">
 import type { Search } from '@/types';
