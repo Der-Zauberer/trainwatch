@@ -13,7 +13,7 @@
     </swd-dropdown>
 </template>
 
-<style>
+<style scoped>
 swd-dropdown {
     display: block;
     margin-bottom: var(--theme-element-spacing);

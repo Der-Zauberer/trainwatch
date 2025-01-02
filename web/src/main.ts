@@ -33,7 +33,7 @@ window.swd.configureLanguages({
     fallback: 'en'
 })
 // @ts-expect-error set default language
-await window.swd.setLanguage(navigator.language);
+await window.swd.setLanguage(navigator.language)
 
 const app = createApp(App)
 app.use(router)
