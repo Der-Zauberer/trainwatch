@@ -1,14 +1,14 @@
 <template>
     <swd-card>
-        <div>
+        <div class="journey-divergence">
             <div>{{ dateToTime(direction.departure.time.scheduled) }}</div>
-            <div class="yellow-text" v-if="isDivergence(direction.departure.time)">{{ dateToTime(direction.departure.time.live) }}</div>
+            <div v-if="calculateDelay(direction.departure.time) > 1" :class="calculateDelay(direction.departure.time) > 3 ? 'red-text' : 'yellow-text'">{{ dateToTime(direction.departure.time.live) }}</div>
         </div>
         <swd-chip class="designation designation-ice">{{ direction.designation.type.name }} {{ direction.designation.number }}</swd-chip>
-        <h4 class="margin-0">{{ direction.from.name }}<swd-subtitle>{{ direction.to.name }}</swd-subtitle></h4>
-        <div>
+        <h4 class="margin-0">{{ direction.from.name }}<swd-subtitle>von {{ direction.to.name }}</swd-subtitle></h4>
+        <div class="journey-divergence-explicit">
             <div>Pl {{ direction.departure.platform.scheduled }}</div>
-            <div class="red-text" v-if="isDivergence(direction.departure.platform)">Pl {{ direction.departure.platform.live }}</div>
+            <div v-if="isDivergence(direction.departure.platform)">Pl {{ direction.departure.platform.live }}</div>
         </div>
         <div class="stops">Tuttlingen &middot; Stuttgart Hbf &middot; Nürnberg Hbf &middot; Leipzig Hbf</div>
     </swd-card>
@@ -18,6 +18,7 @@
 swd-card {
     display: grid;
     grid-template-columns: fit-content(0) fit-content(0) auto fit-content(0);
+    gap: 0 var(--theme-inner-element-spacing) !important;
     white-space: nowrap;
 }
 .stops {
@@ -27,7 +28,6 @@ swd-card {
 }
 .designation {
     font-weight: bold;
-    margin: 0 5px 0 10px;
     transform: translateY(4px);
 }
 
@@ -52,7 +52,7 @@ const direction = ref({
     arrival: {
         time: {
             scheduled: new Date('2024-08-31T10:03'),
-            live: new Date('2024-08-31T10:05')
+            live: new Date('2024-08-31T10:03')
         },
         platform: {
             scheduled: '1',
@@ -62,11 +62,11 @@ const direction = ref({
     departure: {
         time: {
             scheduled: new Date('2024-08-31T10:03'),
-            live: new Date('2024-08-31T10:03')
+            live: new Date('2024-08-31T10:07')
         },
         platform: {
             scheduled: '1',
-            live: '1'
+            live: '2'
         }
     },
     from: {
@@ -101,8 +101,12 @@ const direction = ref({
     ]
 })
 
-function isDivergence(data: {scheduled: unknown, live: unknown}) {
+function isDivergence(data: {scheduled: Date | string, live: Date | string}) {
     return data.scheduled !== data.live
+}
+
+function calculateDelay(delay: {scheduled: Date, live: Date}) {
+    return Math.round((delay.live.getTime() - delay.scheduled.getTime()) / 60000)
 }
 
 </script>

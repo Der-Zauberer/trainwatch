@@ -1,0 +1,16 @@
+.journey-divergence {
+    line-height: 1.4em;
+}
+
+.journey-divergence-explicit {
+    line-height: 1.4em;
+}
+
+.journey-divergence-explicit > :not(:first-child) {
+    color: red;
+}
+
+.journey-cancelled, .journey-divergence-explicit > :not(:last-child) {
+    text-decoration: line-through;
+    color: red;
+}
