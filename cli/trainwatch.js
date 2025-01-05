@@ -1,6 +1,7 @@
 //@ts-check
 
-const { executeCommand, test, Logger, printWarning, printError } = require('./clilib')
+const exp = require('node:constants')
+const { executeCommand, test, Logger, printWarning, printError, CSV } = require('./clilib')
 const FileSystem = require('node:fs')
 const Path = require('path')
 
@@ -152,8 +153,6 @@ class SearchService {
      */
     extractIds(object) {
         const ids = []
-        // @ts-ignore
-        // @ts-ignore
         for (const [key, value] of Object.entries(object)) {
             if (Array.isArray(value)) {
                 value.forEach(id => ids.push(id.toString().toLowerCase()))
@@ -432,6 +431,46 @@ const tests = [
         name: "nWordEgeNgram() should return N-Word-Edge-Ngram",
         execute: () => searchService.nWordEdgeNgram('What why'),
         expect: ['W', 'Wh', 'Wha', 'What', 'Whatw', 'Whatwh', 'Whatwhy', 'w', 'wh', 'why']
+    },
+    {
+        name: "CSV.parse() should parse CSV",
+        execute: () => {
+            const csv = 'id;name;platforms\nsingen_hohentwiel;Singen (Hohentwiel);8\nradolfzell;Radolfzell;\n'
+            return CSV.parse(csv, ';')
+        },
+        expect: [ { id: 'singen_hohentwiel', name: 'Singen (Hohentwiel)', platforms: 8 }, { id: 'radolfzell', name: 'Radolfzell' } ]
+    },
+    {
+        name: "CSV.stringify() should stringify CSV",
+        execute: () => {
+            const csv = [ { id: 'singen_hohentwiel', name: 'Singen (Hohentwiel)', platforms: 8 }, { id: 'radolfzell', name: 'Radolfzell' } ]
+            return CSV.stringify(csv, undefined, ';')
+        },
+        expect: 'id;name;platforms\nsingen_hohentwiel;Singen (Hohentwiel);8\nradolfzell;Radolfzell;\n'
+    },
+    {
+        name: "CSV.stringify() should stringify CSV with replacer array",
+        execute: () => {
+            const csv = [ { id: 'singen_hohentwiel', name: 'Singen (Hohentwiel)', platforms: 8 }, { id: 'radolfzell', name: 'Radolfzell' } ]
+            return CSV.stringify(csv, ['id', 'name'], ';')
+        },
+        expect: 'id;name\nsingen_hohentwiel;Singen (Hohentwiel)\nradolfzell;Radolfzell\n'
+    },
+    {
+        name: "CSV.stringify() should stringify CSV with replacer function",
+        execute: () => {
+            const csv = [ { id: 'singen_hohentwiel', name: 'Singen (Hohentwiel)', platforms: 8 }, { id: 'radolfzell', name: 'Radolfzell' } ]
+            return CSV.stringify(csv, (key, value) => key === 'id' ? `id:${value}` : value, ';')
+        },
+        expect: 'id;name;platforms\nid:singen_hohentwiel;Singen (Hohentwiel);8\nid:radolfzell;Radolfzell;\n'
+    },
+    {
+        name: "CSV.stringify() should stringify CSV with filter replacer function",
+        execute: () => {
+            const csv = [ { id: 'singen_hohentwiel', name: 'Singen (Hohentwiel)', platforms: 8 }, { id: 'radolfzell', name: 'Radolfzell' } ]
+            return CSV.stringify(csv, (key, value) => key === 'id' ? undefined : value, ';')
+        },
+        expect: 'name;platforms\nSingen (Hohentwiel);8\nRadolfzell;\n'
     }
 ]
 

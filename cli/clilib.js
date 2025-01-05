@@ -207,6 +207,64 @@ class Logger {
 
 }
 
+/**********
+*   CSV   *
+**********/
+
+const CSV = {
+
+    /**
+     * @param { string } csv 
+     * @param { string } [seperator]
+     * @returns { any[] }
+     */
+    parse(csv, seperator) {
+        const SEPERATOR = seperator || ','
+        const columns = csv.split('\n').filter(column => column !== '')
+        if (columns.length < 2) return []
+        const entities = []
+        const header = (columns.shift() || '').split(SEPERATOR).map(row => row.trim()).filter(row => row !== '')
+        for (const column of columns) {
+            const entity = {}
+            const rows = column.split(SEPERATOR).map(row => row.trim()).filter(row => row !== '')
+            for (let i = 0; i < rows.length; i++) {
+                const value = rows[i]
+                if (value === 'true' || value === 'false') entity[header[i] || 'unnamed'] = value === 'true'
+                else if (value === 'null') entity[header[i] || 'unnamed'] = null
+                else if (value === 'undefined') entity[header[i] || 'unnamed'] = undefined
+                else if (!isNaN(Number(value))) entity[header[i] || 'unnamed'] = Number(value)
+                else entity[header[i] || 'unnamed'] = rows[i];
+            }
+            entities.push(entity)
+        }
+        return entities
+    },
+
+    /**
+     * @param { any[] } value 
+     * @param { string[] | ((key: string, value: any) => any) } [replacer]
+     * @param { string } [seperator]
+     * @returns { string }
+     */
+    stringify(value, replacer, seperator) {
+        const SEPERATOR = seperator || ','
+        const header = new Set()
+        for (const entry of value) {
+            let keys = Object.keys(entry)
+            if (Array.isArray(replacer)) keys = keys.filter(key => replacer.includes(key))
+            else if (typeof replacer === 'function') keys = keys.filter(key => value.filter(entry => replacer(key, entry[key])).length)
+            keys.forEach(key => header.add(key))
+        }
+        let csv = ''
+        csv += Array.from(header).join(SEPERATOR) + '\n'
+        for (const entry of value) {
+            csv += Array.from(header).map(key => (typeof replacer === 'function' ? replacer(key, entry[key]) : entry[key]) || '').join(SEPERATOR)  + '\n'
+        }
+        return csv
+    }
+
+}
+
 /***********
 *   Test   *
 ***********/
@@ -257,9 +315,10 @@ function test(tests) {
 module.exports = {
     Command,
     Test,
+    Logger,
+    CSV,
     printWarning,
     printError,
     executeCommand,
-    Logger,
     test
 }
