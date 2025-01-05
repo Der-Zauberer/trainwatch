@@ -1,7 +1,5 @@
 //@ts-check
-
-const exp = require('node:constants')
-const { executeCommand, test, Logger, printWarning, printError, CSV } = require('./clilib')
+const { executeCommand, Logger, printWarning, printError, SEARCH, FILES } = require('./clilib')
 const FileSystem = require('node:fs')
 const Path = require('path')
 
@@ -29,186 +27,6 @@ class Source {
     updated
 }
 
-/***********
-*   File   *
-***********/
-
-class FileService {
-
-    /**
-     * @param { string | undefined } path
-     * @param { string } name
-     * @returns { string }
-     */
-    readFile(path, name) {
-        return FileSystem.readFileSync(path ? Path.join(path, name) : name, 'utf8')
-    }
-
-    /**
-     * @param { string | undefined } path
-     * @param { string } name
-     * @param { string } content
-     */
-    writeFile(path, name, content) {
-        const filePath = path ? Path.join(path, name) : name
-        const directory = Path.dirname(filePath)
-        if (directory && !FileSystem.existsSync(directory)) FileSystem.mkdirSync(directory)
-        FileSystem.writeFileSync(filePath, content, 'utf8')
-    }
-
-    /**
-     * @param { String } path 
-     * @param { Logger } logger
-     * @returns { Map<string, Entity> }
-     */
-    loadEntities(path, logger) {
-        const pathAsFile = path?.endsWith('.json')
-        const entities = new Map()
-        if (pathAsFile) {
-            logger.printLoading(`Reading ${logger.type} from file`)
-            try {
-                JSON.parse(this.readFile(undefined, path)).forEach(entity => entities.set(entity.id, entity))
-            } catch (error) {}
-        } else {
-            let i = 1
-            const files = FileSystem.readdirSync(path).filter(file => file.endsWith('json'))
-            try {
-                for (const file of files) {
-                    logger.printProgress(i++, files.length, 'Reading', file.substring(file.length - 'json'.length))
-                    try {
-                        JSON.parse(this.readFile(path, file)).forEach(entity => entities.set(entity.id, entity))
-                    } catch (error) {}
-                }
-                logger.printFinish('Read', entities.size)
-            } catch (error) {}
-        }
-        return entities
-    }
-
-    /**
-     * @param { Map<string, Entity> } entities
-     * @param { string } path 
-     * @param { Logger } logger
-     */
-    saveEntities(entities, path, logger) {
-        const pathAsFile = path?.endsWith('.json')
-        if (pathAsFile) {
-            logger.printLoading(`Writing ${logger.type} to file`)
-            const content = Array.from(entities.values()).sort((a, b) => a.name.localeCompare(b.name))
-            this.writeFile(undefined, path || '', JSON.stringify(content, undefined, '\t'))
-        } else {
-            let i = 1
-            for (const [id, entity] of entities) {
-                logger.printProgress(i++, entities.size, 'Writing', id)
-                this.writeFile(path, id + '.json', JSON.stringify(entity, undefined, '\t'))
-            }
-        }
-        logger.printFinish('written', entities.size)
-    }
-
-}
-
-/*************
-*   Search   *
-*************/
-
-class SearchService {
-
-    /**
-     * @param { string } name
-     * @param { string } [seperator]
-     * @returns { string }
-     */
-    normalize(name, seperator) {
-        const replacements = { 'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'ß': 'ss' }
-        const isWhitespace = (char) => char === ' ' || char === '/' || char === '-' || char === '(' || char === ')'
-        let formatted = ''
-        let blank = name.length > 0 && isWhitespace(name[0])
-        for (let char of name.toLowerCase()) {
-            if (replacements[char]) {
-                formatted += replacements[char]
-                blank = false
-            } else if (isWhitespace(char)) {
-                if (!blank) {
-                    if (seperator) formatted += seperator
-                    blank = true
-                }
-            } else if ((char >= 'a' && char <= 'z') || (char >= '0' && char <= '9')) {
-                formatted += char
-                blank = false
-            } else if (char.charCodeAt(0) > 127) {
-                const normalized = char.normalize('NFD')
-                if (char !== normalized) formatted += normalized[0]
-            }
-        }
-        if (blank && seperator) {
-            return formatted.slice(0, -1)
-        }
-        return formatted
-    }
-
-    /**
-     * @param { { [key: string]: string | number | string[] | number[] } } object
-     * @returns { string[] }
-     */
-    extractIds(object) {
-        const ids = []
-        for (const [key, value] of Object.entries(object)) {
-            if (Array.isArray(value)) {
-                value.forEach(id => ids.push(id.toString().toLowerCase()))
-            } else {
-                ids.push(value.toString().toString().toLowerCase())
-            }
-        }
-        return ids
-    }
-
-    /**
-     * @param { string } name 
-     * @returns { string[] }
-     */
-    nWordEdgeNgram(name) {
-        const parts = []
-        let currentName = ''
-        for (let i = name.length -1; i >= 0; i--) {
-            if (name[i] !== ' ') currentName = name[i] + currentName
-            else parts.unshift(currentName)
-        }
-        parts.unshift(currentName)
-        const result = []
-        for (const part of parts) {
-            for (let i = 1; i <= part.length; i++) {
-                result.push(part.slice(0, i))
-            }
-        }
-        return result
-    }
-    
-    /**
-     * @param { string } search
-     * @param {{ search: string, score: number }} a
-     * @param {{ search: string, score: number }} b
-     */
-    beginnScoreMatching(search, a, b) {
-        const size = (number) => number === 0 ? 1 : Math.floor(Math.log10(number)) + 1
-        if (size(a.score) !== size(b.score)) return a.score - b.score
-        const aStartsWithName = a.search.startsWith(search)
-        const bStartsWithName = b.search.startsWith(search)
-        if (aStartsWithName && !bStartsWithName) return -1
-        else if (!aStartsWithName && bStartsWithName) return 1
-        else return a.score - b.score
-    }
-
-    /**
-     * @param { string } search
-     * @param { { search: string, score: number }[] } entities
-     */
-    sortBeginnScoreMatching(search, entities) {
-        return entities.sort((a, b) => this.beginnScoreMatching(search, a, b))
-    }
-
-}
-
 /***************
 *   Download   *
 ***************/
@@ -218,14 +36,14 @@ class DownloadService {
     /**
      * @param { string } clientId
      * @param { string } apikey
-     * @param { string } path
+     * @param { string } file
      */
-    downloadApiDBStada = async (clientId, apikey, path) => {
+    downloadApiDBStada = async (clientId, apikey, file) => {
         const logger = new Logger('DB/Stada', 'stations')
-        printError(`Require client-id, api-key and path as arguments!`, !clientId || !apikey || !path)
+        printError(`Require client-id, api-key and file as arguments!`, !clientId || !apikey || !file)
         const url = 'https://apis.deutschebahn.com/db-api-marketplace/apis/station-data/v2/stations'
         const headers = { 'DB-Client-Id': clientId, 'DB-Api-Key': apikey }
-        const stations = fileService.loadEntities(path, logger)
+        const stations = new Map(JSON.parse(FILES.readOrUndefined(file) || '[]').map(value => [value.id, value]))
         logger.printLoading(`Downloading stations from ${url}`)
         const response = await fetch(url, { headers })
             .then(response => (logger.printLoading('Parsing stations'), response))
@@ -238,7 +56,7 @@ class DownloadService {
                     continue
                 }
                 const newStation = {
-                    id: searchService.normalize(station.name, '_'),
+                    id: SEARCH.normalize(station.name, '_'),
                     name: station.name,
                     score: station.category,
                     platforms: [],
@@ -289,7 +107,7 @@ class DownloadService {
                     url,
                     updated: new Date().toISOString().split('T')[0]
                 }
-                const mergedStation = { sources: [], ...stations.get(newStation.id), ...newStation }
+                const mergedStation = { ...stations.get(newStation.id), ...newStation }
                 stations.set(newStation.id, this.addSource( mergedStation, source))
                 logger.printProgress(i++, response.result.length, 'Downloading', station.id)
             } catch (error) {
@@ -297,19 +115,19 @@ class DownloadService {
             }
         }
         logger.printFinish('downloaded', response.result.length)
-        fileService.saveEntities(stations, path, logger)
+        FILES.write(file, Array.from(stations.values()))
     }
 
     /**
      * @param { string } clientId
      * @param { string } apikey
-     * @param { string } path
+     * @param { string } file
      */
-    downloadApiDBRisStationsPlatform = async (clientId, apikey, path) => {
+    downloadApiDBRisStationsPlatform = async (clientId, apikey, file) => {
         const logger = new Logger('DB/Ris::Stations', 'stations')
-        printError(`Require client-id, api-key and path as arguments!`, !clientId || !apikey || !path)
+        printError(`Require client-id, api-key and file as arguments!`, !clientId || !apikey || !file)
         const headers = { 'DB-Client-Id': clientId, 'DB-Api-Key': apikey }
-        const stations = fileService.loadEntities(path, logger)
+        const stations = new Map(JSON.parse(FILES.readOrUndefined(file) || '[]').map(value => [value.id, value]))
         const stationQueue = Array.from(stations.keys())
         logger.printLoading(`Downloading stations from https://apis.deutschebahn.com/db-api-marketplace/apis/ris-stations/v1/platforms`)
         let i = 1
@@ -355,7 +173,7 @@ class DownloadService {
             }
         }
         logger.printFinish('downloaded', i)
-        fileService.saveEntities(stations, path, logger)
+        FILES.write(file, Array.from(stations.values()))
     }
 
     /**
@@ -377,120 +195,20 @@ class DownloadService {
 *   General   *
 **************/
 
-const fileService = new FileService()
-const searchService = new SearchService()
 const downloadService = new DownloadService()
-
-const tests = [
-    {
-        name: "normalize() should return without seperator",
-        execute: () => searchService.normalize(' Fäßchen/Brücken-Straße (Brötchen)Compañía '),
-        expect: 'faesschenbrueckenstrassebroetchencompania'
-    },
-    {
-        name: "normalize() should return with blank seperator",
-        execute: () => searchService.normalize(' Fäßchen/Brücken-Straße (Brötchen)Compañía ', ' '),
-        expect: 'faesschen bruecken strasse broetchen compania'
-    },
-    {
-        name: "normalize() should return with underscore seperator",
-        execute: () => searchService.normalize(' Fäßchen/Brücken-Straße (Brötchen)Compañía ', '_'),
-        expect: 'faesschen_bruecken_strasse_broetchen_compania'
-    },
-    {
-        name: "extractIds() should extract ids",
-        execute: () => searchService.extractIds({ eva: 8011160, stada: 1071, ril: [ 'BHBF', 'BL', 'BLS' ] }),
-        expect: [ "8011160", "1071", 'bhbf', 'bl', 'bls' ]
-    },
-    {
-        name: "beginnScoreMatching() should match first entry",
-        execute: () => searchService.beginnScoreMatching('Karlsruhe', { search: 'Karlsruhe Hbf', score: 0 }, { search: 'Leipzig Karlsruher Straße', score: 0 }),
-        expect: -1
-    },
-    {
-        name: "beginnScoreMatching() should match second entry",
-        execute: () => searchService.beginnScoreMatching('Karlsruhe', { search: 'Leipzig Karlsruher Straße', score: 0 }, { search: 'Karlsruhe Hbf', score: 0 }),
-        expect: 1
-    },
-    {
-        name: "beginnScoreMatching() should score second entry",
-        execute: () => searchService.beginnScoreMatching('Karlsruhe', { search: 'Leipzig Karlsruher Straße', score: 0 }, { search: 'Karlsruhe Hbf', score: 1 }),
-        expect: 1
-    },
-    {
-        name: "beginnScoreMatching() should score second entry",
-        execute: () => searchService.beginnScoreMatching('Karlsruhe', { search: 'Leipzig Karlsruher Straße', score: 1 }, { search: 'Karlsruhe Hbf', score: 0 }),
-        expect: 1
-    },
-    {
-        name: "beginnScoreMatching() should rank first entry",
-        execute: () => searchService.beginnScoreMatching('Karlsruhe', { search: 'Karlsruhe Hbf', score: 10 }, { search: 'Leipzig Karlsruher Straße', score: 1 }),
-        expect: 9
-    },
-    {
-        name: "nWordEgeNgram() should return N-Word-Edge-Ngram",
-        execute: () => searchService.nWordEdgeNgram('What why'),
-        expect: ['W', 'Wh', 'Wha', 'What', 'Whatw', 'Whatwh', 'Whatwhy', 'w', 'wh', 'why']
-    },
-    {
-        name: "CSV.parse() should parse CSV",
-        execute: () => {
-            const csv = 'id;name;platforms\nsingen_hohentwiel;Singen (Hohentwiel);8\nradolfzell;Radolfzell;\n'
-            return CSV.parse(csv, ';')
-        },
-        expect: [ { id: 'singen_hohentwiel', name: 'Singen (Hohentwiel)', platforms: 8 }, { id: 'radolfzell', name: 'Radolfzell' } ]
-    },
-    {
-        name: "CSV.stringify() should stringify CSV",
-        execute: () => {
-            const csv = [ { id: 'singen_hohentwiel', name: 'Singen (Hohentwiel)', platforms: 8 }, { id: 'radolfzell', name: 'Radolfzell' } ]
-            return CSV.stringify(csv, undefined, ';')
-        },
-        expect: 'id;name;platforms\nsingen_hohentwiel;Singen (Hohentwiel);8\nradolfzell;Radolfzell;\n'
-    },
-    {
-        name: "CSV.stringify() should stringify CSV with replacer array",
-        execute: () => {
-            const csv = [ { id: 'singen_hohentwiel', name: 'Singen (Hohentwiel)', platforms: 8 }, { id: 'radolfzell', name: 'Radolfzell' } ]
-            return CSV.stringify(csv, ['id', 'name'], ';')
-        },
-        expect: 'id;name\nsingen_hohentwiel;Singen (Hohentwiel)\nradolfzell;Radolfzell\n'
-    },
-    {
-        name: "CSV.stringify() should stringify CSV with replacer function",
-        execute: () => {
-            const csv = [ { id: 'singen_hohentwiel', name: 'Singen (Hohentwiel)', platforms: 8 }, { id: 'radolfzell', name: 'Radolfzell' } ]
-            return CSV.stringify(csv, (key, value) => key === 'id' ? `id:${value}` : value, ';')
-        },
-        expect: 'id;name;platforms\nid:singen_hohentwiel;Singen (Hohentwiel);8\nid:radolfzell;Radolfzell;\n'
-    },
-    {
-        name: "CSV.stringify() should stringify CSV with filter replacer function",
-        execute: () => {
-            const csv = [ { id: 'singen_hohentwiel', name: 'Singen (Hohentwiel)', platforms: 8 }, { id: 'radolfzell', name: 'Radolfzell' } ]
-            return CSV.stringify(csv, (key, value) => key === 'id' ? undefined : value, ';')
-        },
-        expect: 'name;platforms\nSingen (Hohentwiel);8\nRadolfzell;\n'
-    }
-]
 
 const commands = {
     download: {
         'DB/Stada': { 
             execute: downloadService.downloadApiDBStada,
-            usage: 'download DB/Stada <client-id> <api-key> [path|file]',
+            usage: 'download DB/Stada <client-id> <api-key> [file]',
             description: 'Downloads station from the DB Stada API to multible or a single file'
         },
         'DB/RIS/Stations': { 
             execute: downloadService.downloadApiDBRisStationsPlatform,
-            usage: 'download DB/RIS/Stations <client-id> <api-key> [path|file]',
+            usage: 'download DB/RIS/Stations <client-id> <api-key> [file]',
             description: 'Downloads platforms for already downloaded stations from the DB Ris::Stations API to multible or a single file'
         }
-    },
-    test: { 
-        execute: () => test(tests),
-        usage: 'test',
-        description: 'Runs all tests'
     }
 }
 

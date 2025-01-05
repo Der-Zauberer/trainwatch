@@ -1,6 +1,8 @@
 //@ts-check
 
 const process = require('node:process')
+const FileSystem = require('node:fs')
+const Path = require('path')
 
 /************
 *   Types   *
@@ -223,16 +225,16 @@ const CSV = {
         const columns = csv.split('\n').filter(column => column !== '')
         if (columns.length < 2) return []
         const entities = []
-        const header = (columns.shift() || '').split(SEPERATOR).map(row => row.trim()).filter(row => row !== '')
+        const header = (columns.shift() || '').split(SEPERATOR).map(row => row.trim())
         for (const column of columns) {
             const entity = {}
-            const rows = column.split(SEPERATOR).map(row => row.trim()).filter(row => row !== '')
+            const rows = column.split(SEPERATOR).map(row => row.trim())
             for (let i = 0; i < rows.length; i++) {
                 const value = rows[i]
                 if (value === 'true' || value === 'false') entity[header[i] || 'unnamed'] = value === 'true'
+                else if (value === 'undefined' || value === '') entity[header[i] || 'unnamed'] = undefined
                 else if (value === 'null') entity[header[i] || 'unnamed'] = null
-                else if (value === 'undefined') entity[header[i] || 'unnamed'] = undefined
-                else if (!isNaN(Number(value))) entity[header[i] || 'unnamed'] = Number(value)
+                else if (!isNaN(Number(value)) && value !== '' && value[0] !== '0') entity[header[i] || 'unnamed'] = Number(value)
                 else entity[header[i] || 'unnamed'] = rows[i];
             }
             entities.push(entity)
@@ -265,14 +267,170 @@ const CSV = {
 
 }
 
+/************
+*   Files   *
+************/
+
+const FILES = {
+
+    /**
+     * @param { string } name
+     * @returns { string }
+     */
+    read(name) {
+        if (!FileSystem.existsSync(name)) throw new Error(`File "${name}" doesn't exist!`)
+        return FileSystem.readFileSync(name, 'utf8')
+    },
+
+    /**
+     * @param { string } name
+     * @returns { string | undefined }
+     */
+    readOrUndefined(name) {
+        if (!FileSystem.existsSync(name)) return undefined
+        return FileSystem.readFileSync(name, 'utf8')
+    },
+
+    /**
+     * @param { string } name
+     * @param { string | object | any[] } content
+     */
+    write(name, content) {
+        const directory = Path.dirname(name)
+        if (directory && !FileSystem.existsSync(directory)) FileSystem.mkdirSync(directory)
+        FileSystem.writeFileSync(name, typeof content === 'object' || Array.isArray(content) ? JSON.stringify(content, undefined, '\t') : content, 'utf8')
+    },
+
+    /**
+     * @param { string } [directory]
+     * @param { boolean } [recursive]
+     * @returns { string[] }
+     */
+    list(directory, recursive) {
+        directory = directory || '.'
+        const listFiles = (directory) => FileSystem.readdirSync(directory).map(name => Path.join(directory, name)).filter(directory => FileSystem.statSync(directory).isFile())
+        if (!FileSystem.existsSync(directory)) throw new Error(`Directory "${directory}" doesn't exist!`)
+        if (!recursive) return listFiles(directory);
+        return FileSystem.readdirSync(directory)
+            .map(name => Path.join(directory, name))
+            .filter(directory => FileSystem.statSync(directory).isDirectory())
+            .map(directory => this.list(directory, true))
+            .reduce((a, b) => a.concat(b), [])
+            .concat(listFiles(directory));
+    }
+
+}
+
+/*************
+*   Search   *
+*************/
+
+const SEARCH = {
+
+    /**
+     * @param { string } name
+     * @param { string } [seperator]
+     * @returns { string }
+     */
+    normalize(name, seperator) {
+        const replacements = { 'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'ß': 'ss' }
+        const isWhitespace = (char) => char === ' ' || char === '/' || char === '-' || char === '(' || char === ')'
+        let formatted = ''
+        let blank = name.length > 0 && isWhitespace(name[0])
+        for (let char of name.toLowerCase()) {
+            if (replacements[char]) {
+                formatted += replacements[char]
+                blank = false
+            } else if (isWhitespace(char)) {
+                if (!blank) {
+                    if (seperator) formatted += seperator
+                    blank = true
+                }
+            } else if ((char >= 'a' && char <= 'z') || (char >= '0' && char <= '9')) {
+                formatted += char
+                blank = false
+            } else if (char.charCodeAt(0) > 127) {
+                const normalized = char.normalize('NFD')
+                if (char !== normalized) formatted += normalized[0]
+            }
+        }
+        if (blank && seperator) {
+            return formatted.slice(0, -1)
+        }
+        return formatted
+    },
+
+    /**
+     * @param { { [key: string]: string | number | string[] | number[] } } object
+     * @returns { string[] }
+     */
+    extractIds(object) {
+        const ids = []
+        for (const [key, value] of Object.entries(object)) {
+            if (Array.isArray(value)) {
+                value.forEach(id => ids.push(id.toString().toLowerCase()))
+            } else {
+                ids.push(value.toString().toString().toLowerCase())
+            }
+        }
+        return ids
+    },
+
+    /**
+     * @param { string } name 
+     * @returns { string[] }
+     */
+    nWordEdgeNgram(name) {
+        const parts = []
+        let currentName = ''
+        for (let i = name.length -1; i >= 0; i--) {
+            if (name[i] !== ' ') currentName = name[i] + currentName
+            else parts.unshift(currentName)
+        }
+        parts.unshift(currentName)
+        const result = []
+        for (const part of parts) {
+            for (let i = 1; i <= part.length; i++) {
+                result.push(part.slice(0, i))
+            }
+        }
+        return result
+    },
+    
+    /**
+     * @param { string } search
+     * @param {{ search: string, score: number }} a
+     * @param {{ search: string, score: number }} b
+     */
+    beginnScoreMatching(search, a, b) {
+        const size = (number) => number === 0 ? 1 : Math.floor(Math.log10(number)) + 1
+        if (size(a.score) !== size(b.score)) return a.score - b.score
+        const aStartsWithName = a.search.startsWith(search)
+        const bStartsWithName = b.search.startsWith(search)
+        if (aStartsWithName && !bStartsWithName) return -1
+        else if (!aStartsWithName && bStartsWithName) return 1
+        else return a.score - b.score
+    },
+
+    /**
+     * @param { string } search
+     * @param { { search: string, score: number }[] } entities
+     */
+    sortBeginnScoreMatching(search, entities) {
+        return entities.sort((a, b) => this.beginnScoreMatching(search, a, b))
+    }
+
+}
+
 /***********
 *   Test   *
 ***********/
 
 /**
- * @param { Test[] } tests 
+ * @param { Test[] } tests
+ * @param { boolean } [messurePerformance]
  */
-function test(tests) {
+function test(tests, messurePerformance) {
     const WARMUP_CYCLES = 100
     const EXECUTION_CYCLES = 5000
     let passedCount = 0
@@ -280,17 +438,24 @@ function test(tests) {
     for (const test of tests) {
         try { 
             const result = test.execute()
-            for (let i = 0; i < WARMUP_CYCLES; i++) test.execute()
-            const durations = []
-            for (let i = 0; i < EXECUTION_CYCLES; i++) {
-                const startTime = performance.now()
-                test.execute()
-                const endTime = performance.now()
-                durations.push((endTime - startTime) * 1e3)
+            let average = undefined
+            if (messurePerformance) {
+                const consoleLog = console.log;
+                console.log = () => {}
+                for (let i = 0; i < WARMUP_CYCLES; i++) test.execute()
+                const durations = []
+                for (let i = 0; i < EXECUTION_CYCLES; i++) {
+                    const startTime = performance.now()
+                    test.execute()
+                    const endTime = performance.now()
+                    durations.push((endTime - startTime) * 1e3)
+                }
+                console.log = consoleLog
+                average = durations.length ? durations.reduce((a, b) => a + b) / durations.length : 0
             }
-            const average = durations.length ? durations.reduce((a, b) => a + b) / durations.length : 0
             if (JSON.stringify(test.expect) === JSON.stringify(result)) {
-                console.log(`${CLI_GREEN}TEST PASSED:${CLI_RESET} ${test.name} ${CLI_GREY}(${average.toFixed(3)}µs)${CLI_RESET}`)
+                const duration = average ? `(${average.toFixed(3)}µs)` : ''
+                console.log(`${CLI_GREEN}TEST PASSED:${CLI_RESET} ${test.name} ${CLI_GREY}${duration}${CLI_RESET}`)
                 passedCount++
             } else {
                 console.log(`${CLI_RED}TEST FAILED:${CLI_RESET} ${test.name}`)
@@ -308,6 +473,101 @@ function test(tests) {
     if (failedCount > 0) process.exit(-1)
 }
 
+function testLib() {
+    test([
+        {
+            name: 'SEARCH.normalize() should return without seperator',
+            execute: () => SEARCH.normalize(' Fäßchen/Brücken-Straße (Brötchen)Compañía '),
+            expect: 'faesschenbrueckenstrassebroetchencompania'
+        },
+        {
+            name: 'SEARCH.normalize() should return with blank seperator',
+            execute: () => SEARCH.normalize(' Fäßchen/Brücken-Straße (Brötchen)Compañía ', ' '),
+            expect: 'faesschen bruecken strasse broetchen compania'
+        },
+        {
+            name: 'SEARCH.normalize() should return with underscore seperator',
+            execute: () => SEARCH.normalize(' Fäßchen/Brücken-Straße (Brötchen)Compañía ', '_'),
+            expect: 'faesschen_bruecken_strasse_broetchen_compania'
+        },
+        {
+            name: 'SEARCH.extractIds() should extract ids',
+            execute: () => SEARCH.extractIds({ eva: 8011160, stada: 1071, ril: [ 'BHBF', 'BL', 'BLS' ] }),
+            expect: [ '8011160', '1071', 'bhbf', 'bl', 'bls' ]
+        },
+        {
+            name: 'SEARCH.beginnScoreMatching() should match first entry',
+            execute: () => SEARCH.beginnScoreMatching('Karlsruhe', { search: 'Karlsruhe Hbf', score: 0 }, { search: 'Leipzig Karlsruher Straße', score: 0 }),
+            expect: -1
+        },
+        {
+            name: 'SEARCH.beginnScoreMatching() should match second entry',
+            execute: () => SEARCH.beginnScoreMatching('Karlsruhe', { search: 'Leipzig Karlsruher Straße', score: 0 }, { search: 'Karlsruhe Hbf', score: 0 }),
+            expect: 1
+        },
+        {
+            name: 'SEARCH.beginnScoreMatching() should score second entry',
+            execute: () => SEARCH.beginnScoreMatching('Karlsruhe', { search: 'Leipzig Karlsruher Straße', score: 0 }, { search: 'Karlsruhe Hbf', score: 1 }),
+            expect: 1
+        },
+        {
+            name: 'SEARCH.beginnScoreMatching() should score second entry',
+            execute: () => SEARCH.beginnScoreMatching('Karlsruhe', { search: 'Leipzig Karlsruher Straße', score: 1 }, { search: 'Karlsruhe Hbf', score: 0 }),
+            expect: 1
+        },
+        {
+            name: 'SEARCH.beginnScoreMatching() should rank first entry',
+            execute: () => SEARCH.beginnScoreMatching('Karlsruhe', { search: 'Karlsruhe Hbf', score: 10 }, { search: 'Leipzig Karlsruher Straße', score: 1 }),
+            expect: 9
+        },
+        {
+            name: 'SEARCH.nWordEgeNgram() should return N-Word-Edge-Ngram',
+            execute: () => SEARCH.nWordEdgeNgram('What why'),
+            expect: ['W', 'Wh', 'Wha', 'What', 'Whatw', 'Whatwh', 'Whatwhy', 'w', 'wh', 'why']
+        },
+        {
+            name: 'CSV.parse() should parse CSV',
+            execute: () => {
+                const csv = 'id;name;platforms\nsingen_hohentwiel;Singen (Hohentwiel);8\nradolfzell;Radolfzell;\n'
+                return CSV.parse(csv, ';')
+            },
+            expect: [ { id: 'singen_hohentwiel', name: 'Singen (Hohentwiel)', platforms: 8 }, { id: 'radolfzell', name: 'Radolfzell' } ]
+        },
+        {
+            name: 'CSV.stringify() should stringify CSV',
+            execute: () => {
+                const csv = [ { id: 'singen_hohentwiel', name: 'Singen (Hohentwiel)', platforms: 8 }, { id: 'radolfzell', name: 'Radolfzell' } ]
+                return CSV.stringify(csv, undefined, ';')
+            },
+            expect: 'id;name;platforms\nsingen_hohentwiel;Singen (Hohentwiel);8\nradolfzell;Radolfzell;\n'
+        },
+        {
+            name: 'CSV.stringify() should stringify CSV with replacer array',
+            execute: () => {
+                const csv = [ { id: 'singen_hohentwiel', name: 'Singen (Hohentwiel)', platforms: 8 }, { id: 'radolfzell', name: 'Radolfzell' } ]
+                return CSV.stringify(csv, ['id', 'name'], ';')
+            },
+            expect: 'id;name\nsingen_hohentwiel;Singen (Hohentwiel)\nradolfzell;Radolfzell\n'
+        },
+        {
+            name: 'CSV.stringify() should stringify CSV with replacer function',
+            execute: () => {
+                const csv = [ { id: 'singen_hohentwiel', name: 'Singen (Hohentwiel)', platforms: 8 }, { id: 'radolfzell', name: 'Radolfzell' } ]
+                return CSV.stringify(csv, (key, value) => key === 'id' ? `id:${value}` : value, ';')
+            },
+            expect: 'id;name;platforms\nid:singen_hohentwiel;Singen (Hohentwiel);8\nid:radolfzell;Radolfzell;\n'
+        },
+        {
+            name: 'CSV.stringify() should stringify CSV with filter replacer function',
+            execute: () => {
+                const csv = [ { id: 'singen_hohentwiel', name: 'Singen (Hohentwiel)', platforms: 8 }, { id: 'radolfzell', name: 'Radolfzell' } ]
+                return CSV.stringify(csv, (key, value) => key === 'id' ? undefined : value, ';')
+            },
+            expect: 'name;platforms\nSingen (Hohentwiel);8\nRadolfzell;\n'
+        }
+    ], true)
+}
+
 /**************
 *   Exports   *
 **************/
@@ -317,8 +577,11 @@ module.exports = {
     Test,
     Logger,
     CSV,
+    SEARCH,
+    FILES,
     printWarning,
     printError,
     executeCommand,
-    test
+    test,
+    testLib,
 }
