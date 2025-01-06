@@ -3,6 +3,8 @@
 const process = require('node:process')
 const FileSystem = require('node:fs')
 const Path = require('path')
+const Readline = require('readline');
+const { sep } = require('node:path');
 
 /************
 *   Types   *
@@ -221,25 +223,74 @@ const CSV = {
      * @returns { any[] }
      */
     parse(csv, seperator) {
-        const SEPERATOR = seperator || ','
-        const columns = csv.split('\n').filter(column => column !== '')
-        if (columns.length < 2) return []
+        seperator = seperator || ','
+        const lines = csv.split(/\r?\n/gm).filter(column => column !== '')
+        if (lines.length < 2) return []
+        const header = CSV.parseHeader(lines.shift() || '', seperator)
+        return CSV.parseChunk(header, lines, seperator)
+    },
+
+    /**
+     * @param { string } header
+     * @param { string } [seperator]
+     * @returns { string[] }
+     */
+    parseHeader(header, seperator) {
+        seperator = seperator || ','
+        return CSV.splitRow(header, seperator, true).map(row => row.trim())
+    },
+
+    /**
+     * @param { string[] } header
+     * @param { string[] } lines
+     * @param { string } [seperator]
+     * @returns { any[] }
+     */
+    parseChunk(header, lines, seperator) {
+        seperator = seperator || ','
         const entities = []
-        const header = (columns.shift() || '').split(SEPERATOR).map(row => row.trim())
-        for (const column of columns) {
+        for (const line of lines) {
             const entity = {}
-            const rows = column.split(SEPERATOR).map(row => row.trim())
+            const rows = CSV.splitRow(line, seperator).map(row => row.trim())
             for (let i = 0; i < rows.length; i++) {
+                const key = header[i] || 'unnamed'
                 const value = rows[i]
-                if (value === 'true' || value === 'false') entity[header[i] || 'unnamed'] = value === 'true'
-                else if (value === 'undefined' || value === '') entity[header[i] || 'unnamed'] = undefined
-                else if (value === 'null') entity[header[i] || 'unnamed'] = null
-                else if (!isNaN(Number(value)) && value !== '' && value[0] !== '0') entity[header[i] || 'unnamed'] = Number(value)
-                else entity[header[i] || 'unnamed'] = rows[i];
+                if (value === 'true' || value === 'false') entity[key] = value === 'true'
+                else if (value === 'undefined' || value === '' || value === '""') entity[key] = undefined
+                else if (value === 'null') entity[key] = null
+                else if (!isNaN(Number(value)) && value !== '' && value[0] !== '0') entity[key] = Number(value)
+                else if (value.length >= 2 && value[0] === '"' && value[value.length - 1] === '"') entity[key] = value.slice(1, -1)
+                else entity[key] = rows[i];
             }
             entities.push(entity)
         }
         return entities
+    },
+
+    /**
+     * 
+     * @param { string } row 
+     * @param { string } seperator 
+     * @param { boolean } [filterQuotationMarks]
+     * @returns { string[] }
+     */
+    splitRow(row, seperator, filterQuotationMarks) {
+        const columns = []
+        let column = ''
+        let isString = false
+        for (let i = 0; i < row.length; i++) {
+            if (!isString && row[i] === seperator) {
+                columns.push(column)
+                column = ''
+            } else if (row[i] === '"' && !(isString && i > 0 && row[i - 1] === '\\')) {
+                isString = !isString
+                if (!filterQuotationMarks) column += row[i]
+            } else {
+                column += row[i]
+            }
+        }
+        columns.push(column)
+        return columns
     },
 
     /**
@@ -289,6 +340,59 @@ const FILES = {
     readOrUndefined(name) {
         if (!FileSystem.existsSync(name)) return undefined
         return FileSystem.readFileSync(name, 'utf8')
+    },
+
+    /**
+     * 
+     * @param { string } name 
+     * @param { (lines: string[])  => void } callback
+     * @param { number } [lineAmount]
+     */
+    readAsStream2(name, callback, lineAmount) {
+        lineAmount = lineAmount || 100
+        const fileStream = FileSystem.createReadStream(name)
+        const readline = Readline.createInterface({ input: fileStream, crlfDelay: Infinity, })
+      
+        let lines = []
+        let lineCount = 0
+      
+        readline.on('line', (line) => {
+          lines.push(line)
+          lineCount++
+      
+          if (lineCount === lineAmount) {
+            callback(lines)
+            lines = []
+            lineCount = 0
+          }
+        })
+      
+        readline.on('close', () => lines.length > 0 ? callback(lines) : {})
+        readline.on('error', (error) => { throw new Error(error.message) });
+    },
+
+    /**
+     * 
+     * @param { string } name 
+     * @param { (lines: string[])  => void } callback
+     * @param { number } [lineAmount]
+     */
+    readAsStream(name, callback, lineAmount) {
+        lineAmount = lineAmount || 100
+        const fileStream = FileSystem.openSync(name, 'r');
+        const bufferSize = 1024 * 1024;
+        const buffer = Buffer.alloc(bufferSize);
+        let lines = [];
+        let bytesRead;
+
+        while ((bytesRead = FileSystem.readSync(fileStream, buffer, 0, bufferSize, null)) > 0) {
+            buffer.toString('utf8', 0, bytesRead).split(/\r?\n/gm).forEach(line => lines.push(line));
+            while (lines.length > lineAmount) callback(lines.splice(0, lineAmount))
+            lines = lines.splice(lineAmount)
+        }
+
+        if (lines.length > 0) callback(lines)
+        FileSystem.closeSync(fileStream);
     },
 
     /**

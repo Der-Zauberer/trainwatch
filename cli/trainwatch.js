@@ -1,7 +1,10 @@
 //@ts-check
-const { executeCommand, Logger, printWarning, printError, SEARCH, FILES } = require('./clilib')
+const { Hash } = require('node:crypto')
+const { executeCommand, Logger, printWarning, printError, SEARCH, FILES, CSV } = require('./clilib')
 const FileSystem = require('node:fs')
+const { stat } = require('node:fs/promises')
 const Path = require('path')
+const { platform } = require('node:os')
 
 /************
 *   Types   *
@@ -191,11 +194,107 @@ class DownloadService {
 
 }
 
+/***********
+*   GTFS   *
+***********/
+
+class GtfsService {
+
+    /**
+     * @param { string } file
+     */
+    import(file) {
+        printError(`Require file as arguments!`, !file)
+        const logger = new Logger('GTFS-Import', 'gtfs lines')
+        logger.printLoading(`Importing GTFS data from ${file}`)
+        
+        const agencyCsv = CSV.parse(FILES.read(Path.join(file, 'agency.txt')), ',')
+        const routesCsv = CSV.parse(FILES.read(Path.join(file, 'routes.txt')), ',')
+        const stopsCsv = CSV.parse(FILES.read(Path.join(file, 'stops.txt')), ',')
+        const tripsCsv = CSV.parse(FILES.read(Path.join(file, 'trips.txt')), ',')
+        
+        logger.printLoading(`Indexing GTFS data`)
+        
+        const agencyIds = new Map(agencyCsv.map(agency => [agency.agency_id, agency]))
+        const stopIds = new Map(stopsCsv.map(stop => [stop.stop_id, stop]))
+        const routeIds = new Map(routesCsv.map(route => [route.route_id, route]))
+        const tripIds = new Map(tripsCsv.map(trip => [trip.trip_id, trip]))
+        
+        logger.printLoading(`Collecting line information`)
+        
+        const lines = new Map(tripsCsv.map(trip => [trip.trip_id, {
+            id: trip.trip_id,
+            name: trip.trip_short_name,
+            headsign: trip.trip_headsign,
+            route: {
+                id: trip.route_id,
+                name: routeIds.get(trip.route_id)?.route_short_name,
+                long_name: routeIds.get(trip.route_id)?.route_long_name,
+                agency_id: routeIds.get(trip.route_id)?.agency_id,
+                agency_name: agencyIds.get(routeIds.get(trip.route_id)?.agency_id)?.agency_name,
+                description: routeIds.get(trip.route_id)?.route_desc,
+                color: routeIds.get(trip.route_id)?.route_color,
+                textColor: routeIds.get(trip.route_id)?.route_text_color
+            },
+            /** @type { any[] } */stops: []
+        }]))
+
+        logger.printLoading(`Reading stop_times`)
+
+        let header
+        let index = 0
+        FILES.readAsStream(Path.join(file, 'stop_times.txt'), (lineArray) => {
+            if (!header) header = CSV.parseHeader(lineArray.shift() || '')
+            for (const visit of CSV.parseChunk(header, lineArray)) {
+                const stop = stopIds.get(visit.stop_id)
+                const line = lines.get(visit.trip_id)
+                if (!stop) {
+                    printWarning(`Stop ${visit.stop_id} not found`)
+                    continue
+                }
+                if (!line) {
+                    printWarning(`Line ${visit.trip_id} not found`)
+                    continue
+                }
+                line.stops.push({
+                    id: visit.stop_id,
+                    name: stop.stop_name,
+                    arrival: visit.arrival_time.split(':').map(time => time.padStart(2, '0')).slice(0, 2).join(':'),
+                    departure: visit.departure_time.split(':').map(time => time.padStart(2, '0')).slice(0, 2).join(':'),
+                    platform: stop.platform_code
+                })
+            }
+            logger.printProgress(index++, Math.ceil(50564128 / 1000), 'reading', 'stop_times')
+        }, 1000)
+
+        logger.printLoading(`Sorting stops`)
+        
+        for (const line of lines.values()) {
+            line.stops = line.stops.sort((a, b) => a.arrival.localeCompare(b.arrival))
+        }
+
+        logger.printLoading(`Saving lines`)
+
+        const lineArray = Array.from(lines.values())
+        const chunkSize = Math.ceil(lineArray.length / 50);
+
+        for (let i = 0; i < 50; i++) {
+            const chunk = lineArray.slice(i * chunkSize, (i + 1) * chunkSize);
+            FILES.write(Path.join('lines', `lines-${i + 1}.js`), chunk)
+        }
+
+        logger.printFinish('processed', lines.size)
+
+    }
+
+}
+
 /**************
 *   General   *
 **************/
 
 const downloadService = new DownloadService()
+const gtfsService = new GtfsService()
 
 const commands = {
     download: {
@@ -208,6 +307,13 @@ const commands = {
             execute: downloadService.downloadApiDBRisStationsPlatform,
             usage: 'download DB/RIS/Stations <client-id> <api-key> [file]',
             description: 'Downloads platforms for already downloaded stations from the DB Ris::Stations API to multible or a single file'
+        }
+    },
+    gtfs: {
+        import: {
+            execute: gtfsService.import,
+            usage: 'gtfs import <file>',
+            description: 'Imports GTFS data from a CSV files'
         }
     }
 }
