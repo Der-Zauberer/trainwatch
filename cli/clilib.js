@@ -4,7 +4,6 @@ const process = require('node:process')
 const FileSystem = require('node:fs')
 const Path = require('path')
 const Readline = require('readline');
-const { sep } = require('node:path');
 
 /************
 *   Types   *

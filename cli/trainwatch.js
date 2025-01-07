@@ -1,10 +1,8 @@
 //@ts-check
-const { Hash } = require('node:crypto')
+
+const { error } = require('console')
 const { executeCommand, Logger, printWarning, printError, SEARCH, FILES, CSV } = require('./clilib')
-const FileSystem = require('node:fs')
-const { stat } = require('node:fs/promises')
 const Path = require('path')
-const { platform } = require('node:os')
 
 /************
 *   Types   *
@@ -203,9 +201,10 @@ class GtfsService {
     /**
      * @param { string } file
      */
-    import(file) {
+    async import(file) {
         printError(`Require file as arguments!`, !file)
         const logger = new Logger('GTFS-Import', 'gtfs lines')
+
         logger.printLoading(`Importing GTFS data from ${file}`)
         
         const agencyCsv = CSV.parse(FILES.read(Path.join(file, 'agency.txt')), ',')
@@ -219,7 +218,66 @@ class GtfsService {
         const stopIds = new Map(stopsCsv.map(stop => [stop.stop_id, stop]))
         const routeIds = new Map(routesCsv.map(route => [route.route_id, route]))
         const tripIds = new Map(tripsCsv.map(trip => [trip.trip_id, trip]))
+
+        logger.printLoading(`Collecting stop information`)
+
+        const stops = new Map()
+
+        for (const stop of stopsCsv) {
+            const id = SEARCH.normalize(stop.stop_name, '_')
+            const gtfsIdArray = stop.stop_id.split(':')
+            const uic = gtfsIdArray[2]?.length === 7 ? gtfsIdArray[2] : undefined
+            const platform = gtfsIdArray[4] || stop.platform_code || undefined
+            const existingStop = stops.get(id)
+            if (existingStop && platform) {
+                existingStop.platforms.push({ name: platform, height: 0, length: 0, linkedPlatforms: [] })
+                existingStop.platforms.sort((a, b) => a.name.localeCompare(b.name))
+                stops.set(id, existingStop)
+            } else {
+                stops.set(id, {
+                    id,
+                    name: stop.stop_name,
+                    platforms: platform ? [{ name: platform, height: 0, length: 0, linkedPlatforms: [] }] : [],
+                    location: {
+                        latitude: Number(stop.stop_lat),
+                        longitude: Number(stop.stop_lon)
+                    },
+                    ids: uic ? { uic} : {},
+                    sources: []
+                })
+            }
+        }
+
         
+        logger.printLoading(`Upload stops to surrealdb`)
+
+        const options = {
+            method: 'POST',
+            headers: {
+                'surreal-ns': 'pis.derzauberer.eu',
+                'surreal-db': 'gtfs',
+                'Accept': 'application/json',
+                'Authorization': 'Basic YWRtaW46YWRtaW4='
+            }
+        }
+
+
+        logger.print(JSON.stringify(Array.from(stops.values())).length.toString())
+
+        let i = 0;
+        for (const stop of stops.values()) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            let responseCache
+            const result = await fetch(`http://localhost:8080/key/stop`, {
+                ...options,
+                signal: controller.signal,
+                body: JSON.stringify(stop)
+            }).then(response => (responseCache = response, response.text()))
+            clearTimeout(timeoutId);
+            logger.printProgress(i++, stops.size, 'uploading')
+        }
+
         logger.printLoading(`Collecting line information`)
         
         const lines = new Map(tripsCsv.map(trip => [trip.trip_id, {
