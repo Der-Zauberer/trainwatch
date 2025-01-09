@@ -1,6 +1,5 @@
 //@ts-check
 
-const { error } = require('console')
 const { executeCommand, Logger, printWarning, printError, SEARCH, FILES, CSV } = require('./clilib')
 const Path = require('path')
 

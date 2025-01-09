@@ -347,35 +347,6 @@ const FILES = {
      * @param { (lines: string[])  => void } callback
      * @param { number } [lineAmount]
      */
-    readAsStream2(name, callback, lineAmount) {
-        lineAmount = lineAmount || 100
-        const fileStream = FileSystem.createReadStream(name)
-        const readline = Readline.createInterface({ input: fileStream, crlfDelay: Infinity, })
-      
-        let lines = []
-        let lineCount = 0
-      
-        readline.on('line', (line) => {
-          lines.push(line)
-          lineCount++
-      
-          if (lineCount === lineAmount) {
-            callback(lines)
-            lines = []
-            lineCount = 0
-          }
-        })
-      
-        readline.on('close', () => lines.length > 0 ? callback(lines) : {})
-        readline.on('error', (error) => { throw new Error(error.message) });
-    },
-
-    /**
-     * 
-     * @param { string } name 
-     * @param { (lines: string[])  => void } callback
-     * @param { number } [lineAmount]
-     */
     readAsStream(name, callback, lineAmount) {
         lineAmount = lineAmount || 100
         const fileStream = FileSystem.openSync(name, 'r');
