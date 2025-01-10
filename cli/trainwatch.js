@@ -1,5 +1,6 @@
 //@ts-check
 
+const { error } = require('console')
 const { executeCommand, Logger, printWarning, printError, SEARCH, FILES, CSV } = require('./clilib')
 const Path = require('path')
 
@@ -39,8 +40,8 @@ class DownloadService {
      * @param { string } file
      */
     downloadApiDBStada = async (clientId, apikey, file) => {
-        const logger = new Logger('DB/Stada', 'stations')
-        printError(`Require client-id, api-key and file as arguments!`, !clientId || !apikey || !file)
+        const logger = new Logger('DB/Stada')
+        if (!clientId || !apikey || !file) printError(`Require client-id, api-key and file as arguments!`)
         const url = 'https://apis.deutschebahn.com/db-api-marketplace/apis/station-data/v2/stations'
         const headers = { 'DB-Client-Id': clientId, 'DB-Api-Key': apikey }
         const stations = new Map(JSON.parse(FILES.readOrUndefined(file) || '[]').map(value => [value.id, value]))
@@ -109,12 +110,12 @@ class DownloadService {
                 }
                 const mergedStation = { ...stations.get(newStation.id), ...newStation }
                 stations.set(newStation.id, this.addSource( mergedStation, source))
-                logger.printProgress(i++, response.result.length, 'Downloading', station.id)
+                logger.printProgress(i++, response.result.length, 'Downloading stations', station.id)
             } catch (error) {
                 printError(`Failed to parse ${station.id} (${error})`)
             }
         }
-        logger.printFinish('downloaded', response.result.length)
+        logger.print(`Downloaded ${response.result.length} stations`, true)
         FILES.write(file, Array.from(stations.values()))
     }
 
@@ -124,8 +125,8 @@ class DownloadService {
      * @param { string } file
      */
     downloadApiDBRisStationsPlatform = async (clientId, apikey, file) => {
-        const logger = new Logger('DB/Ris::Stations', 'stations')
-        printError(`Require client-id, api-key and file as arguments!`, !clientId || !apikey || !file)
+        const logger = new Logger('DB/Ris::Stations')
+        if (!clientId || !apikey || !file) printError(`Require client-id, api-key and file as arguments!`)
         const headers = { 'DB-Client-Id': clientId, 'DB-Api-Key': apikey }
         const stations = new Map(JSON.parse(FILES.readOrUndefined(file) || '[]').map(value => [value.id, value]))
         const stationQueue = Array.from(stations.keys())
@@ -165,14 +166,14 @@ class DownloadService {
                     updated: new Date().toISOString().split('T')[0]
                 }
                 stations.set(station.id, this.addSource(station, source))
-                logger.printProgress(i++, stations.size, 'Downloading', station.id)
+                logger.printProgress(i++, stations.size, 'Downloading station platforms', station.id)
                 await new Promise(resolve => setTimeout(resolve, 110))
                 if (i == 3) break
             } catch(error) {
                 printWarning(error)
             }
         }
-        logger.printFinish('downloaded', i)
+        logger.print(`Downloaded ${i} stations`, true)
         FILES.write(file, Array.from(stations.values()))
     }
 
@@ -201,8 +202,9 @@ class GtfsService {
      * @param { string } file
      */
     async import(file) {
-        printError(`Require file as arguments!`, !file)
-        const logger = new Logger('GTFS-Import', 'gtfs lines')
+
+        if (!file) printError(`Require file as arguments!`)
+        const logger = new Logger('GTFS-Import')
 
         logger.printLoading(`Importing GTFS data from ${file}`)
         
@@ -228,6 +230,7 @@ class GtfsService {
             const uic = gtfsIdArray[2]?.length === 7 ? gtfsIdArray[2] : undefined
             const platform = gtfsIdArray[4] || stop.platform_code || undefined
             const existingStop = stops.get(id)
+
             if (existingStop && platform) {
                 existingStop.platforms.push({ name: platform, height: 0, length: 0, linkedPlatforms: [] })
                 existingStop.platforms.sort((a, b) => a.name.localeCompare(b.name))
@@ -246,7 +249,6 @@ class GtfsService {
                 })
             }
         }
-
         
         logger.printLoading(`Upload stops to surrealdb`)
 
@@ -259,22 +261,35 @@ class GtfsService {
                 'Authorization': 'Basic YWRtaW46YWRtaW4='
             }
         }
+        /*
+        FILES.write('test.json', Array.from(stops.values()).slice(100))
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 5000)
+        const result = await fetch(`http://localhost:8080/sql`, {
+            ...options,
+            signal: controller.signal,
+            body: `INSERT INTO stop ${JSON.stringify(Array.from(stops.values()).slice(100))}`
+        }).then(response => response.ok ? response.json() : Promise.reject(response.statusText)).catch(error => logger.print(error.message))
+        clearTimeout(timeoutId)
+        logger.print(result)
+        */
 
+        const stopArrays = UTILS.split(Array.from(stops.values()), 1)
 
-        logger.print(JSON.stringify(Array.from(stops.values())).length.toString())
-
-        let i = 0;
-        for (const stop of stops.values()) {
+        for (const [index, stopArray] of stopArrays.entries()) {
+            logger.print(stopArray.length.toString())
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 5000);
-            let responseCache
-            const result = await fetch(`http://localhost:8080/key/stop`, {
+            const result = await fetch(`http://localhost:8080/sql`, {
                 ...options,
                 signal: controller.signal,
-                body: JSON.stringify(stop)
-            }).then(response => (responseCache = response, response.text()))
+                body: `INSERT INTO stop ${JSON.stringify(stopArray)}`
+            })
+                .then(response => response.ok ? response.json() : Promise.reject(response.statusText))
+                .then(response => response[0]?.status !== 'OK' ? response : Promise.reject(response[0].result))
+                .catch(error => printWarning(error.message))
             clearTimeout(timeoutId);
-            logger.printProgress(i++, stops.size, 'uploading')
+            logger.printProgress(index, stopArrays.length, 'uploading gtfs stop')
         }
 
         logger.printLoading(`Collecting line information`)
@@ -340,11 +355,25 @@ class GtfsService {
             FILES.write(Path.join('lines', `lines-${i + 1}.js`), chunk)
         }
 
-        logger.printFinish('processed', lines.size)
+        logger.print(`Processed ${lines.size} lines`)
 
     }
 
 }
+
+const UTILS = {
+
+    /**
+     * @template T
+     * @param { T[] } array
+     * @param { number } size
+     * @returns { T[][] }
+     */
+    split(array, size) {
+        return [...Array(Math.ceil(array.length / size))].map((_, i) => array.slice(i * size, (i + 1) * size));
+    }
+
+} 
 
 /**************
 *   General   *

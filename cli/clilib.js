@@ -3,7 +3,6 @@
 const process = require('node:process')
 const FileSystem = require('node:fs')
 const Path = require('path')
-const Readline = require('readline');
 
 /************
 *   Types   *
@@ -38,31 +37,26 @@ class Test {
 *   Cli   *
 **********/
 
-/** @type { (() => void) | undefined } */
-let removeTemporaryLastLine = undefined
+
 /** @type { (() => void) | undefined } */
 let stopLoading = undefined
 
 /**
  * @param { string } error
- * @param { boolean } [condition]
  */
-function printWarning(error, condition) {
-    if (!condition) return
-    removeTemporaryLastLine?.()
-    stopLoading?.()
-    console.log(`${CLI_YELLOW}WARNING: ${error}${CLI_RESET}`)
+function printWarning(error) {
+    process.stdout.clearLine(0)
+    process.stdout.cursorTo(0)
+    process.stdout.write(`${CLI_YELLOW}WARNING: ${error}${CLI_RESET}\n`)
 }
 
 /**
  * @param { string } error
- * @param { boolean } [condition]
  */
-function printError(error, condition) {
-    if (!condition) return
-    removeTemporaryLastLine?.()
-    stopLoading?.()
-    console.log(`${CLI_RED}ERROR: ${error}${CLI_RESET}`)
+function printError(error) {
+    process.stdout.clearLine(0)
+    process.stdout.cursorTo(0)
+    process.stdout.write(`${CLI_RED}ERROR: ${error}${CLI_RESET}\n`)
     process.exit(-1)
 }
 
@@ -73,7 +67,7 @@ function executeCommand(commands) {
     let branch = commands
     let args = process.argv.slice(2)
     do {
-        printError(`Not enough arguments! Possible arguments: ${Object.keys(branch)}`, args.length === 0)
+        if (args.length === 0) printError(`Not enough arguments! Possible arguments: ${Object.keys(branch)}`)
         if (args[0] === 'help') {
             for (const entry of getCommandHelp(branch)) {
                 console.log(`${entry.usage} ${CLI_GREY}${entry.description}${CLI_RESET}`)
@@ -81,7 +75,7 @@ function executeCommand(commands) {
             return
         }
         const next = branch[args[0]]
-        printError(`Command branch "${args[0]}" doesn't exists!`, !next)
+        if (!next) printError(`Command branch "${args[0]}" doesn't exists!`)
         branch = next
         args = args.slice(1)
     } while (!(typeof branch.execute === 'function'))
@@ -108,107 +102,76 @@ class Logger {
 
     /** @type { string | undefined } */
     #name
-    /** @type { string | undefined } */
-    #type
     /** @type { string } */
     #prefix
-    /** @type { number | undefined } */
-    #timestamnp
     /** @type { number } */
-    #durations = 0
+    #timestamp
 
     /**
      * @param { string } [name] 
-     * @param { string } [type]
      */
-    constructor(name, type) {
+    constructor(name) {
         this.#name = name
-        this.#type = type
         this.#prefix = name ? `${CLI_BLUE}[${this.#name}]${CLI_RESET}` : '';
     }
 
     get name() { return this.#name }
-    get type() { return this.#type }
 
     /**
-     * @param { string } message
-     * @param { any } [response]
-     * @returns { any }
+     * @param { string | number | boolean | object | any[] } message
+     * @param { boolean } [finish]
      */
-    print(message, response) {
-        removeTemporaryLastLine?.()
-        stopLoading?.()
-        console.log(`${this.#prefix} ${message}`)
-        return response
+    print(message, finish) {
+        const output = `${this.#prefix} ${typeof message === 'object' || Array.isArray(message) ? JSON.stringify(message) : message}\n`
+        if (finish) stopLoading?.()
+        process.stdout.clearLine(0)
+        process.stdout.cursorTo(0)
+        process.stdout.write(output)
     }
 
     /**
-     * @param { string } message
-     * @returns { any }
+     * @param { string | number | boolean | object | any[] } message 
      */
     printLoading(message) {
-        removeTemporaryLastLine?.()
         stopLoading?.()
-        console.log(`${this.#prefix} ${message}`)
-        const logLoading = (/** @type {number} */ count) => {
-            const output = `${this.#prefix} ${message} ${'.'.repeat(count)}`
-            process.stdout.moveCursor(0, -1)
-            process.stdout.clearLine(1)
-            console.log(output)
-        }
-        let i = 0
+        const output = `${this.#prefix} ${typeof message === 'object' || Array.isArray(message) ? JSON.stringify(message) : message}`
+        let i = 0;
+        process.stdout.clearLine(0)
+        process.stdout.cursorTo(0)
+        process.stdout.write(output)
         const interval = setInterval(() => {
-            if (i === 4) i = 0
-            logLoading(i++)
+            process.stdout.clearLine(0)
+            process.stdout.cursorTo(0)
+            i = (i + 1) & 3;
+            process.stdout.write(`${output}${'.'.repeat(i)}`)
         }, 250)
-        stopLoading = () => {
-            clearInterval(interval)
-            logLoading(0)
-            stopLoading = undefined
-        }
+        stopLoading = () => { clearInterval(interval) }
     }
 
     /**
-     * @param { number } index
-     * @param { number } amount
-     * @param { string } progressiveVerb
-     * @param { string } [name]
-     * @returns { any }
+     * @param { number } index 
+     * @param { number } amount 
+     * @param { string } status 
+     * @param { string | number | boolean | object | any[] } [message]
      */
-    printProgress(index, amount, progressiveVerb, name) {
-        const now = performance.now() / 1000;
+    printProgress(index, amount, status, message) {
+        stopLoading?.()
+        const seconds = performance.now() / 1000;
         let time = '';
-        if (this.#timestamnp) {
-            const duration = now - this.#timestamnp;
-            this.#durations += duration;
-            const estimation = this.#durations / index * (amount - index)
+        if (this.#timestamp) {
+            const duration = seconds - this.#timestamp
+            const estimation = duration * (amount - 1 - index)
             time = `${CLI_GREY}${(estimation / 60).toFixed(0)}m ${(estimation % 60).toFixed(0)}s${CLI_RESET}`
         }
-        this.#timestamnp = now;
-        const output = `${this.#prefix} ${ ((index / amount) * 100).toFixed(0) }% (${index}/${amount}) ${progressiveVerb} ${this.#type} ${name ? name + ' ' : ''}${time}`
-        removeTemporaryLastLine?.()
-        stopLoading?.()
-        console.log(output)
-        removeTemporaryLastLine = () => {
-            process.stdout.moveCursor(0, -1)
-            process.stdout.clearLine(1)
-            removeTemporaryLastLine = undefined
-        }
-    }
-
-    /**
-     * @param { string } pastVerb
-     * @param { number } amount
-     */
-    printFinish(pastVerb, amount) {
-        removeTemporaryLastLine?.()
-        stopLoading?.()
-        this.#timestamnp = undefined;
-        this.#durations = 0;
-        console.log(`${this.#prefix} Successfully ${pastVerb} ${amount ? amount + ' ' : ''}${this.#type}`)
+        this.#timestamp = seconds;
+        const output = `${this.#prefix} ${(((index + 1) / amount) * 100).toFixed(0)}% (${index + 1}/${amount}) ${status} ${time} ${typeof message === 'object' || Array.isArray(message) ? JSON.stringify(message) : message}`
+        process.stdout.clearLine(0)
+        process.stdout.cursorTo(0)
+        process.stdout.write(`${output}`)
     }
 
 }
+
 
 /**********
 *   CSV   *
@@ -502,9 +465,9 @@ const SEARCH = {
 
 /**
  * @param { Test[] } tests
- * @param { boolean } [messurePerformance]
+ * @param { boolean } [benchmark]
  */
-function test(tests, messurePerformance) {
+function test(tests, benchmark) {
     const WARMUP_CYCLES = 100
     const EXECUTION_CYCLES = 5000
     let passedCount = 0
@@ -513,7 +476,7 @@ function test(tests, messurePerformance) {
         try { 
             const result = test.execute()
             let average = undefined
-            if (messurePerformance) {
+            if (benchmark) {
                 const consoleLog = console.log;
                 console.log = () => {}
                 for (let i = 0; i < WARMUP_CYCLES; i++) test.execute()
