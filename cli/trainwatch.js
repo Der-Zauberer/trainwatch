@@ -1,6 +1,5 @@
 //@ts-check
 
-const { error } = require('console')
 const { executeCommand, Logger, printWarning, printError, SEARCH, FILES, CSV } = require('./clilib')
 const Path = require('path')
 
@@ -26,6 +25,63 @@ class Source {
     url
     /** @type { string } */
     updated
+}
+
+/************
+*   Utils   *
+************/
+
+const UTILS = {
+
+    /**
+     * @template T
+     * @param { T[] } array
+     * @param { number } size
+     * @returns { T[][] }
+     */
+    split(array, size) {
+        return [...Array(Math.ceil(array.length / size))].map((_, i) => array.slice(i * size, (i + 1) * size));
+    },
+
+    /**
+     * @param {{ address: string, namespace: string, database: string, username: string, password: string }} target 
+     * @param { string } body 
+     * @returns { Promise<any[]> }
+     */
+    async surrealDb(target, body) {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 5000)
+        const options = {
+            method: 'POST',
+            headers: {
+                'surreal-ns': target.namespace,
+                'surreal-db': target.database,
+                'Accept': 'application/json',
+                'Authorization': `Basic ${btoa(`${target.username}:${target.password}`)}`
+            },
+            signal: controller.signal,
+            body
+        }
+        try {
+            const response = await fetch(target.address, options);
+            clearTimeout(timeoutId);
+            if (!response.ok) {
+                throw new Error(`HTTP error: ${response.status}`);
+            }
+            const data = await response.json();
+            if (data[0]?.status !== undefined && data[0].status !== 'OK') {
+                throw new Error(`Surrealdb error: ${data[0].result}`);
+            }
+            return data;
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                throw new Error(`HTTP error: Request timed out`);
+            } else {
+                throw new Error(`HTTP error: ${error.message}`);
+            }
+        }
+    }
+
 }
 
 /***************
@@ -227,7 +283,7 @@ class GtfsService {
         for (const stop of stopsCsv) {
             const id = SEARCH.normalize(stop.stop_name, '_')
             const gtfsIdArray = stop.stop_id.split(':')
-            const uic = gtfsIdArray[2]?.length === 7 ? gtfsIdArray[2] : undefined
+            const uic = gtfsIdArray[2]?.length === 7 && !isNaN(gtfsIdArray[2]) ? Number(gtfsIdArray[2]) : undefined
             const platform = gtfsIdArray[4] || stop.platform_code || undefined
             const existingStop = stops.get(id)
 
@@ -244,7 +300,7 @@ class GtfsService {
                         latitude: Number(stop.stop_lat),
                         longitude: Number(stop.stop_lon)
                     },
-                    ids: uic ? { uic} : {},
+                    ids: uic ? { uic } : {},
                     sources: []
                 })
             }
@@ -252,44 +308,16 @@ class GtfsService {
         
         logger.printLoading(`Upload stops to surrealdb`)
 
-        const options = {
-            method: 'POST',
-            headers: {
-                'surreal-ns': 'pis.derzauberer.eu',
-                'surreal-db': 'gtfs',
-                'Accept': 'application/json',
-                'Authorization': 'Basic YWRtaW46YWRtaW4='
-            }
-        }
-        /*
-        FILES.write('test.json', Array.from(stops.values()).slice(100))
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 5000)
-        const result = await fetch(`http://localhost:8080/sql`, {
-            ...options,
-            signal: controller.signal,
-            body: `INSERT INTO stop ${JSON.stringify(Array.from(stops.values()).slice(100))}`
-        }).then(response => response.ok ? response.json() : Promise.reject(response.statusText)).catch(error => logger.print(error.message))
-        clearTimeout(timeoutId)
-        logger.print(result)
-        */
-
-        const stopArrays = UTILS.split(Array.from(stops.values()), 1)
-
+        const stopArrays = UTILS.split(Array.from(stops.values()), 1000)
         for (const [index, stopArray] of stopArrays.entries()) {
-            logger.print(stopArray.length.toString())
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000);
-            const result = await fetch(`http://localhost:8080/sql`, {
-                ...options,
-                signal: controller.signal,
-                body: `INSERT INTO stop ${JSON.stringify(stopArray)}`
-            })
-                .then(response => response.ok ? response.json() : Promise.reject(response.statusText))
-                .then(response => response[0]?.status !== 'OK' ? response : Promise.reject(response[0].result))
-                .catch(error => printWarning(error.message))
-            clearTimeout(timeoutId);
-            logger.printProgress(index, stopArrays.length, 'uploading gtfs stop')
+            await UTILS.surrealDb({
+                address: 'http://localhost:8080/sql',
+                namespace: 'pis.derzauberer.eu',
+                database: 'gtfs',
+                username: 'admin',
+                password: 'admin'
+            }, `INSERT INTO stop ${JSON.stringify(stopArray)}`).catch(printWarning)
+            logger.printProgress(index, stopArrays.length, 'Uploading gtfs stops')
         }
 
         logger.printLoading(`Collecting line information`)
@@ -360,20 +388,6 @@ class GtfsService {
     }
 
 }
-
-const UTILS = {
-
-    /**
-     * @template T
-     * @param { T[] } array
-     * @param { number } size
-     * @returns { T[][] }
-     */
-    split(array, size) {
-        return [...Array(Math.ceil(array.length / size))].map((_, i) => array.slice(i * size, (i + 1) * size));
-    }
-
-} 
 
 /**************
 *   General   *
