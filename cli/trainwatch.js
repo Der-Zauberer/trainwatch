@@ -62,24 +62,25 @@ const UTILS = {
             signal: controller.signal,
             body
         }
+        let response;
         try {
-            const response = await fetch(target.address, options);
-            clearTimeout(timeoutId);
-            if (!response.ok) {
-                throw new Error(`HTTP error: ${response.status}`);
-            }
-            const data = await response.json();
-            if (data[0]?.status !== undefined && data[0].status !== 'OK') {
-                throw new Error(`Surrealdb error: ${data[0].result}`);
-            }
-            return data;
+            response = await fetch(target.address, options);
         } catch (error) {
             if (error.name === 'AbortError') {
-                throw new Error(`HTTP error: Request timed out`);
+                throw new Error(`Request timed out`);
             } else {
-                throw new Error(`HTTP error: ${error.message}`);
+                throw new Error(`${error.message}`);
             }
         }
+        clearTimeout(timeoutId);
+        if (!response.ok) {
+            throw new Error(`${response.statusText}`);
+        }
+        const data = await response.json();
+        if (data[0]?.status !== undefined && data[0].status !== 'OK') {
+            throw new Error(`${data[0].result}`);
+        }
+        return data;
     }
 
 }
@@ -316,7 +317,7 @@ class GtfsService {
                 database: 'gtfs',
                 username: 'admin',
                 password: 'admin'
-            }, `INSERT INTO stop ${JSON.stringify(stopArray)}`).catch(printWarning)
+            }, `INSERT INTO stop ${JSON.stringify(stopArray)} ON DUPLICATE KEY UPDATE id = id, name = name, platforms = platforms, ids = ids, sources = sources;`).catch(printWarning)
             logger.printProgress(index, stopArrays.length, 'Uploading gtfs stops')
         }
 

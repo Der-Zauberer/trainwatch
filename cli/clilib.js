@@ -104,8 +104,10 @@ class Logger {
     #name
     /** @type { string } */
     #prefix
-    /** @type { number } */
+    /** @type { number | undefined } */
     #timestamp
+    /** @type { number } */
+    #durations = 0
 
     /**
      * @param { string } [name] 
@@ -122,7 +124,7 @@ class Logger {
      * @param { boolean } [finish]
      */
     print(message, finish) {
-        const output = `${this.#prefix} ${typeof message === 'object' || Array.isArray(message) ? JSON.stringify(message) : message}\n`
+        const output = `${this.#prefix} ${typeof message === 'object' || Array.isArray(message) ? JSON.stringify(message) : message || ''}\n`
         if (finish) stopLoading?.()
         process.stdout.clearLine(0)
         process.stdout.cursorTo(0)
@@ -134,7 +136,7 @@ class Logger {
      */
     printLoading(message) {
         stopLoading?.()
-        const output = `${this.#prefix} ${typeof message === 'object' || Array.isArray(message) ? JSON.stringify(message) : message}`
+        const output = `${this.#prefix} ${typeof message === 'object' || Array.isArray(message) ? JSON.stringify(message) : message || ''}`
         let i = 0;
         process.stdout.clearLine(0)
         process.stdout.cursorTo(0)
@@ -143,7 +145,7 @@ class Logger {
             process.stdout.clearLine(0)
             process.stdout.cursorTo(0)
             i = (i + 1) & 3;
-            process.stdout.write(`${output}${'.'.repeat(i)}`)
+            process.stdout.write(`${output} ${'.'.repeat(i)}`)
         }, 250)
         stopLoading = () => { clearInterval(interval) }
     }
@@ -156,15 +158,20 @@ class Logger {
      */
     printProgress(index, amount, status, message) {
         stopLoading?.()
-        const seconds = performance.now() / 1000;
+        const now = performance.now();
         let time = '';
         if (this.#timestamp) {
-            const duration = seconds - this.#timestamp
-            const estimation = duration * (amount - 1 - index)
+            const duration = now - this.#timestamp
+            this.#durations += duration
+            const estimation = (this.#durations / index * (amount - index)) / 1000
             time = `${CLI_GREY}${(estimation / 60).toFixed(0)}m ${(estimation % 60).toFixed(0)}s${CLI_RESET}`
         }
-        this.#timestamp = seconds;
-        const output = `${this.#prefix} ${(((index + 1) / amount) * 100).toFixed(0)}% (${index + 1}/${amount}) ${status} ${time} ${typeof message === 'object' || Array.isArray(message) ? JSON.stringify(message) : message}`
+        this.#timestamp = now;
+        if (amount === index - 1) {
+            this.#timestamp = 0
+            this.#durations = 0
+        }
+        const output = `${this.#prefix} ${(((index + 1) / amount) * 100).toFixed(0)}% (${index + 1}/${amount}) ${status} ${time} ${typeof message === 'object' || Array.isArray(message) ? JSON.stringify(message) : message || ''}`
         process.stdout.clearLine(0)
         process.stdout.cursorTo(0)
         process.stdout.write(`${output}`)
