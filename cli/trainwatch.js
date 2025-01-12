@@ -357,18 +357,16 @@ class GtfsService {
                         number: designation[1] || '0'
                     }
                 ],
-                operator: `operator:${SEARCH.normalize(agencyIds.get(route.agency_id).agency_name), '_'}`
+                operator: `operator:${SEARCH.normalize(agencyIds.get(route.agency_id).agency_name, '_')}`
             }
         })
-
-        logger.print(JSON.stringify(routes[0]).replace(/(?<="type":\s?)("[^"]+")/, '$1').replace(/(?<="operator": )("[^"]+")/, '$1'))
 
         logger.printLoading(`Upload routes to surrealdb`)
 
         const routesArrays = UTILS.split(Array.from(routes.values()), 1000)
         for (const [index, routesArray] of routesArrays.entries()) {
-            await UTILS.surrealDb(surrealDb, `INSERT INTO route ${JSON.stringify(routesArray).replace(/(?<="type": )("[^"]+")/, '$1').replace(/(?<="operator": )("[^"]+")/, '$1')} ON DUPLICATE KEY UPDATE id = id;`).catch(printWarning)
-            logger.printProgress(index, operatorArrays.length, 'Uploading gtfs routes')
+            await UTILS.surrealDb(surrealDb, `INSERT INTO route ${JSON.stringify(routesArray).replace(/(?<="type":)"([^"]+)"/g, '$1').replace(/(?<="operator":)"([^"]+)"/g, '$1')} ON DUPLICATE KEY UPDATE id = id;`).catch(printWarning)
+            logger.printProgress(index, routesArrays.length, 'Uploading gtfs routes')
         }
 
         return
