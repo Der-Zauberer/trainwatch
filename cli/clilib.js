@@ -164,7 +164,7 @@ class Logger {
             const duration = now - this.#timestamp
             this.#durations += duration
             const estimation = (this.#durations / index * (amount - index)) / 1000
-            time = `${CLI_GREY}${(estimation / 60).toFixed(0)}m ${(estimation % 60).toFixed(0)}s${CLI_RESET}`
+            time = `${CLI_GREY}${Math.floor((estimation / 60))}m ${Math.floor(estimation % 60)}s${CLI_RESET}`
         }
         this.#timestamp = now;
         if (amount === index - 1) {
@@ -178,7 +178,6 @@ class Logger {
     }
 
 }
-
 
 /**********
 *   CSV   *

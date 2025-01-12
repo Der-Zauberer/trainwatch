@@ -1,5 +1,6 @@
 //@ts-check
 
+const { type } = require('os')
 const { executeCommand, Logger, printWarning, printError, SEARCH, FILES, CSV } = require('./clilib')
 const Path = require('path')
 
@@ -81,7 +82,7 @@ const UTILS = {
             throw new Error(`${data[0].result}`);
         }
         return data;
-    }
+    },
 
 }
 
@@ -259,9 +260,16 @@ class GtfsService {
      * @param { string } file
      */
     async import(file) {
-
         if (!file) printError(`Require file as arguments!`)
         const logger = new Logger('GTFS-Import')
+
+        const surrealDb = {
+            address: 'http://localhost:8080/sql',
+            namespace: 'pis.derzauberer.eu',
+            database: 'gtfs',
+            username: 'admin',
+            password: 'admin'
+        }
 
         logger.printLoading(`Importing GTFS data from ${file}`)
         
@@ -284,7 +292,7 @@ class GtfsService {
         for (const stop of stopsCsv) {
             const id = SEARCH.normalize(stop.stop_name, '_')
             const gtfsIdArray = stop.stop_id.split(':')
-            const uic = gtfsIdArray[2]?.length === 7 && !isNaN(gtfsIdArray[2]) ? Number(gtfsIdArray[2]) : undefined
+            const uic = gtfsIdArray[2] !== undefined && gtfsIdArray[2].length === 7 && !isNaN(gtfsIdArray[2]) ? Number(gtfsIdArray[2]) : undefined
             const platform = gtfsIdArray[4] || stop.platform_code || undefined
             const existingStop = stops.get(id)
 
@@ -311,15 +319,59 @@ class GtfsService {
 
         const stopArrays = UTILS.split(Array.from(stops.values()), 1000)
         for (const [index, stopArray] of stopArrays.entries()) {
-            await UTILS.surrealDb({
-                address: 'http://localhost:8080/sql',
-                namespace: 'pis.derzauberer.eu',
-                database: 'gtfs',
-                username: 'admin',
-                password: 'admin'
-            }, `INSERT INTO stop ${JSON.stringify(stopArray)} ON DUPLICATE KEY UPDATE id = id, name = name, platforms = platforms, ids = ids, sources = sources;`).catch(printWarning)
+            await UTILS.surrealDb(surrealDb, `INSERT INTO stop ${JSON.stringify(stopArray)} ON DUPLICATE KEY UPDATE id = id;`).catch(printWarning)
             logger.printProgress(index, stopArrays.length, 'Uploading gtfs stops')
         }
+
+        logger.printLoading(`Collecting agency information`)
+
+        const operators = agencyCsv.map(agency => ({
+            id: SEARCH.normalize(agency.agency_name, '_'),
+            name: agency.agency_name,
+            address: agency.agency_phone ? { phone: agency.agency_phone }: {},
+            website: agency.agency_url,
+        }))
+
+        logger.printLoading(`Upload operators to surrealdb`)
+
+        const operatorArrays = UTILS.split(Array.from(operators.values()), 1000)
+        for (const [index, operatorArray] of operatorArrays.entries()) {
+            await UTILS.surrealDb(surrealDb, `INSERT INTO operator ${JSON.stringify(operatorArray)} ON DUPLICATE KEY UPDATE id = id;`).catch(printWarning)
+            logger.printProgress(index, operatorArrays.length, 'Uploading gtfs operators')
+        }
+
+        logger.printLoading(`Collecting route information`)
+
+        const types = new Map((await UTILS.surrealDb(surrealDb, `SELECT * FROM type;`)
+            .then(result => result[0].result)
+            .catch(printWarning)
+        ).map(type => [type.id.split(':')[1], type.id]))
+
+        const routes = routesCsv.map(route => {
+            const designation = route.route_short_name.split(/(?<=[A-z]|^)(?=\d)/);
+            return {
+                name: route.route_long_name,
+                designations: [
+                    {
+                        type: types.get(designation[0].toLowerCase()) || 'type:b',
+                        number: designation[1] || '0'
+                    }
+                ],
+                operator: `operator:${SEARCH.normalize(agencyIds.get(route.agency_id).agency_name), '_'}`
+            }
+        })
+
+        logger.print(JSON.stringify(routes[0]).replace(/(?<="type":\s?)("[^"]+")/, '$1').replace(/(?<="operator": )("[^"]+")/, '$1'))
+
+        logger.printLoading(`Upload routes to surrealdb`)
+
+        const routesArrays = UTILS.split(Array.from(routes.values()), 1000)
+        for (const [index, routesArray] of routesArrays.entries()) {
+            await UTILS.surrealDb(surrealDb, `INSERT INTO route ${JSON.stringify(routesArray).replace(/(?<="type": )("[^"]+")/, '$1').replace(/(?<="operator": )("[^"]+")/, '$1')} ON DUPLICATE KEY UPDATE id = id;`).catch(printWarning)
+            logger.printProgress(index, operatorArrays.length, 'Uploading gtfs routes')
+        }
+
+        return
 
         logger.printLoading(`Collecting line information`)
         
