@@ -1,7 +1,7 @@
 import { Surreal } from 'surrealdb';
 import type { App } from 'vue';
 
-const surrealdb = new Surreal();
+const surrealdb = new Surreal()
 
 try {
     await surrealdb.connect('ws://localhost:8080/rpc', {
@@ -14,7 +14,7 @@ try {
 
 export default {
     install(app: App) {
-        app.config.globalProperties.$surrealdb = surrealdb;
-        app.provide('surrealdb', surrealdb);
+        app.config.globalProperties.$surrealdb = surrealdb
+        app.provide('surrealdb', surrealdb)
     }
-};
+}
