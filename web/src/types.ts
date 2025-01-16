@@ -1,5 +1,10 @@
 import type { RecordId } from "surrealdb";
 
+export type HttpError = {
+    statusCode: number,
+    message: string
+}
+
 export type Search = {
     id: RecordId
     name: string

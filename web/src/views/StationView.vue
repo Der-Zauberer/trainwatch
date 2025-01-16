@@ -2,7 +2,7 @@
 <template>
 	<div class="container-md">
 
-		<SearchComponent @search="nameId = $event"/>
+		<SearchComponent @search="parameter.id = $event"/>
 
 		<swd-card>
 			<h3>
@@ -64,15 +64,15 @@ import type { Stop } from '@/types';
 import { xref } from '@/xref';
 import type Surreal from 'surrealdb';
 import { RecordId } from 'surrealdb';
-import { inject, ref } from 'vue';
+import { inject, reactive } from 'vue';
 
 const surrealdb = inject('surrealdb') as Surreal
 
-const nameId = ref('singen_hohentwiel')
+const parameter = reactive({ id: 'singen_hohentwiel' })
 
 const stop = xref({
-	parameter: { nameId },
-	loader: () => surrealdb.select<Stop>(new RecordId('stop', nameId.value))
+	parameter,
+	loader: () => surrealdb.select<Stop>(new RecordId('stop', parameter.id))
 })
 
 </script>

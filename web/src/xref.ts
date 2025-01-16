@@ -1,9 +1,8 @@
-import { ref, watch, type Ref } from "vue";
+import { ref, watch, type Reactive, type Ref } from "vue";
 
-export type XRefValue<T, P> = ((parameter: P, abortSignal: AbortSignal) => Promise<T> | T | undefined) | Promise<T> | T | undefined
-export type XOptionParameter = { [key: string]: Ref<unknown | undefined> } | {}
+export type XRefValue<T, P extends Reactive<unknown>> = ((parameter: P, abortSignal: AbortSignal) => Promise<T> | T | undefined) | Promise<T> | T | undefined
 
-export type XRef<T, P extends XOptionParameter> = Ref<T> & {
+export type XRef<T, P extends Reactive<unknown>> = Ref<T> & {
     readonly error: Ref<unknown | undefined>
     readonly loading: Ref<boolean>
     readonly empty: Ref<boolean>
@@ -11,7 +10,7 @@ export type XRef<T, P extends XOptionParameter> = Ref<T> & {
     reload: (value?: XRefValue<T, P>) => XRef<T, P>
 }
 
-export type XRefOptions<T, P> = {
+export type XRefOptions<T, P extends Reactive<unknown>> = {
     parameter?: P
     initializer?: XRefValue<T, P>
     loader: XRefValue<T, P>
@@ -19,7 +18,7 @@ export type XRefOptions<T, P> = {
 
 export enum XRefStatus { EMPTY, LOADING, RESOLVED, ERROR }
 
-export function xref<T, P extends XOptionParameter>(options: XRefOptions<T, P>): XRef<T | undefined, P> {
+export function xref<T, P extends Reactive<unknown>>(options: XRefOptions<T, P>): XRef<T | undefined, P> {
     const reference = ref<T | undefined>() as XRef<T | undefined, P>;
     const abort: { value: AbortController | undefined } = { value: undefined }
 
@@ -56,18 +55,14 @@ export function xref<T, P extends XOptionParameter>(options: XRefOptions<T, P>):
     }
 
     if (options.parameter) {
-        Object.values(options.parameter).forEach((inputRef: Ref<unknown | undefined>) => {
-            watch(inputRef, (newValue: unknown, oldValue: unknown) => {
-                if (newValue !== oldValue) {
-                    reference.reload()
-                }
-            })
+        watch(options.parameter, () => {
+            reference.reload()
         })
     }
     return reference
 }
 
-async function resolve<T, P extends XOptionParameter>(value: XRefValue<T, P>, reference: XRef<T | undefined, P>, options: XRefOptions<T, P>, abort: { value: AbortController | undefined }) {
+async function resolve<T, P extends Reactive<unknown>>(value: XRefValue<T, P>, reference: XRef<T | undefined, P>, options: XRefOptions<T, P>, abort: { value: AbortController | undefined }) {
     const newAbort = new AbortController()
     reference.status.value = XRefStatus.LOADING
     try {

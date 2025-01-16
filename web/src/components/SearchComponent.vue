@@ -1,7 +1,7 @@
 <template>
     <swd-dropdown>
         <swd-input>
-            <input id="search-input" @input="name = (<any>$event.target).value">
+            <input id="search-input" v-model="parameter.name">
             <input hidden @select="select((<any>$event.target).value)">
             <swd-icon class="search" onclick="this.parentElement.querySelector('input').focus()"/>
         </swd-input>
@@ -24,16 +24,17 @@ swd-dropdown {
 import type { Search } from '@/types';
 import { xref } from '@/xref';
 import type Surreal from 'surrealdb';
-import { inject, ref } from 'vue';
+import { inject, reactive } from 'vue';
 
 const emit = defineEmits(['search'])
 
 const surrealdb = inject('surrealdb') as Surreal
-const name = ref('')
+
+const parameter = reactive({ name: '' })
 
 const results = xref({
-    parameter: { name },
-    loader: (parameter) => !name.value ? [] : surrealdb.query<Search[]>('fn::search::search($name)', { name: parameter.name.value }).then(result => result.flat())
+    parameter,
+    loader: (parameter) => !parameter.name ? [] : surrealdb.query<Search[]>('fn::search::search($name)', { name: parameter.name }).then(result => result.flat())
 })
 
 const select = (value: string) => {

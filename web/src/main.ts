@@ -10,6 +10,7 @@ import cookies from './services/cookies.service'
 import HomeView from './views/HomeView.vue'
 import StationView from './views/StationView.vue'
 import LoginView from './views/LoginView.vue'
+import TableView from './views/TableView.vue'
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -28,6 +29,11 @@ const router = createRouter({
             path: '/stations',
             name: 'station',
             component: StationView,
+        },
+        {
+            path: '/table',
+            name: 'table',
+            component: TableView,
         }
     ],
 })

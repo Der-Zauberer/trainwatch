@@ -3,7 +3,7 @@
 
         <h3>Login</h3>
 
-        <form @submit="$event.preventDefault(); login($event)">
+        <form @submit="$event.preventDefault(); login()">
 
             <swd-input>
                 <label for="login-username" >Username</label>
@@ -45,6 +45,8 @@ form * { margin: 0 }
 </style>
 
 <script setup lang="ts">
+import type { CookieService } from '@/services/cookies.service';
+import { SurrealDbError } from 'surrealdb';
 import { inject, ref, reactive, toRaw } from 'vue';
 
 const cookies = inject('cookies') as CookieService
@@ -58,7 +60,7 @@ async function login() {
         console.log(token)
         error.value = undefined
     } catch (exception) {
-        error.value = exception.message
+        error.value = (exception as SurrealDbError).message
     }
 }
 
