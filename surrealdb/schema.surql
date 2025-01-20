@@ -2,50 +2,16 @@
 -- functions --
 ---------------
 
-DEFINE FUNCTION OVERWRITE fn::name::normalize($name: string, $seperator: option<string>) {
-    RETURN function($name, $seperator) {
-        const [name, seperator] = arguments;
-        const replacements = { 'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'ß': 'ss' };
-        const isWhitespace = (char) => char === ' ' || char === '/' || char === '-' || char === '(' || char === ')';
-        let formatted = '';
-        let blank = name.length > 0 && isWhitespace(name[0]);
-        for (let char of name.toLowerCase()) {
-            if (replacements[char]) {
-                formatted += replacements[char];
-                blank = false;
-            } else if (isWhitespace(char)) {
-                if (!blank) {
-                    if (seperator) formatted += seperator;
-                    blank = true;
-                }
-            } else if ((char >= 'a' && char <= 'z') || (char >= '0' && char <= '9')) {
-                formatted += char;
-                blank = false;
-            } else if (char.charCodeAt(0) > 127) {
-                const normalized = char.normalize('NFD');
-                if (char !== normalized) formatted += normalized[0];
-            }
-        }
-        if (blank && seperator) {
-            return formatted.slice(0, -1);
-        }
-        return formatted;
-    } 
+DEFINE FUNCTION OVERWRITE fn::search::normalize($name: string, $seperator: option<string>) {
+    LET $result = $name.lowercase().replace('ä', 'ae').replace('ö', 'oe').replace('ü', 'ue').slug();
+    IF ($seperator != NONE && $seperator != '-') {
+        RETURN string::replace($result, '-', $seperator);
+    };
+    RETURN $result;
 };
 
-DEFINE FUNCTION OVERWRITE fn::name::extract_ids($object: object) {
-    RETURN function($object) {
-        const [object] = arguments;
-        const ids = [];
-        for (const [key, value] of Object.entries(object)) {
-            if (Array.isArray(value)) {
-                value.forEach(id => ids.push(id.toString().toLowerCase()))
-            } else {
-                ids.push(value.toString().toString().toLowerCase())
-            }
-        }
-        return ids;
-    }
+DEFINE FUNCTION OVERWRITE fn::search::extract_ids($object: object) {
+    RETURN $object.values().flatten().map(|$id| type::string($id).lowercase());
 };
 
 DEFINE FUNCTION OVERWRITE fn::search::n_word_edge_ngram($name: string) {
@@ -85,7 +51,7 @@ DEFINE FUNCTION OVERWRITE fn::search::sort_beginn_score_matching($search: string
 };
 
 DEFINE FUNCTION OVERWRITE fn::search::search($name: string) {
-    RETURN array::flatten(SELECT VALUE entries.*.id.{id, name} AS result FROM type::thing('search', fn::name::normalize($name)));
+    RETURN array::flatten(SELECT VALUE entries.*.id.{id, name} AS result FROM type::thing('search', fn::search::normalize($name)));
 };
 
 ----------
@@ -156,22 +122,22 @@ DEFINE FIELD OVERWRITE entries[*].score ON TABLE search TYPE number;
 
 DEFINE EVENT OVERWRITE stop_update ON TABLE stop WHEN $before.name != $after.name || $before.ids != $after.ids THEN {
     IF $before THEN {
-        FOR $entry IN fn::name::extract_ids($before.ids) {
+        FOR $entry IN fn::search::extract_ids($before.ids) {
             UPDATE type::thing('search', $entry) SET entries = entries.filter(|$v| $v.id = $before.id);
             DELETE type::thing('search', $entry) WHERE array::is_empty(entries);
         };
-        FOR $entry IN fn::search::n_word_edge_ngram(fn::name::normalize($before.name, ' ')) {
+        FOR $entry IN fn::search::n_word_edge_ngram(fn::search::normalize($before.name, ' ')) {
             UPDATE type::thing('search', $entry) SET entries = entries.filter(|$v| $v.id = $before.id);
             DELETE type::thing('search', $entry) WHERE array::is_empty(entries);
         };
     } END;
     IF $after THEN {
-        FOR $entry IN fn::name::extract_ids($after.ids) {
+        FOR $entry IN fn::search::extract_ids($after.ids) {
             UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $after.id, search: $entry, score: $after.score };
             UPDATE ONLY type::thing('search', $entry) SET entries = fn::search::sort_beginn_score_matching($entry, entries);
         };
-        LET $search = fn::name::normalize($after.name);
-        FOR $entry IN fn::search::n_word_edge_ngram(fn::name::normalize($after.name, ' ')) {
+        LET $search = fn::search::normalize($stop.name, '');
+        FOR $entry IN fn::search::n_word_edge_ngram(fn::search::normalize($after.name, ' ')) {
             UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $after.id, search: $search, score: $after.score + 10 };
             UPDATE ONLY type::thing('search', $entry) SET entries = fn::search::sort_beginn_score_matching($entry, entries);
         };
@@ -181,11 +147,11 @@ DEFINE EVENT OVERWRITE stop_update ON TABLE stop WHEN $before.name != $after.nam
 DEFINE FUNCTION OVERWRITE fn::stop::index() {
     DELETE search;
     FOR $stop IN (SELECT * FROM stop) {
-        FOR $entry IN fn::name::extract_ids($stop.ids) {
+        FOR $entry IN fn::search::extract_ids($stop.ids) {
             UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $stop.id, search: $entry, score: $stop.score };
         };
-        LET $search = fn::name::normalize($stop.name);
-        FOR $entry IN fn::search::n_word_edge_ngram(fn::name::normalize($stop.name, ' ')) {
+        LET $search = fn::search::normalize($stop.name, '');
+        FOR $entry IN fn::search::n_word_edge_ngram(fn::search::normalize($stop.name, ' ')) {
             UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $stop.id, search: $search, score: $stop.score + 10 };
         };
     };
