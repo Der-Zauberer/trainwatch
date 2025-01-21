@@ -34,24 +34,8 @@ DEFINE FUNCTION OVERWRITE fn::search::n_word_edge_ngram($name: string) {
     }
 };
 
-DEFINE FUNCTION OVERWRITE fn::search::sort_beginn_score_matching($search: string, $entities:array<any>) {
-    RETURN function($search, $entities) {
-        const [search, entities] = arguments;
-        const beginnScoreMatching = (search, a, b) => {
-            const size = (number) => number === 0 ? 1 : Math.floor(Math.log10(number)) + 1;
-            if (size(a.score) !== size(b.score)) return a.score - b.score;
-            const aStartsWithName = a.search.startsWith(search);
-            const bStartsWithName = b.search.startsWith(search);
-            if (aStartsWithName && !bStartsWithName) return -1;
-            else if (!aStartsWithName && bStartsWithName) return 1;
-            else return a.score - b.score;
-        }
-        return entities.sort((a, b) => beginnScoreMatching(search, a, b));
-    }
-};
-
 DEFINE FUNCTION OVERWRITE fn::search::search($name: string) {
-    RETURN array::flatten(SELECT VALUE entries.*.id.{id, name} AS result FROM type::thing('search', fn::search::normalize($name)));
+    RETURN array::flatten(SELECT VALUE entries.{id, name} AS result FROM type::thing('search', fn::search::normalize($name)));
 };
 
 ----------
@@ -117,7 +101,7 @@ DEFINE TABLE OVERWRITE search SCHEMAFULL
 		FOR select FULL;
 DEFINE FIELD OVERWRITE entries ON TABLE search TYPE array<object>;
 DEFINE FIELD OVERWRITE entries[*].id ON TABLE search TYPE record<stop>;
-DEFINE FIELD OVERWRITE entries[*].search ON TABLE search TYPE string;
+DEFINE FIELD OVERWRITE entries[*].name ON TABLE search TYPE string;
 DEFINE FIELD OVERWRITE entries[*].score ON TABLE search TYPE number;
 
 DEFINE EVENT OVERWRITE stop_update ON TABLE stop WHEN $before.name != $after.name || $before.ids != $after.ids THEN {
@@ -133,29 +117,31 @@ DEFINE EVENT OVERWRITE stop_update ON TABLE stop WHEN $before.name != $after.nam
     } END;
     IF $after THEN {
         FOR $entry IN fn::search::extract_ids($after.ids) {
-            UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $after.id, search: $entry, score: $after.score };
+            UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $after.id, name: $after.name, score: $after.score };
             UPDATE ONLY type::thing('search', $entry) SET entries = fn::search::sort_beginn_score_matching($entry, entries);
         };
         LET $search = fn::search::normalize($stop.name, '');
         FOR $entry IN fn::search::n_word_edge_ngram(fn::search::normalize($after.name, ' ')) {
-            UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $after.id, search: $search, score: $after.score + 10 };
-            UPDATE ONLY type::thing('search', $entry) SET entries = fn::search::sort_beginn_score_matching($entry, entries);
+            LET $score = IF string::starts_with($search, $entry) { 10 } ELSE { 20 };
+            UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $after.id, name: $after.name, score: $after.score + $score };
+            UPDATE ONLY type::thing('search', $entry) SET entries = (SELECT * FROM $parent.entries ORDER BY score);
         };
     } END;
 };
 
 DEFINE FUNCTION OVERWRITE fn::stop::index() {
     DELETE search;
-    FOR $stop IN (SELECT * FROM stop) {
+    FOR $stop IN (SELECT id, name, score, ids FROM stop) {
         FOR $entry IN fn::search::extract_ids($stop.ids) {
-            UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $stop.id, search: $entry, score: $stop.score };
+            UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $stop.id, name: $stop.name, score: $stop.score };
         };
         LET $search = fn::search::normalize($stop.name, '');
         FOR $entry IN fn::search::n_word_edge_ngram(fn::search::normalize($stop.name, ' ')) {
-            UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $stop.id, search: $search, score: $stop.score + 10 };
+            LET $score = IF string::starts_with($search, $entry) { 10 } ELSE { 20 };
+            UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $stop.id, name: $stop.name, score: $stop.score + $score };
         };
     };
-    UPDATE search SET entries = fn::search::sort_beginn_score_matching(record::id(id), entries);
+    UPDATE search SET entries = (SELECT * FROM $parent.entries ORDER BY score);
 };
 
 ----------
