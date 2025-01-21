@@ -2,6 +2,9 @@
 -- functions --
 ---------------
 
+DEFINE ANALYZER OVERWRITE blank TOKENIZERS blank;
+DEFINE ANALYZER OVERWRITE edgengram FILTERS edgengram(1,100);
+
 DEFINE FUNCTION OVERWRITE fn::search::normalize($name: string, $seperator: option<string>) {
     LET $result = $name.lowercase().replace('ä', 'ae').replace('ö', 'oe').replace('ü', 'ue').slug();
     IF ($seperator != NONE && $seperator != '-') {
@@ -15,23 +18,11 @@ DEFINE FUNCTION OVERWRITE fn::search::extract_ids($object: object) {
 };
 
 DEFINE FUNCTION OVERWRITE fn::search::n_word_edge_ngram($name: string) {
-    RETURN function($name) {
-        const [name] = arguments;
-        const parts = [];
-        let currentName = ''
-        for (let i = name.length -1; i >= 0; i--) {
-            if (name[i] !== ' ') currentName = name[i] + currentName;
-            else parts.unshift(currentName);
-        }
-        parts.unshift(currentName);
-        const result = []
-        for (const part of parts) {
-            for (let i = 1; i <= part.length; i++) {
-                result.push(part.slice(0, i));
-            }
-        }
-        return result;
-    }
+    LET $tokens = search::analyze('blank', $name);
+    LET $parts = array::fold((<array> 0..$tokens.len()), { all: $tokens, entries: [] }, |$meta, $index| {
+        RETURN { all: $meta.all, entries: $meta.entries.push(array::slice($meta.all, $index).join('')) };
+    }).entries;
+    RETURN $parts.map(|$part| search::analyze('edgengram', $part)).flatten();
 };
 
 DEFINE FUNCTION OVERWRITE fn::search::search($name: string) {
