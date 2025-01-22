@@ -72,6 +72,6 @@ const parameter = reactive({ name: 'Singen ' })
 
 const stops = resource({
     parameter,
-	loader: (parameter) => surrealdb.query<Stop[][]>(!parameter.name ? 'SELECT * FROM stop LIMIT 1000' : 'SELECT * FROM stop WHERE name CONTAINS $name LIMIT 1000', parameter).then(response => response[0].slice(0, 1000))
+	loader: (parameter) => surrealdb.query<Stop[][]>(!parameter.name ? 'SELECT * FROM stop LIMIT 1000' : 'SELECT * FROM stop WHERE name CONTAINS $name LIMIT 1000', parameter).then(response => response[0].slice(0, 100))
 })
 </script>

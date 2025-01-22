@@ -22,11 +22,11 @@ DEFINE FUNCTION OVERWRITE fn::search::n_word_edge_ngram($name: string) {
     LET $parts = array::fold((<array> 0..$tokens.len()), { all: $tokens, entries: [] }, |$meta, $index| {
         RETURN { all: $meta.all, entries: $meta.entries.push(array::slice($meta.all, $index).join('')) };
     }).entries;
-    RETURN $parts.map(|$part| search::analyze('edgengram', $part)).flatten();
+    RETURN $parts.map(|$part| search::analyze('edgengram', $part)).flatten().distinct();
 };
 
 DEFINE FUNCTION OVERWRITE fn::search::search($name: string) {
-    RETURN array::flatten(SELECT VALUE entries.{id, name} AS result FROM type::thing('search', fn::search::normalize($name)));
+    RETURN array::flatten(SELECT VALUE entries.{id, name} AS result FROM type::thing('search', fn::search::normalize($name, '')));
 };
 
 ----------

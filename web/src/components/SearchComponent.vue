@@ -34,7 +34,7 @@ const parameter = reactive({ name: '' })
 
 const results = resource({
     parameter,
-    loader: (parameter) => !parameter.name ? [] : surrealdb.query<Search[]>('fn::search::search($name)', { name: parameter.name }).then(result => result.flat())
+    loader: (parameter) => !parameter.name ? [] : surrealdb.query<Search[]>('fn::search::search($name)', { name: parameter.name }).then(result => result.flat().splice(0, 20))
 })
 
 const select = (value: string) => {
