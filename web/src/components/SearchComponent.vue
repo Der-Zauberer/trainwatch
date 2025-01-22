@@ -7,7 +7,7 @@
         </swd-input>
         <swd-dropdown-content>
             <swd-selection onfilter="event.preventDefault();">
-                <a v-for="result of results" :key="result.id.id.toString()" v-bind:value="result.id.id">{{ result.name }}</a>
+                <a v-for="result of results.value" :key="result.id.id.toString()" v-bind:value="result.id.id">{{ result.name }}</a>
             </swd-selection>
         </swd-dropdown-content>
     </swd-dropdown>
@@ -21,8 +21,8 @@ swd-dropdown {
 </style>
   
 <script setup lang="ts">
+import { resource } from '@/resource';
 import type { Search } from '@/types';
-import { xref } from '@/xref';
 import type Surreal from 'surrealdb';
 import { inject, reactive } from 'vue';
 
@@ -32,7 +32,7 @@ const surrealdb = inject('surrealdb') as Surreal
 
 const parameter = reactive({ name: '' })
 
-const results = xref({
+const results = resource({
     parameter,
     loader: (parameter) => !parameter.name ? [] : surrealdb.query<Search[]>('fn::search::search($name)', { name: parameter.name }).then(result => result.flat())
 })

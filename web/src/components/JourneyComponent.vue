@@ -65,9 +65,9 @@
 
 <script setup lang="ts">
 import { dateToTime } from '@/functions';
-import { ref } from 'vue';
+import { reactive } from 'vue';
 
-const journey = ref({
+const journey = reactive({
     cancelled: false,
     designation: {
         number: '512',

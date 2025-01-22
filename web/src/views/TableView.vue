@@ -11,7 +11,7 @@
                 <div>Id</div>
                 <div>Name</div>
             </div>
-            <div class="table__row" v-for="stop of stops" :key="stop.name">
+            <div class="table__row" v-for="stop of stops.value" :key="stop.name">
                 <div><samp class="id">{{ stop.id.id.toString() }}</samp></div>
                 <div>{{ stop.name }}</div>
             </div>
@@ -61,8 +61,8 @@
 </style>
 
 <script setup lang="ts">
+import { resource } from '@/resource';
 import type { Stop } from '@/types';
-import { xref } from '@/xref';
 import type Surreal from 'surrealdb';
 import { inject, reactive } from 'vue';
 
@@ -70,7 +70,7 @@ const surrealdb = inject('surrealdb') as Surreal
 
 const parameter = reactive({ name: 'Singen ' })
 
-const stops = xref({
+const stops = resource({
     parameter,
 	loader: (parameter) => surrealdb.query<Stop[][]>(!parameter.name ? 'SELECT * FROM stop LIMIT 1000' : 'SELECT * FROM stop WHERE name CONTAINS $name LIMIT 1000', parameter).then(response => response[0].slice(0, 1000))
 })

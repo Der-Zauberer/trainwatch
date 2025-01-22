@@ -39,9 +39,9 @@ swd-card {
 
 <script setup lang="ts">
 import { dateToTime } from '@/functions';
-import { ref } from 'vue';
+import { reactive } from 'vue';
 
-const direction = ref({
+const direction = reactive({
     cancelled: false,
     designation: {
         number: '512',
