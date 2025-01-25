@@ -27,13 +27,13 @@
 				<label i18n="stop.services"></label>
 				<div v-if="stop.value?.services" class="flex flex-wrap">
 					<swd-chip v-for="service of Object.entries(stop.value.services).filter(entry => entry[1] === true).map(entry => entry[0])" :key="service">
-						<swd-icon class="done"/> {{ service }}
+						<swd-icon class="done-icon"/> {{ service }}
 					</swd-chip>
 				</div>
 			</div>
 			<div class="flex flex-end">
-				<a href="#" class="button grey">bahnhof.de&nbsp;&nbsp;<swd-icon class="external"/></a>
-				<a href="#" class="button grey">Google Maps&nbsp;&nbsp;<swd-icon class="external"/></a>
+				<a href="#" class="button grey-color">bahnhof.de&nbsp;&nbsp;<swd-icon class="external-icon"/></a>
+				<a href="#" class="button grey-color">Google Maps&nbsp;&nbsp;<swd-icon class="external-icon"/></a>
 			</div>
 		</swd-card>
 		   

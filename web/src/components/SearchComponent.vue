@@ -3,7 +3,8 @@
         <swd-input>
             <input id="search-input" v-model="parameter.name">
             <input hidden @select="select((<any>$event.target).value)">
-            <swd-icon class="search" onclick="this.parentElement.querySelector('input').focus()"/>
+            <swd-icon class="search-icon" swd-input-icon/>
+            <swd-icon class="close-icon" swd-input-reset-icon hidden/>
         </swd-input>
         <swd-dropdown-content>
             <swd-selection onfilter="event.preventDefault();">

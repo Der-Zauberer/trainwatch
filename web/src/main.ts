@@ -1,6 +1,5 @@
-import './assets/swd/swd.min.css'
-import './assets/swd/swd.min.js'
-import './assets/trainwatch/style.css'
+import 'simplewebdesign'
+import './assets/style.css'
 
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
