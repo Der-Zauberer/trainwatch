@@ -5,10 +5,10 @@
 		<SearchComponent @search="parameter.id = $event"/>
 
 		<swd-card>
-			<h3>
+			<h4>
 				<span>{{ stop.value?.name }}</span>
 				<swd-subtitle>{{ stop.value?.address?.federalState }}, {{ stop.value?.address?.country }}</swd-subtitle>
-			</h3>
+			</h4>
 			<div class="margin-bottom">
 				<div>{{ stop.value?.address?.street }}</div>
 				<div>{{ stop.value?.address?.zipcode }} {{ stop.value?.address?.city }}</div>
@@ -39,24 +39,32 @@
 		   
 		<swd-card class="flex flex-wrap">
 			<div v-if="stop.value?.ids" v-for="[key, value] of Object.entries(stop.value.ids)" :key="key">
-				<label>{{ key }}</label>
-				<div>
-					<swd-chip v-if="Array.isArray(value)" v-for="name of Array.from(value)" :key="name" class="flex flex-wrap"> {{ name }}</swd-chip>
+				<span>{{ key }}</span>
+				<div class="flex flex-wrap margin-0">
+					<swd-chip v-if="Array.isArray(value)" v-for="name of Array.from(value)" :key="name"> {{ name }}</swd-chip>
 					<swd-chip v-if="!Array.isArray(value)">{{ value }}</swd-chip>
 				</div>
 			</div>
 		</swd-card>
 
-		<swd-card class="sources">
-			<a v-if="stop.value?.sources" v-for="source of stop.value.sources" :key="source.name" v-bind:href="source.url" class="button ghost">
-				{{ source.name }}
-				<swd-subtitle>{{ source.url }}</swd-subtitle>
-				<swd-subtitle>Last updated: {{ source.updated }}</swd-subtitle>
+		<div class="margin-bottom">
+			<a v-if="stop.value?.sources" v-for="source of stop.value.sources" :key="source.name" v-bind:href="source.url" class="sources">
+				<swd-card class="swd-card-hover margin-0">
+					{{ source.name }}
+					<swd-subtitle>{{ source.url }}</swd-subtitle>
+					<swd-subtitle>Last updated: {{ source.updated }}</swd-subtitle>
+				</swd-card>
 			</a>
-		</swd-card>
+		</div>
 
 	</div>
 </template>
+
+<style scoped>
+.sources { text-decoration: none }
+.sources:not(:first-child) swd-card { border-top-left-radius: 0; border-top-right-radius: 0; }
+.sources:not(:last-child) swd-card { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+</style>
 
 <script setup lang="ts">
 import SearchComponent from '@/components/SearchComponent.vue';
