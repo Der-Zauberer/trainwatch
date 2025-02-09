@@ -5,7 +5,7 @@ import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
 import surrealdb from './services/surrealdb.service'
-import cookies from './services/cookies.service'
+import cookies, { CookieService } from './services/cookies.service'
 import HomeView from './views/public/HomeView.vue'
 import StationView from './views/public/StationView.vue'
 import LoginView from './views/public/LoginView.vue'
@@ -18,7 +18,7 @@ const router = createRouter({
         { path: '/', name: 'home', component: HomeView },
         { path: '/login', name: 'login', component: LoginView },
         { path: '/stations', name: 'station', component: StationView },
-        { path: '/studio', name: 'studio', component: StudioHome },
+        { path: '/studio', name: 'studio', component: StudioHome, beforeEnter: CookieService.auth },
         { path: '/table', name: 'table', component: TableView }
     ],
 })

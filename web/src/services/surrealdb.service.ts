@@ -7,7 +7,7 @@ try {
     await surrealdb.connect('ws://localhost:8080/rpc', {
         namespace: "pis.derzauberer.eu",
         database: "develop"
-    });
+    })
 } catch (error) {
     console.error(error)
 }
