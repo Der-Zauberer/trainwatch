@@ -3,7 +3,7 @@
         <input type="text" v-model="search">
     </swd-input>
     <swd-loading-spinner :loading="props.loading">
-        <div class="table">
+        <div class="table" :style="props.columns ? 'grid-template-columns: ' + props.columns : ''">
             <slot></slot>
         </div>        
     </swd-loading-spinner>
@@ -17,7 +17,7 @@ swd-loading-spinner {
 
 .table {
     display: grid;
-    grid-template-columns: fit-content(0) auto;
+    grid-template-columns: max-content auto;
     gap: var(--theme-border-width) 0;
     font-size: 0.8em;
     background-color: var(--theme-element-primary-color);
@@ -40,7 +40,6 @@ swd-loading-spinner {
 
 .table > *:not(:first-child) > * {
     padding: round(0.5em, 1px);
-    vertical-align: middle;
     background-color: var(--theme-background-color);
 }
 
@@ -51,5 +50,5 @@ swd-loading-spinner {
 
 <script lang="ts" setup>
 const search = defineModel()
-const props = defineProps(['loading'])
+const props = defineProps(['loading', 'columns'])
 </script>

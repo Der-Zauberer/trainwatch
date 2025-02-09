@@ -2,14 +2,14 @@
     
     <div class="container-xl">
 
-        <TableComponent v-model="parameter.name" :loading="stops.loading">
+        <TableComponent v-model="parameter.name" :loading="roles.loading">
             <div>
                 <div>Id</div>
                 <div>Name</div>
             </div>
-            <div v-for="stop of stops.value" :key="stop.name">
-                <div><samp class="id">{{ stop.id.id.toString() }}</samp></div>
-                <div>{{ stop.name }}</div>
+            <div v-for="role of roles.value" :key="role.id.id.toString()">
+                <div><samp class="id">{{ role.id.id.toString() }}</samp></div>
+                <div>{{ role.name }}</div>
             </div>
         </TableComponent>
 
@@ -29,16 +29,16 @@
 <script setup lang="ts">
 import TableComponent from '@/components/TableComponent.vue';
 import { resource } from '@/core/resource';
-import type { Stop } from '@/core/types';
+import type { Role } from '@/core/types';
 import type Surreal from 'surrealdb';
 import { inject, reactive } from 'vue';
 
 const surrealdb = inject('surrealdb') as Surreal
 
-const parameter = reactive({ type: 'stop', name: 'Singen ' })
+const parameter = reactive({ name: '' })
 
-const stops = resource({
+const roles = resource({
     parameter,
-	loader: (parameter) => surrealdb.query<Stop[][]>(!parameter.name ? 'SELECT * FROM stop LIMIT 1000' : 'SELECT * FROM stop WHERE name CONTAINS $name LIMIT 1000', parameter).then(response => response[0].slice(0, 100))
+	loader: (parameter) => surrealdb.query<Role[][]>(!parameter.name ? 'SELECT * FROM role LIMIT 1000' : 'SELECT * FROM role WHERE name CONTAINS $name LIMIT 1000', parameter).then(response => response[0].slice(0, 100))
 })
 </script>

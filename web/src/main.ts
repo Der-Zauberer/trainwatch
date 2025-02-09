@@ -9,8 +9,12 @@ import cookies, { CookieService } from './services/cookies.service'
 import HomeView from './views/public/HomeView.vue'
 import StationView from './views/public/StationView.vue'
 import LoginView from './views/public/LoginView.vue'
-import TableView from './views/studio/StudioTableView.vue'
 import StudioHome from './views/studio/StudioHome.vue'
+import StudioStopListView from './views/studio/StudioStopListView.vue'
+import StudioOperatorListView from './views/studio/StudioOperatorListView.vue'
+import StudioTypeListView from './views/studio/StudioTypeListView.vue'
+import StudioUserListView from './views/studio/StudioUserListView.vue'
+import StudioRoleListView from './views/studio/StudioRoleListView.vue'
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -19,7 +23,11 @@ const router = createRouter({
         { path: '/login', name: 'login', component: LoginView },
         { path: '/stations', name: 'station', component: StationView },
         { path: '/studio', name: 'studio', component: StudioHome, beforeEnter: CookieService.auth },
-        { path: '/studio/:id', name: 'table', component: TableView, beforeEnter: CookieService.auth }
+        { path: '/studio/stop', name: 'studio_stop', component: StudioStopListView, beforeEnter: CookieService.auth },
+        { path: '/studio/operator', name: 'studio_operator', component: StudioOperatorListView, beforeEnter: CookieService.auth },
+        { path: '/studio/type', name: 'studio_type', component: StudioTypeListView, beforeEnter: CookieService.auth },
+        { path: '/studio/role', name: 'studio_role', component: StudioRoleListView, beforeEnter: CookieService.auth },
+        { path: '/studio/user', name: 'studio_user', component: StudioUserListView, beforeEnter: CookieService.auth }
     ],
 })
 

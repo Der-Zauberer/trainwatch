@@ -9,7 +9,11 @@
   </swd-menu>
   <swd-navigation v-if="$route.path.startsWith('/studio')">
     <RouterLink to="/studio">Dashboard</RouterLink>
-    <RouterLink to="/studio/stops">Stops</RouterLink>
+    <RouterLink to="/studio/stop">Stops</RouterLink>
+    <RouterLink to="/studio/operator">Operators</RouterLink>
+    <RouterLink to="/studio/type">Types</RouterLink>
+    <RouterLink to="/studio/role">Roles</RouterLink>
+    <RouterLink to="/studio/user">Users</RouterLink>
   </swd-navigation>
   <swd-navigation-content :style="$route.path.startsWith('/studio') ? '' : 'margin-left: 0'">
     <RouterView />
