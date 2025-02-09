@@ -9,7 +9,7 @@ import cookies, { CookieService } from './services/cookies.service'
 import HomeView from './views/public/HomeView.vue'
 import StationView from './views/public/StationView.vue'
 import LoginView from './views/public/LoginView.vue'
-import TableView from './views/studio/TableView.vue'
+import TableView from './views/studio/StudioTableView.vue'
 import StudioHome from './views/studio/StudioHome.vue'
 
 const router = createRouter({
@@ -19,7 +19,7 @@ const router = createRouter({
         { path: '/login', name: 'login', component: LoginView },
         { path: '/stations', name: 'station', component: StationView },
         { path: '/studio', name: 'studio', component: StudioHome, beforeEnter: CookieService.auth },
-        { path: '/table', name: 'table', component: TableView }
+        { path: '/studio/:id', name: 'table', component: TableView, beforeEnter: CookieService.auth }
     ],
 })
 

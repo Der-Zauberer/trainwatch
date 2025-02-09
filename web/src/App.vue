@@ -7,7 +7,13 @@
     <RouterLink to="/login" v-if="!authenticated">Login</RouterLink>
     <a @click="cookieService.logoutAndRedirect()" v-if="authenticated">Logout</a>
   </swd-menu>
-  <RouterView />
+  <swd-navigation v-if="$route.path.startsWith('/studio')">
+    <RouterLink to="/studio">Dashboard</RouterLink>
+    <RouterLink to="/studio/stops">Stops</RouterLink>
+  </swd-navigation>
+  <swd-navigation-content :style="$route.path.startsWith('/studio') ? '' : 'margin-left: 0'">
+    <RouterView />
+  </swd-navigation-content>
 </template>
 
 <script setup lang="ts">

@@ -31,9 +31,9 @@ export enum ResourceStatus { EMPTY, LOADING, RESOLVED, ERROR }
 export function resource<T, P extends Reactive<unknown>>(options: ResourceOptions<T, P>): Resource<T, P> {
     const resource: Resource<T, P> = reactive({
         error: undefined,
-        loading: true,
+        loading: false,
         empty: true,
-        status: ResourceStatus.LOADING,
+        status: ResourceStatus.EMPTY,
         value: undefined,
         reload: (value) => (resolve(value || options.loader, resource, options, abort), resource)
     })
@@ -54,13 +54,16 @@ export function resource<T, P extends Reactive<unknown>>(options: ResourceOption
 
 async function resolve<T, P extends Reactive<unknown>>(value: ResourceValue<T, P>, resource: MutableResource<T, P>, options: ResourceOptions<T, P>, abort: { value: AbortController | undefined }) {
     const newAbort = new AbortController()
+    resource.loading = true
     resource.status = ResourceStatus.LOADING
     try {
         abort.value?.abort()
         const resolved = await Promise.resolve(typeof value === 'function' ? (value as (parameter: P, abortSignal: AbortSignal) => Promise<T> | T | undefined)(options.parameter as unknown as P, newAbort.signal) : value as Promise<T> | T | undefined)
+        resource.loading = false
         resource.value = resolved
         resource.status = resolved === undefined || resolved === null ? ResourceStatus.EMPTY : ResourceStatus.RESOLVED
     } catch (error: unknown) {
+        resource.loading = false
         resource.error = error
         resource.status = ResourceStatus.ERROR
     }
