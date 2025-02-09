@@ -38,7 +38,7 @@ swd-card {
 </style>
 
 <script setup lang="ts">
-import { dateToTime } from '@/functions';
+import { dateToTime } from '@/core/functions';
 import { reactive } from 'vue';
 
 const direction = reactive({

@@ -61,8 +61,8 @@
 </style>
 
 <script setup lang="ts">
-import { resource } from '@/resource';
-import type { Stop } from '@/types';
+import { resource } from '@/core/resource';
+import type { Stop } from '@/core/types';
 import type Surreal from 'surrealdb';
 import { inject, reactive } from 'vue';
 

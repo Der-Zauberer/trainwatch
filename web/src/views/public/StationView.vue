@@ -48,6 +48,7 @@
 		</swd-card>
 
 		<div class="margin-bottom">
+			<swd-card class="margin-0 top-item">Sources</swd-card>
 			<a v-if="stop.value?.sources" v-for="source of stop.value.sources" :key="source.name" v-bind:href="source.url" class="sources">
 				<swd-card class="swd-card-hover margin-0">
 					{{ source.name }}
@@ -68,8 +69,8 @@
 
 <script setup lang="ts">
 import SearchComponent from '@/components/SearchComponent.vue';
-import { resource } from '@/resource';
-import type { Stop } from '@/types';
+import { resource } from '@/core/resource';
+import type { Stop } from '@/core/types';
 import type Surreal from 'surrealdb';
 import { RecordId } from 'surrealdb';
 import { inject, reactive } from 'vue';

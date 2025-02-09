@@ -56,9 +56,9 @@ const error = ref()
 
 async function login() {
     try {
-        const token = await cookies.login(toRaw(credentials))
-        console.log(token)
+        await cookies.loginAndredirect(toRaw(credentials), '/studio')
         error.value = undefined
+
     } catch (exception) {
         error.value = (exception as SurrealDbError).message
     }
