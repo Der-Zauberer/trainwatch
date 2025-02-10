@@ -18,7 +18,7 @@
             <p class="red-text">{{ error }}</p>
 
             <div class="flex flex-end margin-0">
-                <input type="submit" value="Login">
+                <input class="width-100" type="submit" value="Login">
             </div>
 
         </form>
@@ -29,8 +29,9 @@
 <style scoped>
 
 swd-card-outline {
-    max-width: 300px;
+    max-width: 350px;
     margin: calc(var(--theme-element-spacing) * 2) auto;
+    padding: var(--theme-element-spacing);
     border-radius: calc(var(--theme-border-radius) * 2);
     border-color: var(--theme-primary-color);
 }
@@ -39,7 +40,7 @@ form { display: contents }
 form * { margin: 0 }
 
 @media only screen and (max-width: 575px) { swd-card-outline {
-    --theme-border-width: 0px;
+    border: 0;
 }}
 
 </style>
