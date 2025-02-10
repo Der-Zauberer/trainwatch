@@ -21,17 +21,10 @@
 </template>
 
 <style scoped>
-
 .flex {
     margin: 0;
     --theme-element-spacing: calc(var(--theme-inner-element-spacing) / 2)
 }
-
-.id {
-    color: hsl(225, 100%, 50%);
-    background-color: hsla(225, 100%, 50%, 30%);
-}
-
 </style>
 
 <script setup lang="ts">

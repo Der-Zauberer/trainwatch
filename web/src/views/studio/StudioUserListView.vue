@@ -13,15 +13,6 @@
     </div>
 </template>
 
-<style scoped>
-
-.id {
-    color: hsl(225, 100%, 50%);
-    background-color: hsla(225, 100%, 50%, 30%);
-}
-
-</style>
-
 <script setup lang="ts">
 import TableComponent from '@/components/TableComponent.vue';
 import { resource } from '@/core/resource';
