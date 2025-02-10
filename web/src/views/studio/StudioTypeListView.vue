@@ -1,7 +1,5 @@
 <template>
-    
     <div class="container-xl">
-
         <TableComponent v-model="parameter.name" :loading="types.loading" columns="max-content max-content auto">
             <div>
                 <div>Id</div>
@@ -14,9 +12,7 @@
                 <div>{{ type.description }}</div>
             </div>
         </TableComponent>
-
     </div>
-
 </template>
 
 <style scoped>
@@ -41,6 +37,6 @@ const parameter = reactive({ name: '' })
 
 const types = resource({
     parameter,
-	loader: (parameter) => surrealdb.query<Type[][]>(!parameter.name ? 'SELECT * FROM type ORDER BY priority LIMIT 1000' : 'SELECT * FROM type WHERE name CONTAINS $name ORDER BY priority LIMIT 1000', parameter).then(response => response[0].slice(0, 100))
+	loader: (parameter) => surrealdb.query<Type[][]>(`SELECT * FROM type ${ parameter.name ? 'WHERE name CONTAINS $name' : ''} ORDER BY priority LIMIT 1000`, parameter).then(response => response[0].slice(0, 100))
 })
 </script>

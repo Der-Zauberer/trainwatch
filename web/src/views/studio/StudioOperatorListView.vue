@@ -1,7 +1,5 @@
 <template>
-    
     <div class="container-xl">
-
         <TableComponent v-model="parameter.name" :loading="operators.loading">
             <div>
                 <div>Id</div>
@@ -12,9 +10,7 @@
                 <div>{{ operator.name }}<swd-subtitle>{{ [operator.address.federalState, operator.address.country].join(', ') }}</swd-subtitle></div>
             </div>
         </TableComponent>
-
     </div>
-
 </template>
 
 <style scoped>
@@ -39,6 +35,6 @@ const parameter = reactive({ name: '' })
 
 const operators = resource({
     parameter,
-	loader: (parameter) => surrealdb.query<Operator[][]>(!parameter.name ? 'SELECT * FROM operator LIMIT 1000' : 'SELECT * FROM operator WHERE name CONTAINS $name LIMIT 1000', parameter).then(response => response[0].slice(0, 100))
+	loader: (parameter) => surrealdb.query<Operator[][]>(`SELECT * FROM operator ${ parameter.name ? 'WHERE name CONTAINS $name' : '' } LIMIT 1000`, parameter).then(response => response[0].slice(0, 100))
 })
 </script>

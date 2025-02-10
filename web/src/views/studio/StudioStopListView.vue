@@ -1,7 +1,5 @@
 <template>
-    
     <div class="container-xl">
-
         <TableComponent v-model="parameter.name" :loading="stops.loading">
             <div>
                 <div>Id</div>
@@ -12,9 +10,7 @@
                 <div>{{ stop.name }}<swd-subtitle>{{ [stop.address.federalState, stop.address.country].join(', ') }}</swd-subtitle></div>
             </div>
         </TableComponent>
-
     </div>
-
 </template>
 
 <style scoped>
@@ -39,6 +35,6 @@ const parameter = reactive({ name: '' })
 
 const stops = resource({
     parameter,
-	loader: (parameter) => surrealdb.query<Stop[][]>(!parameter.name ? 'SELECT * FROM stop LIMIT 1000' : 'SELECT * FROM stop WHERE name CONTAINS $name LIMIT 1000', parameter).then(response => response[0].slice(0, 100))
+	loader: (parameter) => surrealdb.query<Stop[][]>(`SELECT * FROM stop ${parameter.name ? 'WHERE name CONTAINS $name' : ''} LIMIT 1000`, parameter).then(response => response[0].slice(0, 100))
 })
 </script>

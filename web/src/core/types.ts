@@ -10,6 +10,31 @@ export type Search = {
     name: string
 }
 
+export type Location = {
+    latitude: number
+    longitude: number
+}
+
+export type Address = {
+    street: string | undefined
+    zipcode: string | undefined
+    city: string | undefined
+    federalState: string | undefined
+    country: string | undefined
+}
+
+export type Source = {
+    name: string
+    license: string
+    url: string
+    updated: string
+}
+
+export type Color = {
+    text: string
+    background: string
+}
+
 export type Stop = {
     id: RecordId
     name: string
@@ -51,26 +76,6 @@ export type Stop = {
     [key: string]: unknown
 }
 
-export type Location = {
-    latitude: number
-    longitude: number
-}
-
-export type Address = {
-    street: string | undefined
-    zipcode: string | undefined
-    city: string | undefined
-    federalState: string | undefined
-    country: string | undefined
-}
-
-export type Source = {
-    name: string
-    license: string
-    url: string
-    updated: string
-}
-
 export type Type = {
     id: RecordId
     name: string
@@ -80,16 +85,31 @@ export type Type = {
     classification: 'REGIONAL' | 'LONG_DISTANCE'
 }
 
-export type Color = {
-    text: string
-    background: string
-}
-
 export type Operator = {
     id: RecordId
     name: string
     address: Address
     website: string
+}
+
+export type Route = {
+    id: RecordId
+    name?: string
+    designations: {
+        type: Type
+        number: string
+    }[],
+    operator?: Operator
+}
+
+export type Line = {
+    id: RecordId
+    route: Route
+}
+
+export type Journey = {
+    id: RecordId
+    line: Line
 }
 
 export type Role = {

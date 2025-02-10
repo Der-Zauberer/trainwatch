@@ -12,6 +12,9 @@
     <RouterLink to="/studio/stop">Stops</RouterLink>
     <RouterLink to="/studio/operator">Operators</RouterLink>
     <RouterLink to="/studio/type">Types</RouterLink>
+    <RouterLink to="/studio/route">Routes</RouterLink>
+    <RouterLink to="/studio/line">Lines</RouterLink>
+    <RouterLink to="/studio/journey">Journeys</RouterLink>
     <RouterLink to="/studio/role">Roles</RouterLink>
     <RouterLink to="/studio/user">Users</RouterLink>
   </swd-navigation>

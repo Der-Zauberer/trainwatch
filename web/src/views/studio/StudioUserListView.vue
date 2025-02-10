@@ -1,7 +1,5 @@
 <template>
-    
     <div class="container-xl">
-
         <TableComponent v-model="parameter.name" :loading="users.loading">
             <div>
                 <div>Id</div>
@@ -12,9 +10,7 @@
                 <div>{{ user.name }}<swd-subtitle>{{ user.email }}</swd-subtitle></div>
             </div>
         </TableComponent>
-
     </div>
-
 </template>
 
 <style scoped>
@@ -39,6 +35,6 @@ const parameter = reactive({ name: '' })
 
 const users = resource({
     parameter,
-	loader: (parameter) => surrealdb.query<User[][]>(!parameter.name ? 'SELECT * FROM user LIMIT 1000' : 'SELECT * FROM user WHERE (name CONTAINS $name || email CONTAINS name CONTAINS $name) LIMIT 1000', parameter).then(response => response[0].slice(0, 100))
+	loader: (parameter) => surrealdb.query<User[][]>(`SELECT * FROM user ${ parameter.name ? 'WHERE (name CONTAINS $name || email CONTAINS $name)' : '' } LIMIT 1000`).then(response => response[0].slice(0, 100))
 })
 </script>

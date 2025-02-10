@@ -15,6 +15,9 @@ import StudioOperatorListView from './views/studio/StudioOperatorListView.vue'
 import StudioTypeListView from './views/studio/StudioTypeListView.vue'
 import StudioUserListView from './views/studio/StudioUserListView.vue'
 import StudioRoleListView from './views/studio/StudioRoleListView.vue'
+import StudioRouteListView from './views/studio/StudioRouteListView.vue'
+import StudioLineListView from './views/studio/StudioLineListView.vue'
+import StudioJouneyListView from './views/studio/StudioJouneyListView.vue'
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -26,6 +29,9 @@ const router = createRouter({
         { path: '/studio/stop', name: 'studio_stop', component: StudioStopListView, beforeEnter: CookieService.auth },
         { path: '/studio/operator', name: 'studio_operator', component: StudioOperatorListView, beforeEnter: CookieService.auth },
         { path: '/studio/type', name: 'studio_type', component: StudioTypeListView, beforeEnter: CookieService.auth },
+        { path: '/studio/route', name: 'studio_route', component: StudioRouteListView, beforeEnter: CookieService.auth },
+        { path: '/studio/line', name: 'studio_line', component: StudioLineListView, beforeEnter: CookieService.auth },
+        { path: '/studio/journey', name: 'studio_yourney', component: StudioJouneyListView, beforeEnter: CookieService.auth },
         { path: '/studio/role', name: 'studio_role', component: StudioRoleListView, beforeEnter: CookieService.auth },
         { path: '/studio/user', name: 'studio_user', component: StudioUserListView, beforeEnter: CookieService.auth }
     ],
