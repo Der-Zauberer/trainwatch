@@ -1,12 +1,24 @@
 import type { RecordId } from "surrealdb";
 
+export enum Vehicle {
+    TRAIN,
+    BUS,
+    SHIP,
+    PLANE,
+}
+
+export enum Classification {
+    REGIONAL,
+    LONG_DISTANCE,
+}
+
 export type HttpError = {
     statusCode: number
     message: string
 }
 
 export type Search = {
-    id: RecordId
+    id: RecordId<string>
     name: string
 }
 
@@ -36,7 +48,7 @@ export type Color = {
 }
 
 export type Stop = {
-    id: RecordId
+    id: RecordId<string>
     name: string
     score: number
     platforms: {
@@ -77,23 +89,24 @@ export type Stop = {
 }
 
 export type Type = {
-    id: RecordId
+    id: RecordId<string>
     name: string
     description: string
+    priority: number
     color: Color
     vehicle: 'TRAIN' | 'BUS' | 'SHIP' | 'PLANE'
     classification: 'REGIONAL' | 'LONG_DISTANCE'
 }
 
 export type Operator = {
-    id: RecordId
+    id: RecordId<string>
     name: string
     address: Address
     website: string
 }
 
 export type Route = {
-    id: RecordId
+    id: RecordId<string>
     name?: string
     designations: {
         type: Type
@@ -103,23 +116,23 @@ export type Route = {
 }
 
 export type Line = {
-    id: RecordId
+    id: RecordId<string>
     route: Route
 }
 
 export type Journey = {
-    id: RecordId
+    id: RecordId<string>
     line: Line
 }
 
 export type Role = {
-    id: RecordId
+    id: RecordId<string>
     name: string
     permissions: string[]
 }
 
 export type User = {
-    id: RecordId
+    id: RecordId<string>
     name: string
     email: string
     string?: string

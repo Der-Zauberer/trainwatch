@@ -1,11 +1,16 @@
 <template>
-    <swd-input class="margin-bottom">
-        <input type="text" v-model="search">
-    </swd-input>
+    <div class="header flex width-100">
+        <swd-input>
+            <input type="text" v-model="search">
+            <swd-icon class="search-icon" swd-input-icon></swd-icon>
+            <swd-icon class="close-icon" swd-input-reset-icon hidden></swd-icon>
+        </swd-input>
+        <button @click="emits('add')"><swd-icon class="add-icon"></swd-icon> New</button>
+    </div>
     <swd-loading-spinner :loading="props.loading">
         <div class="table" :style="props.columns ? 'grid-template-columns: ' + props.columns : ''">
             <slot></slot>
-        </div>        
+        </div>
     </swd-loading-spinner>
 </template>
 
@@ -51,4 +56,5 @@ swd-loading-spinner {
 <script lang="ts" setup>
 const search = defineModel()
 const props = defineProps(['loading', 'columns'])
+const emits = defineEmits(['add'])
 </script>

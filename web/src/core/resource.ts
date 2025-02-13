@@ -8,7 +8,7 @@ export type MutableResource<T, P extends Reactive<unknown>> = {
     empty: boolean
     status: ResourceStatus
     value: T | undefined
-    reload: (value?: ResourceValue<T, P>) => Resource<T, P>
+    reload: (value?: ResourceValue<T, P>) => Promise<T>
 }
 
 export type Resource<T, P extends Reactive<unknown>> = {
@@ -17,7 +17,7 @@ export type Resource<T, P extends Reactive<unknown>> = {
     readonly empty: boolean
     readonly status: ResourceStatus
     value: T | undefined
-    reload: (value?: ResourceValue<T, P>) => Resource<T, P>
+    reload: (value?: ResourceValue<T, P>) => Promise<T>
 }
 
 export type ResourceOptions<T, P extends Reactive<unknown>> = {
@@ -35,7 +35,7 @@ export function resource<T, P extends Reactive<unknown>>(options: ResourceOption
         empty: true,
         status: ResourceStatus.EMPTY,
         value: undefined,
-        reload: (value) => (resolve(value || options.loader, resource, options, abort), resource)
+        reload: async (value) => await resolve(value || options.loader, resource, options, abort)
     })
     
     const abort: { value: AbortController | undefined } = { value: undefined }
@@ -47,18 +47,19 @@ export function resource<T, P extends Reactive<unknown>>(options: ResourceOption
     }
 
     if (options.parameter) {
-        watch(options.parameter, () =>  resource.reload())
+        watch(options.parameter, () => resource.reload())
     }
     return resource
 }
 
-async function resolve<T, P extends Reactive<unknown>>(value: ResourceValue<T, P>, resource: MutableResource<T, P>, options: ResourceOptions<T, P>, abort: { value: AbortController | undefined }) {
+async function resolve<T, P extends Reactive<unknown>>(value: ResourceValue<T, P>, resource: MutableResource<T, P>, options: ResourceOptions<T, P>, abort: { value: AbortController | undefined }): Promise<T> {
     const newAbort = new AbortController()
     resource.loading = true
     resource.status = ResourceStatus.LOADING
+    let resolved
     try {
         abort.value?.abort()
-        const resolved = await Promise.resolve(typeof value === 'function' ? (value as (parameter: P, abortSignal: AbortSignal) => Promise<T> | T | undefined)(options.parameter as unknown as P, newAbort.signal) : value as Promise<T> | T | undefined)
+        resolved = await Promise.resolve(typeof value === 'function' ? (value as (parameter: P, abortSignal: AbortSignal) => Promise<T> | T | undefined)(options.parameter as unknown as P, newAbort.signal) : value as Promise<T> | T | undefined)
         resource.loading = false
         resource.value = resolved
         resource.status = resolved === undefined || resolved === null ? ResourceStatus.EMPTY : ResourceStatus.RESOLVED
@@ -68,5 +69,5 @@ async function resolve<T, P extends Reactive<unknown>>(value: ResourceValue<T, P
         resource.status = ResourceStatus.ERROR
     }
     abort.value = newAbort
-    return abort;
+    return resolved as T
 }

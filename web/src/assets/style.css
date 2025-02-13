@@ -19,3 +19,24 @@
     text-decoration: line-through;
     color: red;
 }
+
+/*
+Workaraound
+*/
+swd-loading-spinner {
+    display: initial;
+    height: initial;
+    width: inherit;
+    min-height: inherit;
+    min-width: inherit;
+    cursor: initial;
+}
+
+swd-loading-spinner[loading="true"] {
+    display: inline-block;
+    position: relative;
+    height: max-content;
+    cursor: wait;
+    min-height: calc(1em);
+    min-width: calc(1em);
+}
