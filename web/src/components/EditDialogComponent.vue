@@ -1,15 +1,16 @@
 <template>
-    <swd-dialog shown>
+    <swd-dialog shown v-if="entity.value || entity.loading">
         <swd-card>
             <div class="flex flex-space-between">
-                <h4 class="margin-0">{{ props.title }}</h4>
-                <button class="ghost" @click="emits('cancel')"><swd-icon class="close-icon"></swd-icon></button>
+                <h4 class="margin-0">{{ entity.value?.name || 'Unnamed' }}</h4>
+                <button class="ghost" @click="close()"><swd-icon class="close-icon"></swd-icon></button>
             </div>
-            <swd-loading-spinner :loading="loading" class="width-100"></swd-loading-spinner>
-            <slot v-if="!loading"></slot>
-            <div class="flex" v-if="!loading">
-                <button class="width-100 red-color" @click="emits('cancel')">Cancel</button>
-                <button class="width-100" @click="emits('save')">Save</button>
+            <swd-loading-spinner :loading="entity.loading" class="width-100"></swd-loading-spinner>
+            <slot v-if="!entity.loading"></slot>
+            <button class="width-100 red-color margin-bottom" v-if="!entity.loading" @click="entity.value ? deleteEntity(entity.value) : ''"><swd-icon class="delete-icon"></swd-icon> Delete</button>
+            <div class="flex" v-if="!entity.loading">
+                <button class="width-100 red-color" @click="close()">Cancel</button>
+                <button class="width-100" @click="entity.value ? saveEntity(entity.value) : ''; close()">Save</button>
             </div>
         </swd-card>
     </swd-dialog>
@@ -28,6 +29,52 @@ swd-card {
 </style>
 
 <script setup lang="ts">
-const props = defineProps(['title', 'loading'])
-const emits = defineEmits(['save', 'cancel'])
+import { resource } from '@/core/resource';
+import type { Type } from '@/core/types';
+import { RecordId, type Surreal } from 'surrealdb';
+import { inject, reactive, toRaw, watch } from 'vue';
+
+const surrealdb = inject('surrealdb') as Surreal
+
+const props = defineProps<{
+    record: RecordId<string> | undefined,
+    edit: Type | undefined
+}>()
+
+const emits = defineEmits<{
+    (e: 'update'): void
+    (e: 'update:record', entity: RecordId<string> | undefined): void
+    (e: 'update:edit', entity: Type | undefined): void
+}>()
+
+const parameter = reactive<{ record: RecordId<string> | undefined }>({ record: undefined })
+const entity = resource<Type | undefined, { record: RecordId<string> | undefined }>({
+    parameter: parameter,
+    loader: (edit) => edit.record ? surrealdb.select<Type>(edit.record) : undefined
+})
+
+watch(() => props.record, (record) => parameter.record = toRaw(record))
+watch(() => props.edit, (edit) => entity.reload(edit))
+watch(() => parameter.record, (record) => emits('update:record', record))
+watch(() => entity.value, (value) => emits('update:edit', value))
+
+function close()  {
+    parameter.record = undefined
+    entity.reload(undefined)
+}
+
+async function saveEntity(savebale: Type) {
+    const type = savebale.id.tb
+    if (savebale.id.id === '') savebale.id = undefined as unknown as RecordId<string>
+    await surrealdb.upsert<Type>(type, savebale).then(array => array[0])
+    emits('update')
+}
+
+async function deleteEntity(deletable: Type) {
+    await surrealdb.delete(deletable.id)
+    parameter.record = undefined
+    await entity.reload(undefined)
+    emits('update')
+}
+
 </script>

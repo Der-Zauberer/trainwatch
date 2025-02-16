@@ -28,7 +28,6 @@ swd-loading-spinner {
     background-color: var(--theme-element-primary-color);
     border: solid var(--theme-border-width) var(--theme-element-primary-color);
     border-radius: var(--theme-border-radius);
-    margin-bottom: var(--theme-element-spacing);
 }
 
 .table > * {

@@ -62,12 +62,15 @@ async function resolve<T, P extends Reactive<unknown>>(value: ResourceValue<T, P
         resolved = await Promise.resolve(typeof value === 'function' ? (value as (parameter: P, abortSignal: AbortSignal) => Promise<T> | T | undefined)(options.parameter as unknown as P, newAbort.signal) : value as Promise<T> | T | undefined)
         resource.loading = false
         resource.value = resolved
+        resource.error = undefined
         resource.status = resolved === undefined || resolved === null ? ResourceStatus.EMPTY : ResourceStatus.RESOLVED
     } catch (error: unknown) {
         resource.loading = false
+        resource.value = undefined
         resource.error = error
         resource.status = ResourceStatus.ERROR
     }
+    resource.empty = resource.value === undefined ||  resolved === null
     abort.value = newAbort
     return resolved as T
 }
