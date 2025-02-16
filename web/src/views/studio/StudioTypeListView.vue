@@ -42,33 +42,13 @@
                 <input id="type-color-background" type="color" v-model="edit.color.background">
             </swd-input>
 
-            <swd-dropdown>
-                <swd-input>
-                    <label for="type-vehicle">Vehicle</label>
-                    <input id="type-vehicle" readonly :value="edit.vehicle.toString()">
-                    <swd-icon class="down-icon" swd-input-icon></swd-icon>
-                </swd-input>
-                <input hidden v-model="edit.vehicle">
-                <swd-dropdown-content>
-                    <swd-selection>
-                        <a v-for="vehicle of Object.keys(Vehicle).filter(value => isNaN(Number(value)))" :value="vehicle" :key="vehicle">{{ vehicle }}</a>
-                    </swd-selection>
-                </swd-dropdown-content>
-            </swd-dropdown>
+            <InputDropdownComponent id="type-vehicle" label="Vehicle" v-model="edit.vehicle">
+                <a v-for="vehicle of Object.keys(Vehicle).filter(value => isNaN(Number(value)))" :value="vehicle" :key="vehicle">{{ vehicle }}</a>
+            </InputDropdownComponent>
 
-            <swd-dropdown>
-                <swd-input>
-                    <label for="type-classification">Classification</label>
-                    <input id="type-classification" readonly :value="edit.classification">
-                    <swd-icon class="down-icon" swd-input-icon></swd-icon>
-                </swd-input>
-                <input hidden v-model="edit.classification">
-                <swd-dropdown-content>
-                    <swd-selection>
-                        <a v-for="classification of Object.keys(Classification).filter(value => isNaN(Number(value)))" :value="classification" :key="classification">{{ classification }}</a>
-                    </swd-selection>
-                </swd-dropdown-content>
-            </swd-dropdown>
+            <InputDropdownComponent id="type-classification" label="Classification" v-model="edit.classification">
+                <a v-for="classification of Object.keys(Classification).filter(value => isNaN(Number(value)))" :value="classification" :key="classification">{{ classification }}</a>
+            </InputDropdownComponent>
 
         </div>
     </EditDialogComponent>
@@ -76,6 +56,7 @@
 
 <script setup lang="ts">
 import EditDialogComponent from '@/components/EditDialogComponent.vue';
+import InputDropdownComponent from '@/components/InputDropdownComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
 import { resource } from '@/core/resource';
 import { Classification, Vehicle, type Type } from '@/core/types';
