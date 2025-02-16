@@ -37,7 +37,7 @@ import { inject, reactive, toRaw, watch } from 'vue';
 const surrealdb = inject('surrealdb') as Surreal
 
 const props = defineProps<{
-    record: RecordId<string> | undefined,
+    record: RecordId<string> | undefined
     edit: Type | undefined
 }>()
 
