@@ -30,27 +30,28 @@ swd-card {
 
 <script setup lang="ts">
 import { resource } from '@/core/resource';
-import type { Type } from '@/core/types';
 import { RecordId, type Surreal } from 'surrealdb';
 import { inject, reactive, toRaw, watch } from 'vue';
 
 const surrealdb = inject('surrealdb') as Surreal
 
+type Entity = { id: RecordId<string>, name?: string }
+
 const props = defineProps<{
     record: RecordId<string> | undefined
-    edit: Type | undefined
+    edit: Entity | undefined
 }>()
 
 const emits = defineEmits<{
     (e: 'update'): void
     (e: 'update:record', entity: RecordId<string> | undefined): void
-    (e: 'update:edit', entity: Type | undefined): void
+    (e: 'update:edit', entity: typeof props.edit): void
 }>()
 
 const parameter = reactive<{ record: RecordId<string> | undefined }>({ record: undefined })
-const entity = resource<Type | undefined, { record: RecordId<string> | undefined }>({
+const entity = resource<Entity, { record: RecordId<string> | undefined }>({
     parameter: parameter,
-    loader: (edit) => edit.record ? surrealdb.select<Type>(edit.record) : undefined
+    loader: (edit) => edit.record ? surrealdb.select<Entity>(edit.record) : undefined
 })
 
 watch(() => props.record, (record) => parameter.record = toRaw(record))
@@ -58,19 +59,19 @@ watch(() => props.edit, (edit) => entity.reload(edit))
 watch(() => parameter.record, (record) => emits('update:record', record))
 watch(() => entity.value, (value) => emits('update:edit', value))
 
-function close()  {
+function close() {
     parameter.record = undefined
     entity.reload(undefined)
 }
 
-async function saveEntity(savebale: Type) {
+async function saveEntity(savebale: Entity) {
     const type = savebale.id.tb
     if (savebale.id.id === '') savebale.id = undefined as unknown as RecordId<string>
-    await surrealdb.upsert<Type>(type, savebale).then(array => array[0])
+    await surrealdb.upsert<Entity>(type, savebale).then(array => array[0])
     emits('update')
 }
 
-async function deleteEntity(deletable: Type) {
+async function deleteEntity(deletable: Entity) {
     await surrealdb.delete(deletable.id)
     parameter.record = undefined
     await entity.reload(undefined)

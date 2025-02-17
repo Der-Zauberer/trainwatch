@@ -1,11 +1,11 @@
 <template>
     <div class="container-xl">
-        <TableComponent v-model="parameter.name" :loading="lines.loading">
+        <TableComponent v-model="parameter.name" :loading="lines.loading" @add="edit = create" >
             <div>
                 <div>Id</div>
                 <div>Name</div>
             </div>
-            <div v-for="line of lines.value" :key="line.id.id.toString()">
+            <a v-for="line of lines.value" :key="line.id.id.toString()"  @click="editRecord = line.id" class="white-text">
                 <div><samp class="id">{{ line.id.id.toString() }}</samp></div>
                 <div class="flex">
                     <span>
@@ -15,9 +15,17 @@
                     </span>
                     {{ line.route.name }}
                 </div>
-            </div>
+            </a>
         </TableComponent>
     </div>
+    <EditDialogComponent @update="lines.reload()" v-model:record="editRecord" v-model:edit="edit">
+        <div class="grid-cols-sm-2 grid-cols-1" v-if="edit">
+            <swd-input>
+                <label for="input-id">Id</label>
+                <input id="input-id" :disabled="!!editRecord" :value="edit.id.id" @input="event => edit ? edit.id = new RecordId('line', (event.target as HTMLInputElement).value) : ''">
+            </swd-input>
+        </div>
+    </EditDialogComponent>
 </template>
 
 <style scoped>
@@ -28,18 +36,28 @@
 </style>
 
 <script setup lang="ts">
+import EditDialogComponent from '@/components/EditDialogComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
 import { resource } from '@/core/resource';
-import type { Line } from '@/core/types';
+import type { Line, Route } from '@/core/types';
 import type Surreal from 'surrealdb';
-import { inject, reactive } from 'vue';
+import { RecordId } from 'surrealdb';
+import { inject, reactive, ref } from 'vue';
 
 const surrealdb = inject('surrealdb') as Surreal
 
 const parameter = reactive({ name: '' })
-
 const lines = resource({
     parameter,
 	loader: (parameter) => surrealdb.query<Line[][]>(`SELECT *, route.*, route.designations.{type.*, number} FROM line ${ parameter.name ? 'WHERE route.name CONTAINS $name' : '' } LIMIT 1000`, parameter).then(response => response[0].slice(0, 100))
 })
+
+const editRecord = ref<RecordId<string> | undefined>(undefined)
+const edit = ref<Line | undefined>(undefined)
+
+const create: Line = {
+    id: new RecordId('line', ''),
+    route: undefined as unknown as Route
+}
+
 </script>

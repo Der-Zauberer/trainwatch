@@ -135,7 +135,7 @@ export type User = {
     id: RecordId<string>
     name: string
     email: string
-    string?: string
+    password?: string
     roles: Role[]
     permissions: string[]
 }

@@ -1,5 +1,4 @@
 <template>
-    {{ editRecord }}
     <div class="container-xl">
         <TableComponent v-model="parameter.name" :loading="types.loading" @add="edit = create" columns="max-content max-content auto">
             <div>
@@ -18,8 +17,8 @@
     <EditDialogComponent @update="types.reload()" v-model:record="editRecord" v-model:edit="edit">
         <div class="grid-cols-sm-2 grid-cols-1" v-if="edit">
             <swd-input>
-                <label for="type-id">Id</label>
-                <input id="type-id" :disabled="!!editRecord" :value="edit.id.id" @input="event => edit ? edit.id = new RecordId('type', (event.target as HTMLInputElement).value) : ''">
+                <label for="input-id">Id</label>
+                <input id="input-id" :disabled="!!editRecord" :value="edit.id.id" @input="event => edit ? edit.id = new RecordId('type', (event.target as HTMLInputElement).value) : ''">
             </swd-input>
             <InputComponent label="Name" v-model="edit.name"></InputComponent>
             <InputComponent label="Description" v-model="edit.description"></InputComponent>
