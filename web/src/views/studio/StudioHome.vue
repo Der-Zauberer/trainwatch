@@ -45,7 +45,7 @@
             <swd-card-ghost>
 
                 <h3>Welcome back</h3>
-                <p class="primary-color">{{ cookies.getTokenAsRef().value?.payload.ID }}</p>
+                <p class="primary-color">{{ user?.name }}</p>
 
             </swd-card-ghost>
 
@@ -56,7 +56,7 @@
 
 <script lang="ts" setup>
 import { resource } from '@/core/resource';
-import type { CookieService } from '@/services/cookies.service';
+import type { UserService } from '@/services/user.service';
 import type Surreal from 'surrealdb';
 import { inject } from 'vue';
 
@@ -72,7 +72,9 @@ type Amounts = {
 }
 
 const surrealdb = inject('surrealdb') as Surreal
-const cookies = inject('cookies') as CookieService
+const userService = inject('userService') as UserService
+
+const user = userService.getUserAsRef()
 
 const QUARRY = `
 RETURN {

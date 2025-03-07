@@ -50,14 +50,14 @@ import type { CookieService } from '@/services/cookies.service';
 import { SurrealDbError } from 'surrealdb';
 import { inject, ref, reactive, toRaw } from 'vue';
 
-const cookies = inject('cookies') as CookieService
+const cookies = inject('cookieService') as CookieService
 
 const credentials = reactive({ username: '', password: '' })
 const error = ref()
 
 async function login() {
     try {
-        await cookies.loginAndredirect(toRaw(credentials), '/studio')
+        await cookies.loginAndRedirect(toRaw(credentials), '/studio')
         error.value = undefined
 
     } catch (exception) {

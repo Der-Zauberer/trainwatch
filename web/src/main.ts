@@ -5,7 +5,8 @@ import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
 import surrealdb from './services/surrealdb.service'
-import cookies, { CookieService } from './services/cookies.service'
+import cookieService, { CookieService } from './services/cookies.service'
+import userService from './services/user.service'
 import HomeView from './views/public/HomeView.vue'
 import StationView from './views/public/StationView.vue'
 import LoginView from './views/public/LoginView.vue'
@@ -51,5 +52,6 @@ await window.swd.setLanguage(navigator.language)
 const app = createApp(App)
 app.use(router)
 app.use(surrealdb)
-app.use(cookies)
+app.use(cookieService)
+app.use(userService)
 app.mount('#app')

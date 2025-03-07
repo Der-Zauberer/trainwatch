@@ -4,9 +4,9 @@ import type { App } from 'vue';
 const surrealdb = new Surreal()
 
 try {
-    await surrealdb.connect('ws://localhost:8080/rpc', {
-        namespace: "pis.derzauberer.eu",
-        database: "develop"
+    await surrealdb.connect(import.meta.env.VITE_SURREALDB_ADDRESS, {
+        namespace: import.meta.env.VITE_SURREALDB_NAMESPACE,
+        database: import.meta.env.VITE_SURREALDB_DATABASE
     })
 } catch (error) {
     console.error(error)

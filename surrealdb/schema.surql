@@ -618,7 +618,7 @@ DEFINE INDEX OVERWRITE email ON user FIELDS email UNIQUE;
 
 DEFINE ACCESS OVERWRITE user ON DATABASE TYPE RECORD
 	SIGNIN (
-		SELECT * FROM user WHERE name = $name AND crypto::argon2::compare(password, $password)
+		SELECT * FROM user WHERE name = $username AND crypto::argon2::compare(password, $password)
 	)
 	SIGNUP (
 		CREATE user CONTENT {

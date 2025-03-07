@@ -72,13 +72,18 @@ export class CookieService {
     }
 
     async login(credentials: { username: string, password: string }): Promise<JwtToken> {
-        const token = new JwtToken(await this.surrealdb.signin(credentials))
+        const token = new JwtToken(await this.surrealdb.signin({
+            namespace: import.meta.env.VITE_SURREALDB_NAMESPACE,
+            database: import.meta.env.VITE_SURREALDB_DATABASE,
+            access: 'user',
+            variables: credentials
+        }))
         CookieService.token.value = token
         this.setCookie(CookieService.TOKEN_COOKIE, token.raw, new Date(token.payload.exp * 1000))
         return token;
     }
 
-    async loginAndredirect(credentials: { username: string, password: string }, defaultRoute: string | RouteLocationNormalized = '/') {
+    async loginAndRedirect(credentials: { username: string, password: string }, defaultRoute: string | RouteLocationNormalized = '/') {
         await this.login(credentials)
         this.router.replace(CookieService.loginRedirect || defaultRoute)
         CookieService.loginRedirect = undefined
@@ -134,9 +139,9 @@ export default {
     install(app: App) {
         const router = app.config.globalProperties.$router
         const surrealdb = app.config.globalProperties.$surrealdb
-        const cookies = new CookieService(router, surrealdb)
-        cookies.authenticate()
-        app.config.globalProperties.$surrealdb = cookies;
-        app.provide('cookies', cookies);
+        const cookieService = new CookieService(router, surrealdb)
+        cookieService.authenticate()
+        app.config.globalProperties.$cookieService = cookieService
+        app.provide('cookieService', cookieService)
     }
 }
