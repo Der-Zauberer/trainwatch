@@ -377,8 +377,8 @@ INSERT INTO type [
         vehicle: "TRAIN",
         classification: "LONG_DISTANCE",
         color: {
-            text: "#ffff00",
-            background: "#ff0000"
+            text: "#ff0000",
+            background: "#ffff00"
         }
     },
     {
