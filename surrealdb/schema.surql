@@ -29,6 +29,10 @@ DEFINE FUNCTION OVERWRITE fn::search::search($name: string) {
     RETURN array::flatten(SELECT VALUE entries.{id, name} AS result FROM type::thing('search', fn::search::normalize($name, '')));
 };
 
+DEFINE FUNCTION OVERWRITE fn::user::has_permission($user: record<user>, $permissions: string) {
+    RETURN $user.permissions.includes($permissions) || $user.roles.map(|$role| $role.permissions).flatten().includes($permissions);
+};
+
 ----------
 -- stop --
 ----------
@@ -593,11 +597,13 @@ DEFINE TABLE OVERWRITE role SCHEMAFULL
 		FOR select FULL;
 DEFINE FIELD OVERWRITE id ON TABLE role;
 DEFINE FIELD OVERWRITE name ON role TYPE string;
-DEFINE FIELD OVERWRITE permissions ON TABLE user TYPE array<string>;
+DEFINE FIELD OVERWRITE permissions ON TABLE role TYPE array<string>;
 
 UPSERT role:admin CONTENT {
     name: 'admin',
-    permissions: []
+    permissions: [
+        'studio.stop'
+    ]
 };
 
 ----------
@@ -630,10 +636,19 @@ DEFINE ACCESS OVERWRITE user ON DATABASE TYPE RECORD
 		}
 	);
 
-INSERT INTO user {
-    name: 'guest',
-    email: 'guest@trainwatch.derzauberer.eu',
-    password: 'guest',
-    roles: [],
-    permissions: []
-};
+INSERT INTO user [
+    {
+        name: 'guest',
+        email: 'guest@trainwatch.derzauberer.eu',
+        password: 'guest',
+        roles: [],
+        permissions: []
+    },
+    {
+        name: 'admin',
+        email: 'admin@trainwatch.derzauberer.eu',
+        password: 'admin',
+        roles: [role:admin],
+        permissions: []
+    }
+];
