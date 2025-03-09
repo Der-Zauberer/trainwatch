@@ -5,7 +5,7 @@
                 <div>Id</div>
                 <div>Name</div>
             </div>
-            <a v-for="line of lines.value" :key="line.id.id.toString()"  @click="editRecord = line.id" class="white-text">
+            <a v-for="line of lines.value" :key="line.id.id.toString()"  @click="editRecord = line.id">
                 <div><samp class="id">{{ line.id.id.toString() }}</samp></div>
                 <div class="flex">
                     <span>

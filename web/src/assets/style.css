@@ -20,39 +20,9 @@
     color: red;
 }
 
-/*
-Workaraound
-*/
-swd-loading-spinner {
-    display: initial;
-    height: initial;
-    width: inherit;
-    min-height: inherit;
-    min-width: inherit;
-    cursor: initial;
-}
-
-swd-loading-spinner[loading="true"] {
-    display: inline-block;
-    position: relative;
-    height: max-content;
-    cursor: wait;
-    min-height: calc(1em);
-    min-width: calc(1em);
-}
-
-swd-subtitle {
-    font-size: max(round(0.7em, 1px), 12px);
-    line-height: max(round(1.5em, 1px), 18px);
-}
-
-swd-input input {
-    height: round(1.2em, 1px);
-}
-
-/*
-Unfixed Workaround
-*/
+/**
+Unfixed workaround
+**/
 
 swd-menu {
     overflow: unset !important;

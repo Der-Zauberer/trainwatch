@@ -8,10 +8,13 @@
     <RouterLink to="/login" v-if="!user">Login</RouterLink>
 
     <swd-dropdown v-if="user">
-      <a>User</a>
+      <a>{{ user.name }}</a>
       <swd-dropdown-content>
         <swd-selection>
-          <h4>{{ user.name }}<swd-subtitle>{{ user.email }}</swd-subtitle></h4>
+          <div>
+            <span>{{ user.name }}</span>
+            <swd-subtitle>{{ user.email }}</swd-subtitle>
+          </div>
           <a>Account</a>
           <RouterLink to="/studio">Studio</RouterLink>
           <a @click="cookieService.logoutAndRedirect()">Logout</a>
@@ -38,6 +41,18 @@
   </swd-navigation-content>
 
 </template>
+
+<style scoped>
+
+swd-dropdown {
+  height: 40px;
+}
+
+swd-dropdown swd-selection div {
+  padding: round(.5em,1px) round(.6em,1px);
+}
+
+</style>
 
 <script setup lang="ts">
 import { inject } from 'vue';

@@ -32,6 +32,7 @@ swd-loading-spinner {
 
 .table > * {
     display: contents;
+    color: unset;
 }
 
 .table > *:first-child {

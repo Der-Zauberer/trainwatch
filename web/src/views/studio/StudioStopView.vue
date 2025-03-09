@@ -5,7 +5,7 @@
                 <div>Id</div>
                 <div>Name</div>
             </div>
-            <a v-for="stop of stops.value" :key="stop.id.id.toString()" @click="editRecord = stop.id" class="white-text">
+            <a v-for="stop of stops.value" :key="stop.id.id.toString()" @click="editRecord = stop.id">
                 <div><samp class="id">{{ stop.id.id.toString() }}</samp></div>
                 <div>{{ stop.name }}<swd-subtitle>{{ [stop.address.federalState, stop.address.country].join(', ') }}</swd-subtitle></div>
             </a>

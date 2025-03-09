@@ -5,7 +5,7 @@
                 <div>Id</div>
                 <div>Name</div>
             </div>
-            <a v-for="role of roles.value" :key="role.id.id.toString()" @click="editRecord = role.id" class="white-text">
+            <a v-for="role of roles.value" :key="role.id.id.toString()" @click="editRecord = role.id">
                 <div><samp class="id">{{ role.id.id.toString() }}</samp></div>
                 <div>{{ role.name }}</div>
             </a>

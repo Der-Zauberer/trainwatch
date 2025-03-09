@@ -6,7 +6,7 @@
                 <div>Name</div>
                 <div>Description</div>
             </div>
-            <a v-for="type of types.value" :key="type.id.id.toString()" @click="editRecord = type.id" class="white-text">
+            <a v-for="type of types.value" :key="type.id.id.toString()" @click="editRecord = type.id">
                 <div><samp class="id">{{ type.id.id }}</samp></div>
                 <div><swd-chip :style="`color: ${type.color.text}; background-color: ${type.color.background};`">{{ type.name }}</swd-chip></div>
                 <div>{{ type.description }}</div>

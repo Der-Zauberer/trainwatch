@@ -5,7 +5,7 @@
                 <div>Id</div>
                 <div>Name</div>
             </div>
-            <div v-for="journey of journeys.value" :key="journey.id.id.toString()" @click="editRecord = journey.id" class="white-text">
+            <div v-for="journey of journeys.value" :key="journey.id.id.toString()" @click="editRecord = journey.id">
                 <div><samp class="id">{{ journey.id.id.toString() }}</samp></div>
                 <div class="flex">
                     <span>

@@ -5,7 +5,7 @@
                 <div>Id</div>
                 <div>Name</div>
             </div>
-            <a v-for="operator of operators.value" :key="operator.id.id.toString()" @click="editRecord = operator.id" class="white-text">
+            <a v-for="operator of operators.value" :key="operator.id.id.toString()" @click="editRecord = operator.id">
                 <div><samp class="id">{{ operator.id.id.toString() }}</samp></div>
                 <div>{{ operator.name }}<swd-subtitle>{{ [operator.address.federalState, operator.address.country].join(', ') }}</swd-subtitle></div>
             </a>
