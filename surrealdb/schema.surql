@@ -6,9 +6,9 @@ DEFINE ANALYZER OVERWRITE blank TOKENIZERS blank;
 DEFINE ANALYZER OVERWRITE edgengram FILTERS edgengram(1,100);
 
 DEFINE FUNCTION OVERWRITE fn::search::normalize($name: string, $seperator: option<string>) {
-    LET $result = $name.lowercase().replace('ä', 'ae').replace('ö', 'oe').replace('ü', 'ue').slug();
-    IF ($seperator != NONE && $seperator != '-') {
-        RETURN string::replace($result, '-', $seperator);
+    LET $result = $name.lowercase().replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").slug();
+    IF ($seperator != NONE && $seperator != "-") {
+        RETURN string::replace($result, "-", $seperator);
     };
     RETURN $result;
 };
@@ -18,19 +18,19 @@ DEFINE FUNCTION OVERWRITE fn::search::extract_ids($object: object) {
 };
 
 DEFINE FUNCTION OVERWRITE fn::search::n_word_edge_ngram($name: string) {
-    LET $tokens = search::analyze('blank', $name);
+    LET $tokens = search::analyze("blank", $name);
     LET $parts = array::fold((<array> 0..$tokens.len()), { all: $tokens, entries: [] }, |$meta, $index| {
-        RETURN { all: $meta.all, entries: $meta.entries.push(array::slice($meta.all, $index).join('')) };
+        RETURN { all: $meta.all, entries: $meta.entries.push(array::slice($meta.all, $index).join("")) };
     }).entries;
-    RETURN $parts.map(|$part| search::analyze('edgengram', $part)).flatten().distinct();
+    RETURN $parts.map(|$part| search::analyze("edgengram", $part)).flatten().distinct();
 };
 
 DEFINE FUNCTION OVERWRITE fn::search::search($name: string) {
-    RETURN array::flatten(SELECT VALUE entries.{id, name} AS result FROM type::thing('search', fn::search::normalize($name, '')));
+    RETURN array::flatten(SELECT VALUE entries.{id, name} AS result FROM type::thing("search", fn::search::normalize($name, "")));
 };
 
 DEFINE FUNCTION OVERWRITE fn::user::has_permission($user: record<user>, $permissions: string) {
-    RETURN $user.permissions.includes($permissions) || $user.roles.map(|$role| $role.permissions).flatten().includes($permissions);
+    RETURN array::includes($user.permissions, $permissions) || array::includes($user.roles.map(|$role| $role.permissions).flatten(), $permissions)
 };
 
 ----------
@@ -39,7 +39,8 @@ DEFINE FUNCTION OVERWRITE fn::user::has_permission($user: record<user>, $permiss
 
 DEFINE TABLE OVERWRITE stop SCHEMAFULL
 	PERMISSIONS
-		FOR select FULL;
+		FOR select FULL,
+        FOR create, update, delete WHERE fn::user::has_permission($auth, "studio.stop");
 DEFINE FIELD OVERWRITE id ON TABLE stop;
 DEFINE FIELD OVERWRITE name ON TABLE stop TYPE string;
 DEFINE FIELD OVERWRITE score ON TABLE stop TYPE int DEFAULT 9;
@@ -102,24 +103,24 @@ DEFINE FIELD OVERWRITE entries[*].score ON TABLE search TYPE number;
 DEFINE EVENT OVERWRITE stop_update ON TABLE stop WHEN $before.name != $after.name || $before.ids != $after.ids THEN {
     IF $before THEN {
         FOR $entry IN fn::search::extract_ids($before.ids) {
-            UPDATE type::thing('search', $entry) SET entries = entries.filter(|$v| $v.id = $before.id);
-            DELETE type::thing('search', $entry) WHERE array::is_empty(entries);
+            UPDATE type::thing("search", $entry) SET entries = entries.filter(|$v| $v.id = $before.id);
+            DELETE type::thing("search", $entry) WHERE array::is_empty(entries);
         };
-        FOR $entry IN fn::search::n_word_edge_ngram(fn::search::normalize($before.name, ' ')) {
-            UPDATE type::thing('search', $entry) SET entries = entries.filter(|$v| $v.id = $before.id);
-            DELETE type::thing('search', $entry) WHERE array::is_empty(entries);
+        FOR $entry IN fn::search::n_word_edge_ngram(fn::search::normalize($before.name, " ")) {
+            UPDATE type::thing("search", $entry) SET entries = entries.filter(|$v| $v.id = $before.id);
+            DELETE type::thing("search", $entry) WHERE array::is_empty(entries);
         };
     } END;
     IF $after THEN {
         FOR $entry IN fn::search::extract_ids($after.ids) {
-            UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $after.id, name: $after.name, score: $after.score };
-            UPDATE ONLY type::thing('search', $entry) SET entries = fn::search::sort_beginn_score_matching($entry, entries);
+            UPSERT ONLY type::thing("search", $entry) SET id = $entry, entries += { id: $after.id, name: $after.name, score: $after.score };
+            UPDATE ONLY type::thing("search", $entry) SET entries = fn::search::sort_beginn_score_matching($entry, entries);
         };
-        LET $search = fn::search::normalize($stop.name, '');
-        FOR $entry IN fn::search::n_word_edge_ngram(fn::search::normalize($after.name, ' ')) {
+        LET $search = fn::search::normalize($stop.name, "");
+        FOR $entry IN fn::search::n_word_edge_ngram(fn::search::normalize($after.name, " ")) {
             LET $score = IF string::starts_with($search, $entry) { 10 } ELSE { 20 };
-            UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $after.id, name: $after.name, score: $after.score + $score };
-            UPDATE ONLY type::thing('search', $entry) SET entries = (SELECT * FROM $parent.entries ORDER BY score);
+            UPSERT ONLY type::thing("search", $entry) SET id = $entry, entries += { id: $after.id, name: $after.name, score: $after.score + $score };
+            UPDATE ONLY type::thing("search", $entry) SET entries = (SELECT * FROM $parent.entries ORDER BY score);
         };
     } END;
 };
@@ -128,12 +129,12 @@ DEFINE FUNCTION OVERWRITE fn::stop::index() {
     DELETE search;
     FOR $stop IN (SELECT id, name, score, ids FROM stop) {
         FOR $entry IN fn::search::extract_ids($stop.ids) {
-            UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $stop.id, name: $stop.name, score: $stop.score };
+            UPSERT ONLY type::thing("search", $entry) SET id = $entry, entries += { id: $stop.id, name: $stop.name, score: $stop.score };
         };
-        LET $search = fn::search::normalize($stop.name, '');
-        FOR $entry IN fn::search::n_word_edge_ngram(fn::search::normalize($stop.name, ' ')) {
+        LET $search = fn::search::normalize($stop.name, "");
+        FOR $entry IN fn::search::n_word_edge_ngram(fn::search::normalize($stop.name, " ")) {
             LET $score = IF string::starts_with($search, $entry) { 10 } ELSE { 20 };
-            UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $stop.id, name: $stop.name, score: $stop.score + $score };
+            UPSERT ONLY type::thing("search", $entry) SET id = $entry, entries += { id: $stop.id, name: $stop.name, score: $stop.score + $score };
         };
     };
     UPDATE search SET entries = (SELECT * FROM $parent.entries ORDER BY score);
@@ -145,7 +146,8 @@ DEFINE FUNCTION OVERWRITE fn::stop::index() {
 
 DEFINE TABLE OVERWRITE type SCHEMAFULL
 	PERMISSIONS
-		FOR select FULL;
+		FOR select FULL,
+        FOR create, update, delete WHERE fn::user::has_permission($auth, "studio.type");
 DEFINE FIELD OVERWRITE id ON TABLE type;
 DEFINE FIELD OVERWRITE name ON TABLE type TYPE string;
 DEFINE FIELD OVERWRITE description ON TABLE type TYPE string;
@@ -153,8 +155,8 @@ DEFINE FIELD OVERWRITE priority ON TABLE type TYPE int;
 DEFINE FIELD OVERWRITE color ON TABLE type TYPE object;
 DEFINE FIELD OVERWRITE color.text ON TABLE type TYPE string;
 DEFINE FIELD OVERWRITE color.background ON TABLE type TYPE string;
-DEFINE FIELD OVERWRITE vehicle ON TABLE type TYPE 'TRAIN' | 'BUS' | 'SHIP' | 'PLANE';
-DEFINE FIELD OVERWRITE classification ON TABLE type TYPE 'REGIONAL' | 'LONG_DISTANCE';
+DEFINE FIELD OVERWRITE vehicle ON TABLE type TYPE "TRAIN" | "BUS" | "SHIP" | "PLANE";
+DEFINE FIELD OVERWRITE classification ON TABLE type TYPE "REGIONAL" | "LONG_DISTANCE";
 
 INSERT INTO type [
     {
@@ -513,7 +515,8 @@ INSERT INTO type [
 
 DEFINE TABLE OVERWRITE operator SCHEMAFULL
     PERMISSIONS
-        FOR select FULL;
+        FOR select FULL,
+        FOR create, update, delete WHERE fn::user::has_permission($auth, "studio.operator");
 DEFINE FIELD OVERWRITE id ON TABLE operator;
 DEFINE FIELD OVERWRITE name ON TABLE operator TYPE string;
 DEFINE FIELD OVERWRITE address ON TABLE operator TYPE option<object>;
@@ -532,7 +535,8 @@ DEFINE FIELD OVERWRITE website ON TABLE operator TYPE option<string> ASSERT stri
 
 DEFINE TABLE OVERWRITE route TYPE NORMAL SCHEMAFULL
 	PERMISSIONS
-		FOR select FULL;
+		FOR select FULL,
+        FOR create, update, delete WHERE fn::user::has_permission($auth, "studio.route");
 DEFINE FIELD OVERWRITE id ON TABLE route;
 DEFINE FIELD OVERWRITE name ON TABLE route TYPE option<string>;
 DEFINE FIELD OVERWRITE designations ON TABLE route TYPE array<object>;
@@ -546,13 +550,15 @@ DEFINE FIELD OVERWRITE operator ON TABLE route TYPE option<record<operator>>;
 
 DEFINE TABLE OVERWRITE line SCHEMAFULL
 	PERMISSIONS
-		FOR select FULL;
+		FOR select FULL,
+        FOR create, update, delete WHERE fn::user::has_permission($auth, "studio.line");
 DEFINE FIELD OVERWRITE id ON TABLE line;
 DEFINE FIELD OVERWRITE route ON TABLE line TYPE record<route>;
 
 DEFINE TABLE OVERWRITE connects SCHEMAFULL TYPE RELATION
     PERMISSIONS
-        FOR select FULL;
+        FOR select FULL,
+        FOR create, update, delete WHERE fn::user::has_permission($auth, "studio.line");
 DEFINE FIELD OVERWRITE id ON TABLE connects;
 DEFINE FIELD OVERWRITE in ON TABLE connects TYPE record<line>;
 DEFINE FIELD OVERWRITE out ON TABLE connects TYPE record<stop>;
@@ -569,13 +575,15 @@ DEFINE FIELD OVERWRITE departure.platform ON TABLE connects TYPE string;
 
 DEFINE TABLE OVERWRITE journey SCHEMAFULL
 	PERMISSIONS
-		FOR select FULL;
+		FOR select FULL,
+        FOR create, update, delete WHERE fn::user::has_permission($auth, "studio.journey");
 DEFINE FIELD OVERWRITE id ON TABLE journey;
 DEFINE FIELD OVERWRITE line ON TABLE journey TYPE record<line>;
 
 DEFINE TABLE OVERWRITE visits SCHEMAFULL TYPE RELATION
     PERMISSIONS
-        FOR select FULL;
+        FOR select FULL,
+        FOR create, update, delete WHERE fn::user::has_permission($auth, "studio.journey");
 DEFINE FIELD OVERWRITE id ON TABLE visits;
 DEFINE FIELD OVERWRITE in ON TABLE visits TYPE record<journey>;
 DEFINE FIELD OVERWRITE out ON TABLE visits TYPE record<stop>;
@@ -594,15 +602,23 @@ DEFINE FIELD OVERWRITE realtime.departure.platform ON TABLE visits TYPE string;
 
 DEFINE TABLE OVERWRITE role SCHEMAFULL
 	PERMISSIONS
-		FOR select FULL;
+		FOR select FULL,
+        FOR create, update, delete WHERE fn::user::has_permission($auth, "auth.role");
 DEFINE FIELD OVERWRITE id ON TABLE role;
 DEFINE FIELD OVERWRITE name ON role TYPE string;
 DEFINE FIELD OVERWRITE permissions ON TABLE role TYPE array<string>;
 
 UPSERT role:admin CONTENT {
-    name: 'admin',
+    name: "admin",
     permissions: [
-        'studio.stop'
+        "studio.stop",
+        "studio.type",
+        "studio.operator",
+        "studio.route",
+        "studio.line",
+        "studio.journey",
+        "auth.role",
+        "auth.user",
     ]
 };
 
@@ -612,7 +628,7 @@ UPSERT role:admin CONTENT {
 
 DEFINE TABLE OVERWRITE user SCHEMAFULL
 	PERMISSIONS
-		FOR select, update, delete WHERE id = $auth.id;
+		FOR select, update, delete WHERE id = $auth.id || fn::user::has_permission($auth, "auth.user");
 DEFINE FIELD OVERWRITE id ON TABLE user;
 DEFINE FIELD OVERWRITE name ON TABLE user TYPE string;
 DEFINE FIELD OVERWRITE email ON TABLE user TYPE string ASSERT string::is::email($value);
@@ -638,16 +654,16 @@ DEFINE ACCESS OVERWRITE user ON DATABASE TYPE RECORD
 
 INSERT INTO user [
     {
-        name: 'guest',
-        email: 'guest@trainwatch.derzauberer.eu',
-        password: 'guest',
+        name: "guest",
+        email: "guest@trainwatch.derzauberer.eu",
+        password: "guest",
         roles: [],
         permissions: []
     },
     {
-        name: 'admin',
-        email: 'admin@trainwatch.derzauberer.eu',
-        password: 'admin',
+        name: "admin",
+        email: "admin@trainwatch.derzauberer.eu",
+        password: "admin",
         roles: [role:admin],
         permissions: []
     }
