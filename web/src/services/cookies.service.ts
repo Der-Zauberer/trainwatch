@@ -1,51 +1,22 @@
+import { Cookies } from "@/core/cookies";
+import { JwtToken } from "@/core/jwt";
+import type { User } from "@/core/types";
 import type Surreal from "surrealdb";
 import { computed, ref, type App, type Ref } from "vue";
 import { type NavigationGuardNext, type RouteLocationNormalized, type Router } from "vue-router";
 
-export class JwtToken {
-    header: {
-        typ: string,
-        alg: string
-    }
-    payload: {
-        iat: number,
-        nbf: number,
-        exp: number,
-        iss: string,
-        jit: string,
-        ID: string,
-    }
-    signature: string
-    raw: string
-
-    constructor(token: string) {
-        const [header, payload, signature] = token.split('.')
-        this.header = JSON.parse(atob(header))
-        this.payload = JSON.parse(atob(payload))
-        this.signature = signature
-        this.raw = token
-    }
-
-    isExpired():boolean {
-        return this.payload.exp * 1000 < new Date().getTime()
-    }
-}
-
 export class CookieService {
 
     private static readonly TOKEN_COOKIE = 'token'
-    private static readonly cookies: Map<string, string> = new Map()
+    private static readonly cookies = new Cookies()
     private static loginRedirect?: RouteLocationNormalized
     private static token: Ref<JwtToken | undefined> = ref()
+    private static user: Ref<User | undefined> = ref()
 
     private readonly router: Router
     private readonly surrealdb: Surreal
 
     static {
-        for (const cookie of document.cookie.split('; ')) {
-            const [name, value] = cookie.split('=');
-            CookieService.cookies.set(name, decodeURIComponent(value || ''));
-        }
         const token = CookieService.cookies.get(CookieService.TOKEN_COOKIE)
         if (token) CookieService.token.value = new JwtToken(token)
     }
@@ -56,9 +27,8 @@ export class CookieService {
     }
 
     setCookie(name: string, value: string, date: Date) {
-        document.cookie = `${name}=${encodeURIComponent(value)}; expires=${date.toUTCString()}; path=/; SameSite=Strict`
-        CookieService.cookies.set(name, value)
-        if (CookieService.TOKEN_COOKIE) CookieService.token.value = new JwtToken(value)
+        CookieService.cookies.set(name, value, date)
+        if (CookieService.TOKEN_COOKIE === name) CookieService.token.value = new JwtToken(value)
     }
 
     getCookie(name: string): string | undefined {
@@ -66,9 +36,8 @@ export class CookieService {
     }
 
     deleteCookie(name: string) {
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict`
         CookieService.cookies.delete(name)
-        if (CookieService.TOKEN_COOKIE) CookieService.token.value = undefined
+        if (CookieService.TOKEN_COOKIE === name) CookieService.token.value = undefined
     }
 
     async login(credentials: { username: string, password: string }): Promise<JwtToken> {
@@ -79,7 +48,8 @@ export class CookieService {
             variables: credentials
         }))
         CookieService.token.value = token
-        this.setCookie(CookieService.TOKEN_COOKIE, token.raw, new Date(token.payload.exp * 1000))
+        CookieService.user.value = await this.surrealdb.info() as User | undefined
+        this.setCookie(CookieService.TOKEN_COOKIE, token.raw, new Date((token.payload.exp || 0) * 1000))
         return token;
     }
 
@@ -92,6 +62,7 @@ export class CookieService {
     async logout() {
         await this.surrealdb.invalidate()
         CookieService.token.value = undefined
+        CookieService.user.value = undefined
         this.deleteCookie(CookieService.TOKEN_COOKIE)
     }
 
@@ -102,10 +73,16 @@ export class CookieService {
 
     async authenticate(): Promise<boolean> {
         if (!CookieService.token.value || CookieService.token.value.isExpired()) {
-            CookieService.cookies.delete(CookieService.TOKEN_COOKIE)
+            this.deleteCookie(CookieService.TOKEN_COOKIE)
             return false
         }
-        return await this.surrealdb.authenticate(CookieService.token.value.raw)
+        const success = await this.surrealdb.authenticate(CookieService.token.value.raw)
+        if (success) {
+            CookieService.user.value = await this.surrealdb.info() as User | undefined
+        } else {
+            this.deleteCookie(CookieService.TOKEN_COOKIE)
+        }
+        return success
     }
 
     isAuthenticated(): boolean {
@@ -122,6 +99,14 @@ export class CookieService {
 
     getTokenAsRef(): Ref<JwtToken | undefined> {
         return CookieService.token
+    }
+
+    getUser(): User | undefined {
+        return CookieService.user.value
+    }
+    
+    getUserAsRef(): Ref<User | undefined> {
+        return CookieService.user
     }
 
     static auth = (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {

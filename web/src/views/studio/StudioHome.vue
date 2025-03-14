@@ -56,7 +56,6 @@
 
 <script lang="ts" setup>
 import { resource } from '@/core/resource';
-import type { UserService } from '@/services/user.service';
 import type Surreal from 'surrealdb';
 import { inject } from 'vue';
 
@@ -72,9 +71,9 @@ type Amounts = {
 }
 
 const surrealdb = inject('surrealdb') as Surreal
-const userService = inject('userService') as UserService
+const cookieService = inject('cookieService') as CookieService
 
-const user = userService.getUserAsRef()
+const user = cookieService.getUserAsRef()
 
 const QUARRY = `
 RETURN {

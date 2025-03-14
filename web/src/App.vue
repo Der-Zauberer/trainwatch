@@ -58,11 +58,9 @@ swd-dropdown swd-selection div {
 import { inject } from 'vue';
 import { RouterLink, RouterView } from 'vue-router'
 import type { CookieService } from './services/cookies.service';
-import type { UserService } from './services/user.service';
 
 const cookieService = inject('cookieService') as CookieService
-const userService = inject('userService') as UserService
 
-const user = userService.getUserAsRef()
+const user = cookieService.getUserAsRef()
 
 </script>
