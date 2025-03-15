@@ -2,10 +2,10 @@
 
   <swd-menu>
     <a class="swd-menu-title">trainwatch</a>
-    <RouterLink to="/">Home</RouterLink>
-    <RouterLink to="/stations">Stations</RouterLink>
+    <RouterLink to="/">{{ $t('page.home') }}</RouterLink>
+    <RouterLink to="/stations">{{ $t('entity.stop.stop', 0) }}</RouterLink>
     <div class="width-100"></div>
-    <RouterLink to="/login" v-if="!user">Login</RouterLink>
+    <RouterLink to="/login" v-if="!user">{{ $t('page.login') }}</RouterLink>
 
     <swd-dropdown v-if="user">
       <a>{{ user.name }}</a>
@@ -16,8 +16,8 @@
             <swd-subtitle>{{ user.email }}</swd-subtitle>
           </div>
           <a>Account</a>
-          <RouterLink to="/studio">Studio</RouterLink>
-          <a @click="cookieService.logoutAndRedirect()">Logout</a>
+          <RouterLink to="/studio">{{ $t('page.studio') }}</RouterLink>
+          <a @click="cookieService.logoutAndRedirect()">{{ $t('page.logout') }}</a>
         </swd-selection>
       </swd-dropdown-content>
     </swd-dropdown>
@@ -25,15 +25,15 @@
   </swd-menu>
 
   <swd-navigation v-if="$route.path.startsWith('/studio')">
-    <RouterLink to="/studio">Dashboard</RouterLink>
-    <RouterLink to="/studio/stop">Stops</RouterLink>
-    <RouterLink to="/studio/operator">Operators</RouterLink>
-    <RouterLink to="/studio/type">Types</RouterLink>
-    <RouterLink to="/studio/route">Routes</RouterLink>
-    <RouterLink to="/studio/line">Lines</RouterLink>
-    <RouterLink to="/studio/journey">Journeys</RouterLink>
-    <RouterLink to="/studio/role">Roles</RouterLink>
-    <RouterLink to="/studio/user">Users</RouterLink>
+    <RouterLink to="/studio">{{ $t('page.dashboard') }}</RouterLink>
+    <RouterLink to="/studio/stop">{{ $t('entity.stop.stop', 0) }}</RouterLink>
+    <RouterLink to="/studio/operator">{{ $t('entity.operator.operator', 0) }}</RouterLink>
+    <RouterLink to="/studio/type">{{ $t('entity.type.type', 0) }}</RouterLink>
+    <RouterLink to="/studio/route">{{ $t('entity.route.route', 0) }}</RouterLink>
+    <RouterLink to="/studio/line">{{ $t('entity.line.line', 0) }}</RouterLink>
+    <RouterLink to="/studio/journey">{{ $t('entity.journey.journey', 0) }}</RouterLink>
+    <RouterLink to="/studio/role">{{ $t('entity.role.role', 0) }}</RouterLink>
+    <RouterLink to="/studio/user">{{ $t('entity.user.user', 0) }}</RouterLink>
   </swd-navigation>
 
   <swd-navigation-content :style="$route.path.startsWith('/studio') ? '' : 'margin-left: 0'">

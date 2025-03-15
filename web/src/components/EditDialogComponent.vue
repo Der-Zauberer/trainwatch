@@ -7,10 +7,10 @@
             </div>
             <swd-loading-spinner :loading="entity.loading" class="width-100"></swd-loading-spinner>
             <slot v-if="!entity.loading"></slot>
-            <button class="width-100 red-color margin-bottom" v-if="!entity.loading" @click="entity.value ? deleteEntity(entity.value) : ''"><swd-icon class="delete-icon"></swd-icon> Delete</button>
+            <button class="width-100 red-color margin-bottom" v-if="!entity.loading" @click="entity.value ? deleteEntity(entity.value) : ''"><swd-icon class="delete-icon"></swd-icon> {{ $t('action.delete') }}</button>
             <div class="flex" v-if="!entity.loading">
-                <button class="width-100 red-color" @click="close()">Cancel</button>
-                <button class="width-100" @click="entity.value ? saveEntity(entity.value) : ''; close()">Save</button>
+                <button class="width-100 red-color" @click="close()">{{ $t('action.cancel') }}</button>
+                <button class="width-100" @click="entity.value ? saveEntity(entity.value) : ''; close()">{{ $t('action.save') }}</button>
             </div>
         </swd-card>
     </swd-dialog>

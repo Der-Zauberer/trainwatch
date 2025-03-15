@@ -9,35 +9,35 @@
 
                     <div class="margin-bottom">
                         <span>{{ amounts.value?.stops || 0 }}</span>
-                        <swd-subtitle>Stops</swd-subtitle>
+                        <swd-subtitle>{{ $t('entity.stop.stop', 0) }}</swd-subtitle>
                     </div>
                     <div class="margin-bottom">
                         <span>{{ amounts.value?.operator || 0 }}</span>
-                        <swd-subtitle>Operators</swd-subtitle>
+                        <swd-subtitle>{{ $t('entity.operator.operator', 0) }}</swd-subtitle>
                     </div>
                     <div class="margin-bottom">
                         <span>{{ amounts.value?.types || 0 }}</span>
-                        <swd-subtitle>Types</swd-subtitle>
+                        <swd-subtitle>{{ $t('entity.type.type', 0) }}</swd-subtitle>
                     </div>
                     <div class="margin-bottom">
                         <span>{{ amounts.value?.routes || 0 }}</span>
-                        <swd-subtitle>Routes</swd-subtitle>
+                        <swd-subtitle>{{ $t('entity.route.route', 0) }}</swd-subtitle>
                     </div>
                     <div class="margin-bottom">
                         <span>{{ amounts.value?.lines || 0 }}</span>
-                        <swd-subtitle>Lines</swd-subtitle>
+                        <swd-subtitle>{{ $t('entity.line.line', 0) }}</swd-subtitle>
                     </div>
                     <div class="margin-bottom">
                         <span>{{ amounts.value?.journeys || 0 }}</span>
-                        <swd-subtitle>Journeys</swd-subtitle>
+                        <swd-subtitle>{{ $t('entity.journey.journey', 0) }}</swd-subtitle>
                     </div>
                     <div class="margin-bottom">
                         <span>{{ amounts.value?.roles || 0 }}</span>
-                        <swd-subtitle>Roles</swd-subtitle>
+                        <swd-subtitle>{{ $t('entity.role.role', 0) }}</swd-subtitle>
                     </div>
                     <div class="margin-bottom">
                         <span>{{ amounts.value?.users || 0 }}</span>
-                        <swd-subtitle>Users</swd-subtitle>
+                        <swd-subtitle>{{ $t('entity.user.user', 0) }}</swd-subtitle>
                     </div>
                 </swd-card>
             </swd-loading-spinner>
@@ -56,6 +56,7 @@
 
 <script lang="ts" setup>
 import { resource } from '@/core/resource';
+import type { CookieService } from '@/services/cookies.service';
 import type Surreal from 'surrealdb';
 import { inject } from 'vue';
 
