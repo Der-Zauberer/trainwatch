@@ -11,20 +11,14 @@ export class CookieService {
     private static readonly cookies = new Cookies()
     private static loginRedirect?: RouteLocationNormalized
     private static token: Ref<JwtToken | undefined> = ref()
-    private static user: Ref<User | undefined> = ref()
-
-    private readonly router: Router
-    private readonly surrealdb: Surreal
+    private user: Ref<User | undefined> = ref()
 
     static {
         const token = CookieService.cookies.get(CookieService.TOKEN_COOKIE)
         if (token) CookieService.token.value = new JwtToken(token)
     }
 
-    constructor(router: Router, surrealdb: Surreal) {
-        this.router = router
-        this.surrealdb = surrealdb
-    }
+    constructor(private router: Router, private surrealdb: Surreal) {}
 
     setCookie(name: string, value: string, date: Date) {
         CookieService.cookies.set(name, value, date)
@@ -48,7 +42,7 @@ export class CookieService {
             variables: credentials
         }))
         CookieService.token.value = token
-        CookieService.user.value = await this.surrealdb.info() as User | undefined
+        this.user.value = await this.surrealdb.info() as User | undefined
         this.setCookie(CookieService.TOKEN_COOKIE, token.raw, new Date((token.payload.exp || 0) * 1000))
         return token;
     }
@@ -62,7 +56,7 @@ export class CookieService {
     async logout() {
         await this.surrealdb.invalidate()
         CookieService.token.value = undefined
-        CookieService.user.value = undefined
+        this.user.value = undefined
         this.deleteCookie(CookieService.TOKEN_COOKIE)
     }
 
@@ -78,7 +72,7 @@ export class CookieService {
         }
         const success = await this.surrealdb.authenticate(CookieService.token.value.raw)
         if (success) {
-            CookieService.user.value = await this.surrealdb.info() as User | undefined
+            this.user.value = await this.surrealdb.info() as User | undefined
         } else {
             this.deleteCookie(CookieService.TOKEN_COOKIE)
         }
@@ -102,11 +96,11 @@ export class CookieService {
     }
 
     getUser(): User | undefined {
-        return CookieService.user.value
+        return this.user.value
     }
     
     getUserAsRef(): Ref<User | undefined> {
-        return CookieService.user
+        return this.user
     }
 
     static auth = (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
