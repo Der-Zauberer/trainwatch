@@ -1,0 +1,129 @@
+{
+    "page": {
+        "home": "Home",
+        "studio": "Studio",
+        "dashboard": "Dashboard",
+        "login": "Login",
+        "logout": "Logout"
+    },
+    "action": {
+        "new": "Neu",
+        "search": "Suchen",
+        "delete": "Löschen",
+        "save": "Speichern",
+        "cancel": "Abbrechen"
+    },
+    "entity": {
+        "general": {
+            "id": "Id",
+            "name": "Name",
+            "description": "Beschreibung"
+        },
+        "vehicle": {
+            "vehicle": "Verkehrsmittel | Verkehrsmittel",
+            "TRAIN": "Zug",
+            "BUS": "Bus",
+            "SHIP": "Schiff",
+            "PLANE": "Flugzeug"
+        },
+        "classification": {
+            "classification": "Klassifizierung | Klassifizierungen",
+            "REGIONAL": "Regional",
+            "LONG_DISTANCE": "Fernverkehr"
+        },
+        "location": {
+            "location": "Koordinate | Koordinaten",
+            "latitude": "Latitude",
+            "longitude": "Longitude"
+        },
+        "address": {
+            "address": "Adresse | Adressen",
+            "street": "Straße",
+            "zipcode": "Postleitzahl",
+            "city": "Stadt",
+            "federalState": "Bundesland",
+            "country": "Land"
+        },
+        "source": {
+            "source": "Quelle | Quellen",
+            "license": "Lizenz",
+            "url": "Url",
+            "updated": "Aktualisiert"
+        },
+        "color": {
+            "color": "Farbe | Farben",
+            "text": "Text",
+            "background": "Hintergrund"
+        },
+        "stop": {
+            "stop": "Stop | Stops",
+            "score": "Score",
+            "platforms": {
+                "platforms": "Bahnsteige",
+                "length": "Länge",
+                "height": "Höhe",
+                "linkedPlatforms": "Verbundene Bahnsteige"
+            },
+            "open": {
+                "open": "Öffnungszeiten",
+                "monday": "Montag",
+                "tuesday": "Dienstag",
+                "wednesday": "Mittwoch",
+                "thursday": "Donnerstag",
+                "friday": "Freitag",
+                "saturday": "Samstag",
+                "sunday": "Sonntag"
+            },
+            "services": {
+                "services": "Services",
+                "parking": "Parken",
+                "localPublicTransport": "Öffentlicher Nahverkehr",
+                "carRental": "Autovermietung",
+                "taxi": "Taxi",
+                "publicFacilities": "Öffentlcihe Toiletten",
+                "travelNecessities": "Geschäfte für Reiseutensilien",
+                "locker": "Schließfächer",
+                "wifi": "WLAN",
+                "information": "Information",
+                "railwayMission": "Bahnhofsmission",
+                "lostAndFound": "Fundbüro",
+                "barrierFree": "Barrierefrei",
+                "mobilityService": "Mobilitätsservice"
+            },
+            "ids": {}
+        },
+        "type": {
+            "type": "Zuggattung | Zuggattungen",
+            "priority": "Priorität"
+        },
+        "operator": {
+            "operator": "Betreiber | Betreiber",
+            "website": "Webseite"
+        },
+        "route": {
+            "route": "Route | Routen",
+            "designations": {
+                "designations": "Bezeichnung",
+                "number": "Nummer"
+            }
+        },
+        "line": {
+            "line": "Linie | Linien"
+        },
+        "journey": {
+            "journey": "Umlauf | Umläufe"
+        },
+        "role": {
+            "role": "Rolle | Rollen",
+            "permissions": "Rechte"
+        },
+        "user": {
+            "user": "Benutzer | Benutzer",
+            "email": "Email",
+            "username": "Benutzername",
+            "password": "Passwort",
+            "permissions": "Rechte"
+        }
+    }
+}
+  
