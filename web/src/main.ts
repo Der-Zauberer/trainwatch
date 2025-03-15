@@ -1,5 +1,5 @@
 import 'simplewebdesign'
-import './assets/style.css'
+import './style.css'
 
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
