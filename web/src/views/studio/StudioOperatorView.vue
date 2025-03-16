@@ -13,18 +13,21 @@
     </div>
 
     <EditDialogComponent  @update="operators.reload()" v-model:record="editRecord" v-model:edit="edit">
-        <div class="grid-cols-sm-2 grid-cols-1" v-if="edit">
-            <swd-input>
-                <label for="input-id">Id</label>
-                <input id="input-id" :disabled="!!editRecord" :value="edit.id.id" @input="event => edit ? edit.id = new RecordId('operator', (event.target as HTMLInputElement).value) : ''">
-            </swd-input>
-            <InputComponent label="Name" v-model="edit.name"></InputComponent>
-            <InputComponent label="Street" v-model="edit.address.street"></InputComponent>
-            <InputComponent label="Zip Code" v-model="edit.address.zipcode"></InputComponent>
-            <InputComponent label="City" v-model="edit.address.city"></InputComponent>
-            <InputComponent label="Federal State" v-model="edit.address.federalState"></InputComponent>
-            <InputComponent label="Country" v-model="edit.address.country"></InputComponent>
-            <InputComponent label="Website" v-model="edit.website"></InputComponent>
+        <div class="grid-cols-md-2 grid-cols-sm-1" v-if="edit">
+            <div class="grid-cols-1">
+                <h6 class="grid-span-2">{{ $t('entity.general.general') }}</h6>
+                <InputComponent :label="$t('entity.general.id')" :disabled="!!editRecord" v-model="edit.id.id"></InputComponent>
+                <InputComponent :label="$t('entity.general.name')" v-model="edit.name"></InputComponent>
+                <InputComponent :label="$t('entity.operator.website')" v-model="edit.website"></InputComponent>
+            </div>
+            <div class="grid-cols-sm-2 grid-cols-1">
+                <h6 class="grid-span-2">{{ $t('entity.address.address') }}</h6>
+                <InputComponent :label="$t('entity.address.street')" v-model="edit.address.street" class="grid-span-2"></InputComponent>
+                <InputComponent :label="$t('entity.address.zipcode')" v-model="edit.address.zipcode"></InputComponent>
+                <InputComponent :label="$t('entity.address.city')" v-model="edit.address.city"></InputComponent>
+                <InputComponent :label="$t('entity.address.federalState')" v-model="edit.address.federalState"></InputComponent>
+                <InputComponent :label="$t('entity.address.country')" v-model="edit.address.country"></InputComponent>
+            </div>
         </div>
     </EditDialogComponent>
 </template>

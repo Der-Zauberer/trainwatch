@@ -2,8 +2,8 @@
     <div class="container-xl">
         <TableComponent v-model="parameter.name" :loading="routes.loading" @add="edit = create">
             <div>
-                <div>Id</div>
-                <div>Name</div>
+                <div>{{ $t('entity.general.id') }}</div>
+                <div>{{ $t('entity.general.name') }}</div>
             </div>
             <a v-for="route of routes.value" :key="route.id.id.toString()" @click="editRecord = route.id">
                 <div><samp class="id">{{ route.id.id.toString() }}</samp></div>
@@ -21,14 +21,8 @@
 
     <EditDialogComponent @update="routes.reload()" v-model:record="editRecord" v-model:edit="edit">
         <div class="grid-cols-sm-2 grid-cols-1" v-if="edit">
-            <swd-input>
-                <label for="input-id">Id</label>
-                <input id="input-id" :disabled="!!editRecord" :value="edit.id.id" @input="event => edit ? edit.id = new RecordId('route', (event.target as HTMLInputElement).value) : ''">
-            </swd-input>
-            <swd-input>
-                <label for="input-name">Name</label>
-                <input id="input-name" :disabled="!!editRecord" :value="edit.name" @input="event => edit ? edit.name = (event.target as HTMLInputElement).value : ''">
-            </swd-input>
+            <InputComponent :label="$t('entity.general.id')" :disabled="!!editRecord" v-model="edit.id.id"></InputComponent>
+            <InputComponent :label="$t('entity.general.name')" v-model="edit.name"></InputComponent>
         </div>
     </EditDialogComponent>
 </template>
@@ -42,6 +36,7 @@
 
 <script setup lang="ts">
 import EditDialogComponent from '@/components/EditDialogComponent.vue';
+import InputComponent from '@/components/InputComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
 import { resource } from '@/core/resource';
 import type { Route } from '@/core/types';

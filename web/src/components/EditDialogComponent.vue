@@ -18,7 +18,7 @@
 
 <style scoped>
 swd-card {
-    max-width: 600px;
+    max-width: 1200px;
     max-height: 100vh;
     overflow-y: auto;
 }

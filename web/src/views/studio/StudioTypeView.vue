@@ -2,9 +2,9 @@
     <div class="container-xl">
         <TableComponent v-model="parameter.name" :loading="types.loading" @add="edit = create" columns="max-content max-content auto">
             <div>
-                <div>Id</div>
-                <div>Name</div>
-                <div>Description</div>
+                <div>{{ $t('entity.general.id') }}</div>
+                <div>{{ $t('entity.general.name') }}</div>
+                <div>{{ $t('entity.general.description') }}</div>
             </div>
             <a v-for="type of types.value" :key="type.id.id.toString()" @click="editRecord = type.id">
                 <div><samp class="id">{{ type.id.id }}</samp></div>
@@ -16,20 +16,17 @@
 
     <EditDialogComponent @update="types.reload()" v-model:record="editRecord" v-model:edit="edit">
         <div class="grid-cols-sm-2 grid-cols-1" v-if="edit">
-            <swd-input>
-                <label for="input-id">Id</label>
-                <input id="input-id" :disabled="!!editRecord" :value="edit.id.id" @input="event => edit ? edit.id = new RecordId('type', (event.target as HTMLInputElement).value) : ''">
-            </swd-input>
-            <InputComponent label="Name" v-model="edit.name"></InputComponent>
-            <InputComponent label="Description" v-model="edit.description"></InputComponent>
-            <InputComponent label="Priority" v-model="edit.priority"></InputComponent>
-            <InputComponent label="Text Color" type="color" v-model="edit.color.text"></InputComponent>
-            <InputComponent label="Background Color" type="color" v-model="edit.color.background"></InputComponent>
-            <InputDropdownComponent label="Vehicle" v-model="edit.vehicle">
-                <a v-for="vehicle of enumToArray(Vehicle)" :value="vehicle" :key="vehicle">{{ vehicle }}</a>
+            <InputComponent :label="$t('entity.general.id')" :disabled="!!editRecord" v-model="edit.id.id"></InputComponent>
+            <InputComponent :label="$t('entity.general.name')" v-model="edit.name"></InputComponent>
+            <InputComponent :label="$t('entity.general.description')" v-model="edit.description"></InputComponent>
+            <InputComponent :label="$t('entity.type.priority')" v-model="edit.priority"></InputComponent>
+            <InputComponent :label="$t('entity.color.text')" type="color" v-model="edit.color.text"></InputComponent>
+            <InputComponent :label="$t('entity.color.background')" type="color" v-model="edit.color.background"></InputComponent>
+            <InputDropdownComponent :label="$t('entity.vehicle.vehicle')" v-model="edit.vehicle" :display="$t('entity.vehicle.' + edit.vehicle)">
+                <a v-for="vehicle of enumToArray(Vehicle)" :value="vehicle" :key="vehicle">{{ $t('entity.vehicle.' + vehicle) }}</a>
             </InputDropdownComponent>
-            <InputDropdownComponent label="Classification" v-model="edit.classification">
-                <a v-for="classification of Object.keys(Classification).filter(value => isNaN(Number(value)))" :value="classification" :key="classification">{{ classification }}</a>
+            <InputDropdownComponent :label="$t('entity.classification.classification')" v-model="edit.classification" :display="$t('entity.classification.' + edit.classification)">
+                <a v-for="classification of Object.keys(Classification).filter(value => isNaN(Number(value)))" :value="classification" :key="classification">{{  $t('entity.classification.' + classification) }}</a>
             </InputDropdownComponent>
         </div>
     </EditDialogComponent>
@@ -40,12 +37,12 @@ import EditDialogComponent from '@/components/EditDialogComponent.vue';
 import InputComponent from '@/components/InputComponent.vue';
 import InputDropdownComponent from '@/components/InputDropdownComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
+import { enumToArray } from '@/core/functions';
 import { resource } from '@/core/resource';
 import { Classification, Vehicle, type Type } from '@/core/types';
+import type Surreal from 'surrealdb';
 import { RecordId } from 'surrealdb';
 import { inject, reactive, ref } from 'vue';
-import type Surreal from 'surrealdb';
-import { enumToArray } from '@/core/functions';
 
 const surrealdb = inject('surrealdb') as Surreal
 

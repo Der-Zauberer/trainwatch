@@ -2,8 +2,8 @@
     <div class="container-xl">
         <TableComponent v-model="parameter.name" :loading="roles.loading" @add="edit = create">
             <div>
-                <div>Id</div>
-                <div>Name</div>
+                <div>{{ $t('entity.general.id') }}</div>
+                <div>{{ $t('entity.general.name') }}</div>
             </div>
             <a v-for="role of roles.value" :key="role.id.id.toString()" @click="editRecord = role.id">
                 <div><samp class="id">{{ role.id.id.toString() }}</samp></div>
@@ -14,11 +14,8 @@
 
     <EditDialogComponent @update="roles.reload()" v-model:record="editRecord" v-model:edit="edit">
         <div class="grid-cols-sm-2 grid-cols-1" v-if="edit">
-            <swd-input>
-                <label for="input-id">Id</label>
-                <input id="input-id" :disabled="!!editRecord" :value="edit.id.id" @input="event => edit ? edit.id = new RecordId('role', (event.target as HTMLInputElement).value) : ''">
-            </swd-input>
-            <InputComponent label="Name" v-model="edit.name"></InputComponent>
+            <InputComponent :label="$t('entity.general.id')" :disabled="!!editRecord" v-model="edit.id.id"></InputComponent>
+            <InputComponent :label="$t('entity.general.name')" v-model="edit.name"></InputComponent>
         </div>
     </EditDialogComponent>
 </template>
@@ -29,8 +26,8 @@ import InputComponent from '@/components/InputComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
 import { resource } from '@/core/resource';
 import type { Role } from '@/core/types';
-import { RecordId } from 'surrealdb';
 import type Surreal from 'surrealdb';
+import { RecordId } from 'surrealdb';
 import { inject, reactive, ref } from 'vue';
 
 const surrealdb = inject('surrealdb') as Surreal

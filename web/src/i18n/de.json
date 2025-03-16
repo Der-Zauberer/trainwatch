@@ -15,6 +15,7 @@
     },
     "entity": {
         "general": {
+            "general": "Allgemein",
             "id": "Id",
             "name": "Name",
             "description": "Beschreibung"

@@ -2,8 +2,8 @@
     <div class="container-xl">
         <TableComponent v-model="parameter.name" :loading="users.loading" @add="edit = create">
             <div>
-                <div>Id</div>
-                <div>Name</div>
+                <div>{{ $t('entity.general.id') }}</div>
+                <div>{{ $t('entity.general.name') }}</div>
             </div>
             <a v-for="user of users.value" :key="user.id.id.toString()" @click="editRecord = user.id">
                 <div><samp class="id">{{ user.id.id.toString() }}</samp></div>
@@ -14,13 +14,10 @@
 
     <EditDialogComponent @update="users.reload()" v-model:record="editRecord" v-model:edit="edit">
         <div class="grid-cols-sm-2 grid-cols-1" v-if="edit">
-            <swd-input>
-                <label for="input-id">Id</label>
-                <input id="input-id" :disabled="!!editRecord" :value="edit.id.id" @input="event => edit ? edit.id = new RecordId('user', (event.target as HTMLInputElement).value) : ''">
-            </swd-input>
-            <InputComponent label="Name" v-model="edit.name"></InputComponent>
-            <InputComponent label="Email" type="email" v-model="edit.email"></InputComponent>
-            <InputComponent label="Password" type="password" v-model="edit.password"></InputComponent>
+            <InputComponent :label="$t('entity.general.id')" :disabled="!!editRecord" v-model="edit.id.id"></InputComponent>
+            <InputComponent :label="$t('entity.general.name')" v-model="edit.name"></InputComponent>
+            <InputComponent :label="$t('entity.user.email')" type="email" v-model="edit.email"></InputComponent>
+            <InputComponent :label="$t('entity.user.password')" type="password" v-model="edit.password"></InputComponent>
         </div>
     </EditDialogComponent>
 </template>
@@ -31,8 +28,8 @@ import InputComponent from '@/components/InputComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
 import { resource } from '@/core/resource';
 import type { User } from '@/core/types';
-import { RecordId } from 'surrealdb';
 import type Surreal from 'surrealdb';
+import { RecordId } from 'surrealdb';
 import { inject, reactive, ref } from 'vue';
 
 const surrealdb = inject('surrealdb') as Surreal
