@@ -13,16 +13,16 @@
     </div>
 
     <EditDialogComponent  @update="operators.reload()" v-model:record="editRecord" v-model:edit="edit">
-        <div class="grid-cols-xl-2 grid-cols-1" v-if="edit">
+        <div class="grid-cols-lg-2 grid-cols-1" v-if="edit">
             <div class="grid-cols-sm-2 grid-cols-1">
-                <h6 class="grid-span-2">{{ $t('entity.general.general') }}</h6>
+                <h6 class="grid-span-sm-2 grid-span-1">{{ $t('entity.general.general') }}</h6>
                 <InputComponent :label="$t('entity.general.id')" :disabled="!!editRecord" v-model="edit.id.id"></InputComponent>
                 <InputComponent :label="$t('entity.general.name')" v-model="edit.name"></InputComponent>
                 <InputComponent :label="$t('entity.operator.website')" v-model="edit.website"></InputComponent>
             </div>
-            <div class="grid-cols-xl-2 grid-cols-1">
-                <h6 class="grid-cols-sm-2 grid-cols-1">{{ $t('entity.address.address') }}</h6>
-                <InputComponent :label="$t('entity.address.street')" v-model="edit.address.street" class="grid-cols-sm-2 grid-cols-1"></InputComponent>
+            <div class="grid-cols-sm-2 grid-cols-1">
+                <h6 class="grid-span-sm-2 grid-span-1">{{ $t('entity.address.address') }}</h6>
+                <InputComponent :label="$t('entity.address.street')" v-model="edit.address.street" class="grid-span-sm-2 grid-span-1"></InputComponent>
                 <InputComponent :label="$t('entity.address.zipcode')" v-model="edit.address.zipcode"></InputComponent>
                 <InputComponent :label="$t('entity.address.city')" v-model="edit.address.city"></InputComponent>
                 <InputComponent :label="$t('entity.address.federalState')" v-model="edit.address.federalState"></InputComponent>

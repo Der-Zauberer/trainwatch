@@ -13,19 +13,19 @@
     </div>
 
     <EditDialogComponent  @update="stops.reload()" v-model:record="editRecord" v-model:edit="edit">
-        <div class="grid-cols-xl-2 grid-cols-1" v-if="edit">
+        <div class="grid-cols-lg-2 grid-cols-1" v-if="edit">
             <div class="grid-cols-sm-2 grid-cols-1">
                 <h6 class="grid-span-sm-2 grid-span-1">{{ $t('entity.general.general') }}</h6>
                 <InputComponent :label="$t('entity.general.id')" :disabled="!!editRecord" v-model="edit.id.id"></InputComponent>
                 <InputComponent :label="$t('entity.general.name')" v-model="edit.name"></InputComponent>
                 <InputComponent :label="$t('entity.stop.score')" type="number" v-model="edit.score"></InputComponent>
             </div>
-            <div class="grid-cols-xl-2 grid-cols-1">
+            <div class="grid-cols-sm-2 grid-cols-1">
                 <h6 class="grid-span-sm-2 grid-span-1">{{ $t('entity.location.location') }}</h6>
                 <InputComponent :label="$t('entity.location.latitude')" type="number" v-model="edit.location.latitude"></InputComponent>
                 <InputComponent :label="$t('entity.location.longitude')" type="number" v-model="edit.location.longitude"></InputComponent>
             </div>
-            <div class="grid-cols-xl-2 grid-cols-1">
+            <div class="grid-cols-sm-2 grid-cols-1">
                 <h6 class="grid-span-sm-2 grid-span-1">{{ $t('entity.address.address') }}</h6>
                 <InputComponent :label="$t('entity.address.street')" v-model="edit.address.street" class="grid-span-sm-2 grid-span-1"></InputComponent>
                 <InputComponent :label="$t('entity.address.zipcode')" v-model="edit.address.zipcode"></InputComponent>
@@ -33,7 +33,7 @@
                 <InputComponent :label="$t('entity.address.federalState')" v-model="edit.address.federalState"></InputComponent>
                 <InputComponent :label="$t('entity.address.country')" v-model="edit.address.country"></InputComponent>
             </div>
-            <div class="grid-cols-xl-2 grid-cols-1">
+            <div class="grid-cols-sm-2 grid-cols-1">
                 <h6 class="grid-span-sm-2 grid-span-1">{{ $t('entity.stop.open.open') }}</h6>
                 <InputComponent :label="$t('entity.stop.open.monday')" v-model="edit.open.monday"></InputComponent>
                 <InputComponent :label="$t('entity.stop.open.tuesday')" v-model="edit.open.tuesday"></InputComponent>

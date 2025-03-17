@@ -14,10 +14,23 @@
 
     <EditDialogComponent @update="users.reload()" v-model:record="editRecord" v-model:edit="edit">
         <div class="grid-cols-sm-2 grid-cols-1" v-if="edit">
+            <h6 class="grid-span-sm-2 grid-span-1">{{ $t('entity.general.general') }}</h6>
             <InputComponent :label="$t('entity.general.id')" :disabled="!!editRecord" v-model="edit.id.id"></InputComponent>
             <InputComponent :label="$t('entity.general.name')" v-model="edit.name"></InputComponent>
             <InputComponent :label="$t('entity.user.email')" type="email" v-model="edit.email"></InputComponent>
-            <InputComponent :label="$t('entity.user.password')" type="password" v-model="edit.password"></InputComponent>
+            <!--<InputComponent :label="$t('entity.user.password')" type="password" v-model="edit.password"></InputComponent>-->
+            <h6 class="grid-span-sm-2 grid-span-1">{{ $t('entity.role.role', 0) }}</h6>
+            <div class="flex" v-for="(role, index) in edit.roles" :key="index">
+                <InputComponent v-model="edit.roles[index]"></InputComponent>
+                <button class="red-color" @click="edit.roles.splice(index, 1);"><swd-icon class="delete-icon"></swd-icon></button>
+            </div>
+            <button><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>
+            <h6 class="grid-span-sm-2 grid-span-1">{{ $t('entity.user.permissions') }}</h6>
+            <div class="flex" v-for="(permission, index) in edit.permissions" :key="index">
+                <InputComponent v-model="edit.permissions[index]"></InputComponent>
+                <button class="red-color" @click="edit.permissions.splice(index, 1);"><swd-icon class="delete-icon"></swd-icon></button>
+            </div>
+            <button @click="edit.permissions.push('')"><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>
         </div>
     </EditDialogComponent>
 </template>
@@ -47,7 +60,6 @@ const create: User = {
     id: new RecordId('user', ''),
     name: '',
     email: '',
-    password: '',
     roles: [],
     permissions: []
 }

@@ -8,6 +8,7 @@
     },
     "action": {
         "new": "New",
+        "add": "Add",
         "search": "Search",
         "delete": "Delete",
         "save": "Save",

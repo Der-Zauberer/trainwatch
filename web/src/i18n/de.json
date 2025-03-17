@@ -8,6 +8,7 @@
     },
     "action": {
         "new": "Neu",
+        "add": "Hinzufügen",
         "search": "Suchen",
         "delete": "Löschen",
         "save": "Speichern",
