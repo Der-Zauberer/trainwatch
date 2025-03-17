@@ -628,13 +628,20 @@ UPSERT role:admin CONTENT {
 
 DEFINE TABLE OVERWRITE user SCHEMAFULL
 	PERMISSIONS
-		FOR select, update, delete WHERE id = $auth.id || fn::user::has_permission($auth, "auth.user");
+		FOR select, create, update, delete WHERE id = $auth.id || fn::user::has_permission($auth, "auth.user");
 DEFINE FIELD OVERWRITE id ON TABLE user;
 DEFINE FIELD OVERWRITE name ON TABLE user TYPE string;
 DEFINE FIELD OVERWRITE email ON TABLE user TYPE string ASSERT string::is::email($value);
 DEFINE FIELD OVERWRITE password ON TABLE user TYPE string VALUE crypto::argon2::generate($value);
-DEFINE FIELD OVERWRITE roles ON TABLE user TYPE array<record<role>>;
-DEFINE FIELD OVERWRITE permissions ON TABLE user TYPE array<string>;
+DEFINE FIELD OVERWRITE roles ON TABLE user TYPE set<record<role>> 
+    PERMISSIONS 
+        FOR select WHERE id = $auth.id || fn::user::has_permission($auth, "auth.user"), 
+        FOR create, update, delete WHERE fn::user::has_permission($auth, "auth.user");
+DEFINE FIELD OVERWRITE permissions ON TABLE user TYPE set<string>
+    PERMISSIONS 
+        FOR select WHERE id = $auth.id || fn::user::has_permission($auth, "auth.user"), 
+        FOR create, update, delete WHERE fn::user::has_permission($auth, "auth.user");
+
 DEFINE INDEX OVERWRITE name ON user FIELDS name UNIQUE;
 DEFINE INDEX OVERWRITE email ON user FIELDS email UNIQUE;
 
