@@ -44,7 +44,9 @@
             "zipcode": "Postleitzahl",
             "city": "Stadt",
             "federalState": "Bundesland",
-            "country": "Land"
+            "country": "Land",
+            "email": "Email",
+            "phone": "Telefon"
         },
         "source": {
             "source": "Quelle | Quellen",

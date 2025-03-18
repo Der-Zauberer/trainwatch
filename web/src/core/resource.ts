@@ -3,7 +3,7 @@ import { reactive, watch, type Reactive } from "vue";
 export type ResourceValue<T, P extends Reactive<unknown>> = ((parameter: P, abortSignal: AbortSignal) => Promise<T> | T | undefined) | Promise<T> | T | undefined
 
 export type MutableResource<T, P extends Reactive<unknown>> = {
-    error: unknown | undefined
+    error?: Error
     loading: boolean
     empty: boolean
     status: ResourceStatus
@@ -12,7 +12,7 @@ export type MutableResource<T, P extends Reactive<unknown>> = {
 }
 
 export type Resource<T, P extends Reactive<unknown>> = {
-    readonly error: unknown | undefined
+    readonly error?: Error
     readonly loading: boolean
     readonly empty: boolean
     readonly status: ResourceStatus
@@ -67,7 +67,7 @@ async function resolve<T, P extends Reactive<unknown>>(value: ResourceValue<T, P
     } catch (error: unknown) {
         resource.loading = false
         resource.value = undefined
-        resource.error = error
+        resource.error = error as Error
         resource.status = ResourceStatus.ERROR
     }
     resource.empty = resource.value === undefined ||  resolved === null

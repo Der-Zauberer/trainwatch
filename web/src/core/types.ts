@@ -28,11 +28,13 @@ export type Location = {
 }
 
 export type Address = {
-    street: string | undefined
-    zipcode: string | undefined
-    city: string | undefined
-    federalState: string | undefined
-    country: string | undefined
+    street?: string
+    zipcode?: string
+    city?: string
+    federalState?: string
+    country?: string
+    email?: string
+    phone?: string
 }
 
 export type Source = {
@@ -48,7 +50,7 @@ export type Color = {
 }
 
 export type Stop = {
-    id: RecordId<string>
+    id: RecordId<'stop'>
     name: string
     score: number
     platforms: {
@@ -60,13 +62,13 @@ export type Stop = {
     location: Location
     address: Address
     open: {
-        monday: string | undefined
-        tuesday: string | undefined
-        wednesday: string | undefined
-        thursday: string | undefined
-        friday: string | undefined
-        saturday: string | undefined
-        sunday: string | undefined
+        monday?: string
+        tuesday?: string
+        wednesday?: string
+        thursday?: string
+        friday?: string
+        saturday?: string
+        sunday?: string
     }
     services: {
         parking: boolean
@@ -81,15 +83,15 @@ export type Stop = {
         railwayMission: boolean
         lostAndFound: boolean
         barrierFree: boolean
-        mobilityService: string | undefined
+        mobilityService?: string
     }
     ids: { [key: string]: string | string[] }
-    sources: Source[]
+    sources?: Source[]
     [key: string]: unknown
 }
 
 export type Type = {
-    id: RecordId<string>
+    id: RecordId<'type'>
     name: string
     description: string
     priority: number
@@ -99,43 +101,43 @@ export type Type = {
 }
 
 export type Operator = {
-    id: RecordId<string>
+    id: RecordId<'operator'>
     name: string
     address: Address
     website: string
 }
 
 export type Route = {
-    id: RecordId<string>
+    id: RecordId<'route'>
     name?: string
     designations: {
         type: Type
         number: string
     }[],
-    operator?: Operator
+    operator?: Operator | RecordId<'operator'>
 }
 
 export type Line = {
-    id: RecordId<string>
-    route: Route
+    id: RecordId<'line'>
+    route: Route | RecordId<'route'>
 }
 
 export type Journey = {
-    id: RecordId<string>
+    id: RecordId<'journey'>
     line: Line
 }
 
 export type Role = {
-    id: RecordId<string>
+    id: RecordId<'role'>
     name: string
     permissions: string[]
 }
 
 export type User = {
-    id: RecordId<string>
+    id: RecordId<'user'>
     name: string
     email: string
     password?: string
-    roles: Role[]
+    roles: (Role | RecordId<'user'>)[]
     permissions: string[]
 }

@@ -55,6 +55,13 @@ swd-loading-spinner {
 
 <script lang="ts" setup>
 const search = defineModel()
-const props = defineProps(['loading', 'columns'])
-const emits = defineEmits(['add'])
+
+const props = defineProps<{
+    loading: boolean
+    columns?: string
+}>()
+
+const emits = defineEmits<{
+    (e: 'add'): void
+}>()
 </script>

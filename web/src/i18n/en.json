@@ -44,7 +44,9 @@
             "zipcode": "Zipcode",
             "city": "City",
             "federalState": "Federal State",
-            "country": "Country"
+            "country": "Country",
+            "email": "Email",
+            "phone": "Phone"
         },
         "source": {
             "source": "Source | Sources",

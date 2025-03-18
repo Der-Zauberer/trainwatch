@@ -53,21 +53,21 @@ DEFINE FIELD OVERWRITE location ON TABLE stop TYPE object;
 DEFINE FIELD OVERWRITE location.latitude ON TABLE stop TYPE option<float>;
 DEFINE FIELD OVERWRITE location.longitude ON TABLE stop TYPE option<float>;
 DEFINE FIELD OVERWRITE address ON TABLE stop TYPE option<object>;
-DEFINE FIELD OVERWRITE address.street ON TABLE stop TYPE option<string>;
-DEFINE FIELD OVERWRITE address.zipcode ON TABLE stop TYPE option<string>;
-DEFINE FIELD OVERWRITE address.city ON TABLE stop TYPE option<string>;
-DEFINE FIELD OVERWRITE address.federalState ON TABLE stop TYPE option<string>;
-DEFINE FIELD OVERWRITE address.country ON TABLE stop TYPE option<string>;
-DEFINE FIELD OVERWRITE address.email ON TABLE operator TYPE option<string>;
-DEFINE FIELD OVERWRITE address.phone ON TABLE operator TYPE option<string>;
+DEFINE FIELD OVERWRITE address.street ON TABLE stop TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
+DEFINE FIELD OVERWRITE address.zipcode ON TABLE stop TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
+DEFINE FIELD OVERWRITE address.city ON TABLE stop TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
+DEFINE FIELD OVERWRITE address.federalState ON TABLE stop TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
+DEFINE FIELD OVERWRITE address.country ON TABLE stop TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
+DEFINE FIELD OVERWRITE address.email ON TABLE stop TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
+DEFINE FIELD OVERWRITE address.phone ON TABLE stop TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
 DEFINE FIELD OVERWRITE open ON TABLE stop TYPE option<object>;
-DEFINE FIELD OVERWRITE open.monday ON TABLE stop TYPE option<string>;
-DEFINE FIELD OVERWRITE open.tuesday ON TABLE stop TYPE option<string>;
-DEFINE FIELD OVERWRITE open.wednesday ON TABLE stop TYPE option<string>;
-DEFINE FIELD OVERWRITE open.thursday ON TABLE stop TYPE option<string>;
-DEFINE FIELD OVERWRITE open.friday ON TABLE stop TYPE option<string>;
-DEFINE FIELD OVERWRITE open.saturday ON TABLE stop TYPE option<string>;
-DEFINE FIELD OVERWRITE open.sunday ON TABLE stop TYPE option<string>;
+DEFINE FIELD OVERWRITE open.monday ON TABLE stop TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
+DEFINE FIELD OVERWRITE open.tuesday ON TABLE stop TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
+DEFINE FIELD OVERWRITE open.wednesday ON TABLE stop TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
+DEFINE FIELD OVERWRITE open.thursday ON TABLE stop TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
+DEFINE FIELD OVERWRITE open.friday ON TABLE stop TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
+DEFINE FIELD OVERWRITE open.saturday ON TABLE stop TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
+DEFINE FIELD OVERWRITE open.sunday ON TABLE stop TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
 DEFINE FIELD OVERWRITE services ON TABLE stop TYPE object;
 DEFINE FIELD OVERWRITE services.parking ON TABLE stop TYPE bool DEFAULT false;
 DEFINE FIELD OVERWRITE services.localPublicTransport ON TABLE stop TYPE bool DEFAULT false;
@@ -81,7 +81,7 @@ DEFINE FIELD OVERWRITE services.information ON TABLE stop TYPE bool DEFAULT fals
 DEFINE FIELD OVERWRITE services.railwayMission ON TABLE stop TYPE bool DEFAULT false;
 DEFINE FIELD OVERWRITE services.lostAndFound ON TABLE stop TYPE bool DEFAULT false;
 DEFINE FIELD OVERWRITE services.barrierFree ON TABLE stop TYPE bool DEFAULT false;
-DEFINE FIELD OVERWRITE services.mobilityService ON TABLE stop TYPE option<string>;
+DEFINE FIELD OVERWRITE services.mobilityService ON TABLE stop TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
 DEFINE FIELD OVERWRITE ids ON TABLE stop TYPE option<object>;
 DEFINE FIELD OVERWRITE ids.uic ON TABLE stop TYPE option<int>;
 DEFINE FIELD OVERWRITE ids.ril ON TABLE stop TYPE option<array<string>>;
@@ -89,7 +89,7 @@ DEFINE FIELD OVERWRITE ids.stada ON TABLE stop TYPE option<int>;
 DEFINE FIELD OVERWRITE sources ON TABLE stop TYPE option<array<object>>;
 DEFINE FIELD OVERWRITE sources[*].name ON TABLE stop TYPE string;
 DEFINE FIELD OVERWRITE sources[*].license ON TABLE stop TYPE string;
-DEFINE FIELD OVERWRITE sources[*].url ON TABLE stop TYPE string ASSERT string::is::url($value);
+DEFINE FIELD OVERWRITE sources[*].url ON TABLE stop TYPE string;
 DEFINE FIELD OVERWRITE sources[*].updated ON TABLE stop TYPE string;
 
 DEFINE TABLE OVERWRITE search SCHEMAFULL
@@ -520,14 +520,14 @@ DEFINE TABLE OVERWRITE operator SCHEMAFULL
 DEFINE FIELD OVERWRITE id ON TABLE operator;
 DEFINE FIELD OVERWRITE name ON TABLE operator TYPE string;
 DEFINE FIELD OVERWRITE address ON TABLE operator TYPE option<object>;
-DEFINE FIELD OVERWRITE address.street ON TABLE operator TYPE option<string>;
-DEFINE FIELD OVERWRITE address.zipcode ON TABLE operator TYPE option<string>;
-DEFINE FIELD OVERWRITE address.city ON TABLE operator TYPE option<string>;
-DEFINE FIELD OVERWRITE address.federalState ON TABLE operator TYPE option<string>;
-DEFINE FIELD OVERWRITE address.country ON TABLE operator TYPE option<string>;
-DEFINE FIELD OVERWRITE address.email ON TABLE operator TYPE option<string>;
-DEFINE FIELD OVERWRITE address.phone ON TABLE operator TYPE option<string>;
-DEFINE FIELD OVERWRITE website ON TABLE operator TYPE option<string> ASSERT string::is::url($value);
+DEFINE FIELD OVERWRITE address.street ON TABLE operator TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
+DEFINE FIELD OVERWRITE address.zipcode ON TABLE operator TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
+DEFINE FIELD OVERWRITE address.city ON TABLE operator TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
+DEFINE FIELD OVERWRITE address.federalState ON TABLE operator TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
+DEFINE FIELD OVERWRITE address.country ON TABLE operator TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
+DEFINE FIELD OVERWRITE address.email ON TABLE operator TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
+DEFINE FIELD OVERWRITE address.phone ON TABLE operator TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
+DEFINE FIELD OVERWRITE website ON TABLE operator TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
 
 -----------
 -- route --
@@ -538,7 +538,7 @@ DEFINE TABLE OVERWRITE route TYPE NORMAL SCHEMAFULL
 		FOR select FULL,
         FOR create, update, delete WHERE fn::user::has_permission($auth, "studio.route");
 DEFINE FIELD OVERWRITE id ON TABLE route;
-DEFINE FIELD OVERWRITE name ON TABLE route TYPE option<string>;
+DEFINE FIELD OVERWRITE name ON TABLE route TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
 DEFINE FIELD OVERWRITE designations ON TABLE route TYPE array<object>;
 DEFINE FIELD OVERWRITE designations[*].type ON TABLE route TYPE record<type>;
 DEFINE FIELD OVERWRITE designations[*].number ON TABLE route TYPE string;

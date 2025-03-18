@@ -7,7 +7,7 @@
             </div>
             <a v-for="operator of operators.value" :key="operator.id.id.toString()" @click="editRecord = operator.id">
                 <div><samp class="id">{{ operator.id.id.toString() }}</samp></div>
-                <div>{{ operator.name }}<swd-subtitle>{{ [operator.address.federalState, operator.address.country].join(', ') }}</swd-subtitle></div>
+                <div>{{ operator.name }}<swd-subtitle v-if="operator.address.federalState || operator.address.country">{{ [operator.address.federalState, operator.address.country].join(', ') }}</swd-subtitle></div>
             </a>
         </TableComponent>
     </div>
@@ -27,6 +27,8 @@
                 <InputComponent :label="$t('entity.address.city')" v-model="edit.address.city"></InputComponent>
                 <InputComponent :label="$t('entity.address.federalState')" v-model="edit.address.federalState"></InputComponent>
                 <InputComponent :label="$t('entity.address.country')" v-model="edit.address.country"></InputComponent>
+                <InputComponent :label="$t('entity.address.email')" type="email" v-model="edit.address.email"></InputComponent>
+                <InputComponent :label="$t('entity.address.phone')" type="tel" v-model="edit.address.phone"></InputComponent>
             </div>
         </div>
     </EditDialogComponent>

@@ -7,7 +7,7 @@
             </div>
             <a v-for="stop of stops.value" :key="stop.id.id.toString()" @click="editRecord = stop.id">
                 <div><samp class="id">{{ stop.id.id.toString() }}</samp></div>
-                <div>{{ stop.name }}<swd-subtitle>{{ [stop.address.federalState, stop.address.country].join(', ') }}</swd-subtitle></div>
+                <div>{{ stop.name }}<swd-subtitle v-if="stop.address.federalState || stop.address.country">{{ [stop.address.federalState, stop.address.country].join(', ') }}</swd-subtitle></div>
             </a>
         </TableComponent>
     </div>
@@ -32,6 +32,8 @@
                 <InputComponent :label="$t('entity.address.city')" v-model="edit.address.city"></InputComponent>
                 <InputComponent :label="$t('entity.address.federalState')" v-model="edit.address.federalState"></InputComponent>
                 <InputComponent :label="$t('entity.address.country')" v-model="edit.address.country"></InputComponent>
+                <InputComponent :label="$t('entity.address.email')" type="email" v-model="edit.address.email"></InputComponent>
+                <InputComponent :label="$t('entity.address.phone')" type="tel" v-model="edit.address.phone"></InputComponent>
             </div>
             <div class="grid-cols-sm-2 grid-cols-1">
                 <h6 class="grid-span-sm-2 grid-span-1">{{ $t('entity.stop.open.open') }}</h6>
