@@ -1,8 +1,18 @@
-import { reactive, watch, type Reactive } from "vue";
+import { isReactive, isRef, reactive, toRaw, watch, type Reactive, type Ref } from "vue";
 
-export type ResourceValue<T, P extends Reactive<unknown>> = ((parameter: P, abortSignal: AbortSignal) => Promise<T> | T | undefined) | Promise<T> | T | undefined
+export type ResourceValue<T, P> = ((parameter: P, abortSignal: AbortSignal) => Promise<T> | T | undefined) | Promise<T> | T | undefined
+export type ResourceParameter<P> = Reactive<P> | { [K in keyof P]: Ref<P[K] | Reactive<P>> }
 
-export type MutableResource<T, P extends Reactive<unknown>> = {
+export type Resource<T, P> = {
+    readonly error?: Error
+    readonly loading: boolean
+    readonly empty: boolean
+    readonly status: ResourceStatus
+    readonly value: T | undefined
+    reload: (value?: ResourceValue<T, P>) => Promise<T>
+}
+
+type MutableResource<T, P> = {
     error?: Error
     loading: boolean
     empty: boolean
@@ -11,24 +21,15 @@ export type MutableResource<T, P extends Reactive<unknown>> = {
     reload: (value?: ResourceValue<T, P>) => Promise<T>
 }
 
-export type Resource<T, P extends Reactive<unknown>> = {
-    readonly error?: Error
-    readonly loading: boolean
-    readonly empty: boolean
-    readonly status: ResourceStatus
-    value: T | undefined
-    reload: (value?: ResourceValue<T, P>) => Promise<T>
-}
-
-export type ResourceOptions<T, P extends Reactive<unknown>> = {
-    parameter?: P
+export type ResourceOptions<T, P> = {
+    parameter?: ResourceParameter<P>
     initializer?: ResourceValue<T, P>
     loader: ResourceValue<T, P>
 }
 
 export enum ResourceStatus { EMPTY, LOADING, RESOLVED, ERROR }
 
-export function resource<T, P extends Reactive<unknown>>(options: ResourceOptions<T, P>): Resource<T, P> {
+export function resource<T, P>(options: ResourceOptions<T, P>): Resource<T, P> {
     const resource: Resource<T, P> = reactive({
         error: undefined,
         loading: false,
@@ -46,20 +47,35 @@ export function resource<T, P extends Reactive<unknown>>(options: ResourceOption
         resolve(options.loader, resource, options, abort);
     }
 
+    
+
     if (options.parameter) {
-        watch(options.parameter, () => resource.reload())
+        if (isReactive(options.parameter)) {
+            watch(options.parameter, () => resource.reload())
+        } else {
+            for (const parameter of Object.values(options.parameter)) {
+                watch(parameter, () => resource.reload())
+            }
+        }
     }
     return resource
 }
 
-async function resolve<T, P extends Reactive<unknown>>(value: ResourceValue<T, P>, resource: MutableResource<T, P>, options: ResourceOptions<T, P>, abort: { value: AbortController | undefined }): Promise<T> {
+export function unwrapParameters<P>(parameters?: ResourceParameter<P>): P | undefined {
+    if (!parameters) return;
+    if (isRef(parameters) || isReactive(parameters)) return toRaw(parameters) as P;
+    return Object.fromEntries(Object.entries(parameters).map(([key, value]) => [key, isRef(value) || isReactive(parameters) ? toRaw(value) : value])) as P;
+}
+
+async function resolve<T, P>(value: ResourceValue<T, P>, resource: MutableResource<T, P>, options: ResourceOptions<T, P>, abort: { value: AbortController | undefined }): Promise<T> {
+    const parameter = unwrapParameters(options.parameter)
     const newAbort = new AbortController()
     resource.loading = true
     resource.status = ResourceStatus.LOADING
     let resolved
     try {
         abort.value?.abort()
-        resolved = await Promise.resolve(typeof value === 'function' ? (value as (parameter: P, abortSignal: AbortSignal) => Promise<T> | T | undefined)(options.parameter as unknown as P, newAbort.signal) : value as Promise<T> | T | undefined)
+        resolved = await Promise.resolve(typeof value === 'function' ? (value as (parameter: P, abortSignal: AbortSignal) => Promise<T> | T | undefined)(parameter as unknown as P, newAbort.signal) : value as Promise<T> | T | undefined)
         resource.loading = false
         resource.value = resolved
         resource.error = undefined
