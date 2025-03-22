@@ -1,7 +1,7 @@
 import { isReactive, isRef, reactive, toRaw, watch, type Reactive, type Ref } from "vue";
 
 export type ResourceValue<T, P> = ((parameter: P, abortSignal: AbortSignal) => Promise<T> | T | undefined) | Promise<T> | T | undefined
-export type ResourceParameter<P> = Reactive<P> | { [K in keyof P]: Ref<P[K] | Reactive<P>> }
+export type ResourceParameter<P> = Reactive<P> | { [K in keyof P]: Ref<P[K]> | Reactive<P[K]> }
 
 export type Resource<T, P> = {
     readonly error?: Error
