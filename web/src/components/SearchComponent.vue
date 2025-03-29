@@ -23,7 +23,7 @@ swd-dropdown {
   
 <script setup lang="ts">
 import { resource } from '@/core/resource';
-import type { Search } from '@/core/types';
+import type { Entity } from '@/core/types';
 import type Surreal from 'surrealdb';
 import { inject, reactive } from 'vue';
 
@@ -35,7 +35,7 @@ const parameter = reactive({ name: '' })
 
 const results = resource({
     parameter,
-    loader: (parameter) => !parameter.name ? [] : surrealdb.query<Search[]>('fn::search::search($name)', { name: parameter.name }).then(result => result.flat().splice(0, 20))
+    loader: (parameter) => !parameter.name ? [] : surrealdb.query<Entity<'stop'>[]>('fn::search::search($name)', { name: parameter.name }).then(result => result.flat().splice(0, 20))
 })
 
 const select = (value: string) => {

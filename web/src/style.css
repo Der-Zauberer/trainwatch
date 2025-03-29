@@ -24,6 +24,10 @@
     flex-direction: column;
 }
 
+h5 {
+    font-weight: normal;
+}
+
 /**
 Unfixed workaround
 **/

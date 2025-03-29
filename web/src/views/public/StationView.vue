@@ -6,8 +6,22 @@
 
 	<div class="container-xxxl grid-cols-xl-3 grid-cols-md-2 grid-cols-1" v-if="stop.value">
 
-		<div>
-			Section1
+		<div v-if="traffic.value">
+			<swd-card v-for="traffic of traffic.value" :key="JSON.stringify(traffic)">
+				<div class="flex">
+					<div>{{ dateToTime(traffic.departure.time) }}</div>
+					<div> 
+						<swd-chip v-for="designation of traffic.line.route.designations" :key="designation" :style="`background: ${designation.type.color.background}; color: ${designation.type.color.text};`">
+							{{ designation.type.name }}{{ designation.number }}
+						</swd-chip>
+					</div>
+					<h5>
+						{{ traffic.stops[traffic.stops.length - 1].name }}
+						<swd-subtitle>{{ traffic.stops[0].name }}</swd-subtitle>
+					</h5>
+				</div>
+				<swd-subtitle>{{ traffic.stops.map(stop => stop.name).slice(traffic.stops.map(stop => stop.id).indexOf(stop.value.id)).join(' &middot; ') }}</swd-subtitle>
+			</swd-card>
 		</div>
 
 		<div hidden>
@@ -82,8 +96,9 @@
 
 <script setup lang="ts">
 import SearchComponent from '@/components/SearchComponent.vue';
+import { dateToTime } from '@/core/functions';
 import { resource } from '@/core/resource';
-import type { Stop } from '@/core/types';
+import type { Stop, StopTraffic } from '@/core/types';
 import type Surreal from 'surrealdb';
 import { RecordId } from 'surrealdb';
 import { inject, reactive } from 'vue';
@@ -106,6 +121,11 @@ const urls = {
 const stop = resource({
 	parameter,
 	loader: () => surrealdb.select<Stop>(new RecordId('stop', parameter.id))
+})
+
+const traffic = resource({
+	parameter,
+	loader: () => surrealdb.query<StopTraffic[][]>(`fn::traffic::station_board(stop:${parameter.id});`).then(response => response.flat())
 })
 
 </script>

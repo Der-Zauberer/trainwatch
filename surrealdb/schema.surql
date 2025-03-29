@@ -26,11 +26,19 @@ DEFINE FUNCTION OVERWRITE fn::search::n_word_edge_ngram($name: string) {
 };
 
 DEFINE FUNCTION OVERWRITE fn::search::search($name: string) {
-    RETURN array::flatten(SELECT VALUE entries.{id, name} AS result FROM type::thing("search", fn::search::normalize($name, "")));
+    RETURN SELECT VALUE entries.{id, name} AS result FROM ONLY type::thing("search", fn::search::normalize($name, ""));
 };
 
 DEFINE FUNCTION OVERWRITE fn::user::has_permission($user: record<user>, $permissions: string) {
     RETURN array::includes($user.permissions, $permissions) || array::includes($user.roles.map(|$role| $role.permissions).flatten(), $permissions)
+};
+
+DEFINE FUNCTION OVERWRITE fn::traffic::station_board($stop: record<stop>) {
+    RETURN SELECT VALUE (
+        SELECT arrival, departure, in.{id, route.{id, name, designations.{number, type.*}}} AS line,
+        (SELECT VALUE out.{name, id} FROM (SELECT * FROM <-line->connects ORDER BY departure.time)) AS stops
+        FROM <-connects
+    ) AS lines FROM ONLY $stop;
 };
 
 ----------

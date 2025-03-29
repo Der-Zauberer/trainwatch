@@ -17,8 +17,8 @@ export type HttpError = {
     message: string
 }
 
-export type Search = {
-    id: RecordId<string>
+export type Entity<T extends string = string> = {
+    id: RecordId<T>
     name: string
 }
 
@@ -49,9 +49,7 @@ export type Color = {
     background: string
 }
 
-export type Stop = {
-    id: RecordId<'stop'>
-    name: string
+export type Stop = Entity<'stop'> & {
     score: number
     platforms: {
         name: string
@@ -90,9 +88,7 @@ export type Stop = {
     [key: string]: unknown
 }
 
-export type Type = {
-    id: RecordId<'type'>
-    name: string
+export type Type = Entity<'type'> & {
     description: string
     priority: number
     color: Color
@@ -100,9 +96,7 @@ export type Type = {
     classification: 'REGIONAL' | 'LONG_DISTANCE'
 }
 
-export type Operator = {
-    id: RecordId<'operator'>
-    name: string
+export type Operator = Entity<'operator'> & {
     address: Address
     website: string
 }
@@ -127,17 +121,26 @@ export type Journey = {
     line: Line
 }
 
-export type Role = {
-    id: RecordId<'role'>
-    name: string
+export type Role = Entity<'role'> & {
     permissions: string[]
 }
 
-export type User = {
-    id: RecordId<'user'>
-    name: string
+export type User = Entity<'user'> & {
     email: string
     password?: string
     roles: Role[]
     permissions: string[]
+}
+
+export type StopTraffic = {
+    arrival: { 
+        platform: string,
+        time: Date
+    },
+    departure: {
+        platform: string,
+        time: Date
+    },
+    stops: Entity<'stop'>[]
+    line: Line
 }

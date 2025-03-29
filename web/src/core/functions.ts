@@ -3,6 +3,6 @@ export function enumToArray(enumeration: object): string[] {
 }
 
 export function dateToTime(date: Date) {
-    if (isNaN(date.getTime())) return '00:00'
-    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
+    if (isNaN(date.getTime())) throw Error(`${date} is not a valid date!`)
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
