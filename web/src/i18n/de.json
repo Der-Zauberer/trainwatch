@@ -17,7 +17,7 @@
     "entity": {
         "general": {
             "general": "Allgemein",
-            "id": "Id",
+            "id": "Id | Ids",
             "name": "Name",
             "description": "Beschreibung"
         },
@@ -52,7 +52,7 @@
             "source": "Quelle | Quellen",
             "license": "Lizenz",
             "url": "Url",
-            "updated": "Aktualisiert"
+            "updated": "Zuletzt aktualisiert"
         },
         "color": {
             "color": "Farbe | Farben",
@@ -93,8 +93,7 @@
                 "lostAndFound": "Fundbüro",
                 "barrierFree": "Barrierefrei",
                 "mobilityService": "Mobilitätsservice"
-            },
-            "ids": {}
+            }
         },
         "type": {
             "type": "Zuggattung | Zuggattungen",

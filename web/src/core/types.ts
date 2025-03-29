@@ -85,8 +85,8 @@ export type Stop = {
         barrierFree: boolean
         mobilityService?: string
     }
-    ids: { [key: string]: string | string[] }
-    sources?: Source[]
+    ids: Record<string, string | string []>
+    sources: Source[]
     [key: string]: unknown
 }
 
@@ -114,12 +114,12 @@ export type Route = {
         type: Type
         number: string
     }[],
-    operator?: Operator | RecordId<'operator'>
+    operator?: Operator
 }
 
 export type Line = {
     id: RecordId<'line'>
-    route: Route | RecordId<'route'>
+    route: Route
 }
 
 export type Journey = {
@@ -138,6 +138,6 @@ export type User = {
     name: string
     email: string
     password?: string
-    roles: (Role | RecordId<'user'>)[]
+    roles: Role[]
     permissions: string[]
 }

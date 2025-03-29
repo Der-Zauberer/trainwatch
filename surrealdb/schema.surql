@@ -44,11 +44,11 @@ DEFINE TABLE OVERWRITE stop SCHEMAFULL
 DEFINE FIELD OVERWRITE id ON TABLE stop;
 DEFINE FIELD OVERWRITE name ON TABLE stop TYPE string;
 DEFINE FIELD OVERWRITE score ON TABLE stop TYPE int DEFAULT 9;
-DEFINE FIELD OVERWRITE platforms ON TABLE stop TYPE array<object>;
+DEFINE FIELD OVERWRITE platforms ON TABLE stop TYPE array<object> DEFAULT [];
 DEFINE FIELD OVERWRITE platforms[*].name ON TABLE stop TYPE string;
 DEFINE FIELD OVERWRITE platforms[*].length ON TABLE stop TYPE float;
 DEFINE FIELD OVERWRITE platforms[*].height ON TABLE stop TYPE int;
-DEFINE FIELD OVERWRITE platforms[*].linkedPlatforms ON TABLE stop TYPE array<string>;
+DEFINE FIELD OVERWRITE platforms[*].linkedPlatforms ON TABLE stop TYPE array<string> DEFAULT [];
 DEFINE FIELD OVERWRITE location ON TABLE stop TYPE object;
 DEFINE FIELD OVERWRITE location.latitude ON TABLE stop TYPE option<float>;
 DEFINE FIELD OVERWRITE location.longitude ON TABLE stop TYPE option<float>;
@@ -86,7 +86,7 @@ DEFINE FIELD OVERWRITE ids ON TABLE stop TYPE option<object>;
 DEFINE FIELD OVERWRITE ids.uic ON TABLE stop TYPE option<int>;
 DEFINE FIELD OVERWRITE ids.ril ON TABLE stop TYPE option<array<string>>;
 DEFINE FIELD OVERWRITE ids.stada ON TABLE stop TYPE option<int>;
-DEFINE FIELD OVERWRITE sources ON TABLE stop TYPE option<array<object>>;
+DEFINE FIELD OVERWRITE sources ON TABLE stop TYPE array<object> DEFAULT [];
 DEFINE FIELD OVERWRITE sources[*].name ON TABLE stop TYPE string;
 DEFINE FIELD OVERWRITE sources[*].license ON TABLE stop TYPE string;
 DEFINE FIELD OVERWRITE sources[*].url ON TABLE stop TYPE string;
@@ -95,7 +95,7 @@ DEFINE FIELD OVERWRITE sources[*].updated ON TABLE stop TYPE string;
 DEFINE TABLE OVERWRITE search SCHEMAFULL
 	PERMISSIONS
 		FOR select FULL;
-DEFINE FIELD OVERWRITE entries ON TABLE search TYPE array<object>;
+DEFINE FIELD OVERWRITE entries ON TABLE search TYPE array<object> DEFAULT [];
 DEFINE FIELD OVERWRITE entries[*].id ON TABLE search TYPE record<stop>;
 DEFINE FIELD OVERWRITE entries[*].name ON TABLE search TYPE string;
 DEFINE FIELD OVERWRITE entries[*].score ON TABLE search TYPE number;
@@ -539,7 +539,7 @@ DEFINE TABLE OVERWRITE route TYPE NORMAL SCHEMAFULL
         FOR create, update, delete WHERE fn::user::has_permission($auth, "studio.route");
 DEFINE FIELD OVERWRITE id ON TABLE route;
 DEFINE FIELD OVERWRITE name ON TABLE route TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
-DEFINE FIELD OVERWRITE designations ON TABLE route TYPE array<object>;
+DEFINE FIELD OVERWRITE designations ON TABLE route TYPE array<object> DEFAULT [];
 DEFINE FIELD OVERWRITE designations[*].type ON TABLE route TYPE record<type>;
 DEFINE FIELD OVERWRITE designations[*].number ON TABLE route TYPE string;
 DEFINE FIELD OVERWRITE operator ON TABLE route TYPE option<record<operator>>;
@@ -606,7 +606,7 @@ DEFINE TABLE OVERWRITE role SCHEMAFULL
         FOR create, update, delete WHERE fn::user::has_permission($auth, "auth.role");
 DEFINE FIELD OVERWRITE id ON TABLE role;
 DEFINE FIELD OVERWRITE name ON role TYPE string;
-DEFINE FIELD OVERWRITE permissions ON TABLE role TYPE array<string>;
+DEFINE FIELD OVERWRITE permissions ON TABLE role TYPE array<string> DEFAULT [];
 
 UPSERT role:admin CONTENT {
     name: "admin",

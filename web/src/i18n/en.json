@@ -17,7 +17,7 @@
     "entity": {
         "general": {
             "general": "General",
-            "id": "Id",
+            "id": "Id | Ids",
             "name": "Name",
             "description": "Description"
         },
@@ -52,7 +52,7 @@
             "source": "Source | Sources",
             "license": "License",
             "url": "Url",
-            "updated": "Updated"
+            "updated": "Last updated"
         },
         "color": {
             "color": "Color | Colors",
@@ -93,8 +93,7 @@
                 "lostAndFound": "Lost And Found",
                 "barrierFree": "BarrierFree",
                 "mobilityService": "MobilityService"
-            },
-            "ids": {}
+            }
         },
         "type": {
             "type": "Type | Types",
