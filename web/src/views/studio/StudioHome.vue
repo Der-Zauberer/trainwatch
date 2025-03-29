@@ -6,47 +6,20 @@
             <swd-loading-spinner :loading="amounts.loading">
                 <swd-card class="grid-cols-2">
                     <h4 class="grid-span-2">Statistics</h4>
-
-                    <div class="margin-bottom">
-                        <span>{{ amounts.value?.stops || 0 }}</span>
-                        <swd-subtitle>{{ $t('entity.stop.stop', 0) }}</swd-subtitle>
-                    </div>
-                    <div class="margin-bottom">
-                        <span>{{ amounts.value?.operator || 0 }}</span>
-                        <swd-subtitle>{{ $t('entity.operator.operator', 0) }}</swd-subtitle>
-                    </div>
-                    <div class="margin-bottom">
-                        <span>{{ amounts.value?.types || 0 }}</span>
-                        <swd-subtitle>{{ $t('entity.type.type', 0) }}</swd-subtitle>
-                    </div>
-                    <div class="margin-bottom">
-                        <span>{{ amounts.value?.routes || 0 }}</span>
-                        <swd-subtitle>{{ $t('entity.route.route', 0) }}</swd-subtitle>
-                    </div>
-                    <div class="margin-bottom">
-                        <span>{{ amounts.value?.lines || 0 }}</span>
-                        <swd-subtitle>{{ $t('entity.line.line', 0) }}</swd-subtitle>
-                    </div>
-                    <div class="margin-bottom">
-                        <span>{{ amounts.value?.journeys || 0 }}</span>
-                        <swd-subtitle>{{ $t('entity.journey.journey', 0) }}</swd-subtitle>
-                    </div>
-                    <div class="margin-bottom">
-                        <span>{{ amounts.value?.roles || 0 }}</span>
-                        <swd-subtitle>{{ $t('entity.role.role', 0) }}</swd-subtitle>
-                    </div>
-                    <div class="margin-bottom">
-                        <span>{{ amounts.value?.users || 0 }}</span>
-                        <swd-subtitle>{{ $t('entity.user.user', 0) }}</swd-subtitle>
-                    </div>
+                    <div class="margin-bottom"><span>{{ amounts.value?.stops || 0 }}</span><swd-subtitle>{{ $t('entity.stop.stop', 0) }}</swd-subtitle></div>
+                    <div class="margin-bottom"><span>{{ amounts.value?.operator || 0 }}</span><swd-subtitle>{{ $t('entity.operator.operator', 0) }}</swd-subtitle></div>
+                    <div class="margin-bottom"><span>{{ amounts.value?.types || 0 }}</span><swd-subtitle>{{ $t('entity.type.type', 0) }}</swd-subtitle></div>
+                    <div class="margin-bottom"><span>{{ amounts.value?.routes || 0 }}</span><swd-subtitle>{{ $t('entity.route.route', 0) }}</swd-subtitle></div>
+                    <div class="margin-bottom"><span>{{ amounts.value?.lines || 0 }}</span><swd-subtitle>{{ $t('entity.line.line', 0) }}</swd-subtitle></div>
+                    <div class="margin-bottom"><span>{{ amounts.value?.journeys || 0 }}</span><swd-subtitle>{{ $t('entity.journey.journey', 0) }}</swd-subtitle></div>
+                    <div class="margin-bottom"><span>{{ amounts.value?.roles || 0 }}</span><swd-subtitle>{{ $t('entity.role.role', 0) }}</swd-subtitle></div>
+                    <div class="margin-bottom"><span>{{ amounts.value?.users || 0 }}</span><swd-subtitle>{{ $t('entity.user.user', 0) }}</swd-subtitle></div>
                 </swd-card>
             </swd-loading-spinner>
 
             <swd-card-ghost>
-
                 <h3>Welcome back</h3>
                 <p class="primary-color">{{ user?.name }}</p>
-
             </swd-card-ghost>
 
         </div>

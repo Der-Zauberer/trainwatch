@@ -9,9 +9,7 @@
                 <div><samp class="id">{{ line.id.id.toString() }}</samp></div>
                 <div class="flex">
                     <span>
-                        <swd-chip v-for="designation of line.route.designations" :key="designation.number" :style="`color: ${designation.type.color.text}; background-color: ${designation.type.color.background};`">
-                            {{ designation.type.name }} {{ designation.number }}
-                        </swd-chip>
+                        <DesignationChip v-for="designation of line.route.designations" :key="designation.type.name + designation.number" :type="designation.type" :number="designation.number"/>
                     </span>
                     {{ line.route.name }}
                 </div>
@@ -41,6 +39,7 @@ import type { Line, Route } from '@/core/types';
 import type Surreal from 'surrealdb';
 import { RecordId } from 'surrealdb';
 import { inject, reactive, ref } from 'vue';
+import DesignationChip from '@/components/DesignationChip.vue';
 
 const surrealdb = inject('surrealdb') as Surreal
 

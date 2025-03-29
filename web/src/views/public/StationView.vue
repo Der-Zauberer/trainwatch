@@ -4,28 +4,30 @@
 		<SearchComponent @search="parameter.id = $event"/>
 	</div>
 
-	<div class="container-xxxl grid-cols-xl-3 grid-cols-md-2 grid-cols-1" v-if="stop.value">
+	<div class="container-xl grid-cols-md-2 grid-cols-1" v-if="stop.value">
 
-		<div v-if="traffic.value">
-			<swd-card v-for="traffic of traffic.value" :key="JSON.stringify(traffic)">
-				<div class="flex">
-					<div>{{ dateToTime(traffic.departure.time) }}</div>
+		<div>
+
+			<div class="tab">
+				<button class="grey-color" :selected="boardType === Board.DEPARTURE ? true : undefined" @click="boardType = Board.DEPARTURE">Departure</button>
+				<button class="grey-color" :selected="boardType === Board.ARRIVAL ? true : undefined" @click="boardType = Board.ARRIVAL">Arrival</button>
+			</div>
+
+			<swd-card v-for="traffic of board.value" :key="JSON.stringify(traffic)">
+				<div class="flex margin-0">
+					<div>{{ dateToTime(boardType === Board.DEPARTURE ? traffic.departure.time : traffic.arrival.time) }}</div>
 					<div> 
-						<swd-chip v-for="designation of traffic.line.route.designations" :key="designation" :style="`background: ${designation.type.color.background}; color: ${designation.type.color.text};`">
-							{{ designation.type.name }}{{ designation.number }}
-						</swd-chip>
+						<DesignationChip v-for="designation of traffic.line.route.designations" :key="designation.type.name + designation.number" :type="designation.type" :number="designation.number"/>
 					</div>
-					<h5>
+					<h5 class="width-100">
 						{{ traffic.stops[traffic.stops.length - 1].name }}
 						<swd-subtitle>{{ traffic.stops[0].name }}</swd-subtitle>
 					</h5>
+					<div>{{ boardType === Board.DEPARTURE ? traffic.departure.platform : traffic.arrival.platform }}</div>
 				</div>
-				<swd-subtitle>{{ traffic.stops.map(stop => stop.name).slice(traffic.stops.map(stop => stop.id).indexOf(stop.value.id)).join(' &middot; ') }}</swd-subtitle>
+				<swd-subtitle>{{ getStops(traffic).map(stop => stop.name).join(' &middot; ') }}</swd-subtitle>
 			</swd-card>
-		</div>
 
-		<div hidden>
-			Section2
 		</div>
 
 		<div>
@@ -37,13 +39,16 @@
 						{{ [stop.value.address.federalState, stop.value.address.country].join(', ') }} 
 					</swd-subtitle>
 				</h4>
-
 				<div>
 					<div>{{ stop.value.address.street }}</div>
 					<div>{{ [stop.value.address.zipcode, stop.value.address.city].join(' ') }}</div>
-					<div></div>
 				</div>
-
+				<div class="flex flex-wrap">
+					<swd-chip v-for="service of getServices(stop.value)" :key="service">
+						<swd-icon class="done-icon"></swd-icon> 
+						{{ $t('entity.stop.services.' + service) }}
+					</swd-chip>
+				</div>
 				<div class="flex flex-end">
 					<a :href="urls.createDbStationUrl(stop.value)" target="_blank" class="button grey-color">bahnhof.de&nbsp;&nbsp;<swd-icon class="external-icon"/></a>
 					<a :href="urls.createGoogleMapsUrl(stop.value)" target="_blank" class="button grey-color">Google Maps&nbsp;&nbsp;<swd-icon class="external-icon"/></a>
@@ -81,6 +86,26 @@
 </template>
 
 <style scoped>
+
+.tab {
+	display: flex;
+	flex-direction: row;
+	margin-bottom: var(--theme-element-spacing);
+}
+
+.tab button {
+	width: 100%;
+	text-align: center;
+}
+
+.tab button:first-child {
+	border-radius: var(--theme-border-radius) 0 0 var(--theme-border-radius);
+}
+
+.tab button:last-child {
+	border-radius: 0 var(--theme-border-radius) var(--theme-border-radius) 0;
+}
+
 .sources .sources__headline {
 	padding-bottom: 0px;
 }
@@ -95,16 +120,20 @@
 </style>
 
 <script setup lang="ts">
+import DesignationChip from '@/components/DesignationChip.vue';
 import SearchComponent from '@/components/SearchComponent.vue';
 import { dateToTime } from '@/core/functions';
 import { resource } from '@/core/resource';
 import type { Stop, StopTraffic } from '@/core/types';
 import type Surreal from 'surrealdb';
 import { RecordId } from 'surrealdb';
-import { inject, reactive } from 'vue';
+import { inject, reactive, ref } from 'vue';
+
+enum Board { DEPARTURE, ARRIVAL }
 
 const surrealdb = inject('surrealdb') as Surreal
 
+const boardType = ref<Board>(Board.DEPARTURE)
 const parameter = reactive({ id: 'singen_hohentwiel' })
 
 const urls = {
@@ -127,5 +156,19 @@ const traffic = resource({
 	parameter,
 	loader: () => surrealdb.query<StopTraffic[][]>(`fn::traffic::station_board(stop:${parameter.id});`).then(response => response.flat())
 })
+
+const board = resource<StopTraffic[], unknown>({
+	parameter: { traffic, boardType },
+	loader: () => traffic.value?.filter(traffic => stop.value?.id.id !== (boardType.value == Board.ARRIVAL ? traffic.stops[0].id.id : traffic.stops.slice(-1)[0].id.id)) || []
+})
+
+function getServices(stop: Stop) {
+	return Object.entries(stop.services).filter(entry => Boolean(entry[1])).map(entry => entry[0])
+}
+
+function getStops(traffic: StopTraffic) {
+	const position = traffic.stops.map(stop => stop.id.id).indexOf(parameter.id)
+	return boardType.value === Board.DEPARTURE ? traffic.stops.slice(position + 1) : traffic.stops.slice(0, position)
+}
 
 </script>
