@@ -20,10 +20,6 @@
     color: red;
 }
 
-.flex.flex-column {
-    flex-direction: column;
-}
-
 h5 {
     font-weight: normal;
 }

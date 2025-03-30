@@ -132,7 +132,8 @@ export type User = Entity<'user'> & {
     permissions: string[]
 }
 
-export type StopTraffic = {
+export type BoardLine = {
+    id: RecordId<'connects'>
     arrival: { 
         platform: string,
         time: Date

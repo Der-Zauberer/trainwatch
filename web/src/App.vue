@@ -4,7 +4,7 @@
     <a class="only-smaller-md" v-if="$route.path.startsWith('/studio')" tabindex="0" onclick="swd.query('swd-navigation').toggle()"><swd-icon class="hamburger-icon"></swd-icon></a>
     <a class="swd-menu-title">trainwatch</a>
     <RouterLink to="/">{{ $t('page.home') }}</RouterLink>
-    <RouterLink to="/stations">{{ $t('entity.stop.stop', 0) }}</RouterLink>
+    <RouterLink to="/stop/singen_hohentwiel">{{ $t('entity.stop.stop', 0) }}</RouterLink>
     <div class="width-100"></div>
     <RouterLink to="/login" v-if="!user">{{ $t('page.login') }}</RouterLink>
 
@@ -38,7 +38,7 @@
   </swd-navigation>
 
   <swd-navigation-content navigation-collapse-md :style="$route.path.startsWith('/studio') ? '' : 'margin-left: 0'">
-    <RouterView />
+    <RouterView/>
   </swd-navigation-content>
 
 </template>

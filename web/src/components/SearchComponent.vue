@@ -2,7 +2,7 @@
     <swd-dropdown>
         <swd-input>
             <input id="search-input" v-model="parameter.name">
-            <input hidden @select="select((<any>$event.target).value)">
+            <input hidden @select="emits('search', (<any>$event.target).value)">
             <swd-icon class="search-icon" swd-input-icon/>
             <swd-icon class="close-icon" swd-input-reset-icon hidden/>
         </swd-input>
@@ -25,9 +25,10 @@ swd-dropdown {
 import { resource } from '@/core/resource';
 import type { Entity } from '@/core/types';
 import type Surreal from 'surrealdb';
-import { inject, reactive } from 'vue';
+import { inject, reactive, watch } from 'vue';
 
-const emit = defineEmits(['search'])
+const props = defineProps<{ name?: string }>()
+const emits = defineEmits<{ (e: 'search', value: string): void }>()
 
 const surrealdb = inject('surrealdb') as Surreal
 
@@ -38,7 +39,5 @@ const results = resource({
     loader: (parameter) => !parameter.name ? [] : surrealdb.query<Entity<'stop'>[]>('fn::search::search($name)', { name: parameter.name }).then(result => result.flat().splice(0, 20))
 })
 
-const select = (value: string) => {
-    emit('search', value)
-}
+watch(props, async () => props.name ? parameter.name = props.name : {})
 </script>

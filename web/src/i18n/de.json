@@ -21,6 +21,12 @@
             "name": "Name",
             "description": "Beschreibung"
         },
+        "traffic": {
+            "arrival": "Ankunft",
+            "departure": "Abfahrt",
+            "platform": "Gleis",
+            "time": "Zeit"
+        },
         "vehicle": {
             "vehicle": "Verkehrsmittel | Verkehrsmittel",
             "TRAIN": "Zug",

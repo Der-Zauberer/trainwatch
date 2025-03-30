@@ -1,38 +1,38 @@
 <template>
 
 	<div class="container-sm" style="padding-bottom: 0;">
-		<SearchComponent @search="parameter.id = $event"/>
+		<SearchComponent :name="stop.value?.name" @search="router.replace({ params: { id: $event } })"/>
 	</div>
 
 	<div class="container-xl grid-cols-md-2 grid-cols-1" v-if="stop.value">
 
-		<div>
+		<div class="grid-cols-1">
 
 			<div class="tab">
 				<button class="grey-color" :selected="boardType === Board.DEPARTURE ? true : undefined" @click="boardType = Board.DEPARTURE">Departure</button>
 				<button class="grey-color" :selected="boardType === Board.ARRIVAL ? true : undefined" @click="boardType = Board.ARRIVAL">Arrival</button>
 			</div>
 
-			<swd-card v-for="traffic of board.value" :key="JSON.stringify(traffic)">
+			<swd-card v-for="line of board.value" :key="line.id.id">
 				<div class="flex margin-0">
-					<div>{{ dateToTime(boardType === Board.DEPARTURE ? traffic.departure.time : traffic.arrival.time) }}</div>
+					<div>{{ dateToTime(boardType === Board.DEPARTURE ? line.departure.time : line.arrival.time) }}</div>
 					<div> 
-						<DesignationChip v-for="designation of traffic.line.route.designations" :key="designation.type.name + designation.number" :type="designation.type" :number="designation.number"/>
+						<DesignationChip v-for="designation of line.line.route.designations" :key="designation.type.name + designation.number" :type="designation.type" :number="designation.number"/>
 					</div>
 					<h5 class="width-100">
-						{{ traffic.stops[traffic.stops.length - 1].name }}
-						<swd-subtitle>{{ traffic.stops[0].name }}</swd-subtitle>
+						{{ line.stops[line.stops.length - 1].name }}
+						<swd-subtitle>{{ line.stops[0].name }}</swd-subtitle>
 					</h5>
-					<div>{{ boardType === Board.DEPARTURE ? traffic.departure.platform : traffic.arrival.platform }}</div>
+					<div>{{ boardType === Board.DEPARTURE ? line.departure.platform : line.arrival.platform }}</div>
 				</div>
-				<swd-subtitle>{{ getStops(traffic).map(stop => stop.name).join(' &middot; ') }}</swd-subtitle>
+				<swd-subtitle>{{ getStops(line).map(stop => stop.name).join(' &middot; ') }}</swd-subtitle>
 			</swd-card>
 
 		</div>
 
 		<div>
 			
-			<swd-card class="flex flex-column">
+			<swd-card class="grid-cols-1">
 				<h4>
 					{{ stop.value.name }}
 					<swd-subtitle> 
@@ -55,7 +55,7 @@
 				</div>
 			</swd-card>
 
-			<swd-card class="flex flex-column" v-if="stop.value.ids">
+			<swd-card class="grid-cols-1" v-if="stop.value.ids">
 				<h5>{{ $t('entity.general.id', 2) }}</h5>
 				<div class="flex flex-wrap">
 					<div v-for="[key, value] of Object.entries(stop.value.ids)" :key="key">
@@ -90,7 +90,6 @@
 .tab {
 	display: flex;
 	flex-direction: row;
-	margin-bottom: var(--theme-element-spacing);
 }
 
 .tab button {
@@ -124,17 +123,19 @@ import DesignationChip from '@/components/DesignationChip.vue';
 import SearchComponent from '@/components/SearchComponent.vue';
 import { dateToTime } from '@/core/functions';
 import { resource } from '@/core/resource';
-import type { Stop, StopTraffic } from '@/core/types';
+import type { Stop, BoardLine } from '@/core/types';
 import type Surreal from 'surrealdb';
 import { RecordId } from 'surrealdb';
-import { inject, reactive, ref } from 'vue';
+import { inject, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
 enum Board { DEPARTURE, ARRIVAL }
 
+const route = useRoute()
+const router = useRouter()
 const surrealdb = inject('surrealdb') as Surreal
 
 const boardType = ref<Board>(Board.DEPARTURE)
-const parameter = reactive({ id: 'singen_hohentwiel' })
 
 const urls = {
 	createDbStationUrl: (stop: Stop) => `https://www.bahnhof.de/${encodeURI(stop.id.id.toString().replace('_', '-'))}`,
@@ -148,26 +149,26 @@ const urls = {
 }
 
 const stop = resource({
-	parameter,
-	loader: () => surrealdb.select<Stop>(new RecordId('stop', parameter.id))
+	parameter: { route },
+	loader: (parameter) => surrealdb.select<Stop>(new RecordId('stop', parameter.route.params.id))
 })
 
-const traffic = resource({
-	parameter,
-	loader: () => surrealdb.query<StopTraffic[][]>(`fn::traffic::station_board(stop:${parameter.id});`).then(response => response.flat())
+const lines = resource({
+	parameter: { route },
+	loader: (parameter) => surrealdb.query<BoardLine[][]>(`fn::traffic::stop_board(stop:${parameter.route.params.id});`).then(response => response.flat())
 })
 
-const board = resource<StopTraffic[], unknown>({
-	parameter: { traffic, boardType },
-	loader: () => traffic.value?.filter(traffic => stop.value?.id.id !== (boardType.value == Board.ARRIVAL ? traffic.stops[0].id.id : traffic.stops.slice(-1)[0].id.id)) || []
+const board = resource<BoardLine[], unknown>({
+	parameter: { lines, boardType },
+	loader: () => lines.value?.filter(lines => stop.value?.id.id !== (boardType.value == Board.ARRIVAL ? lines.stops[0].id.id : lines.stops.slice(-1)[0].id.id)) || []
 })
 
 function getServices(stop: Stop) {
 	return Object.entries(stop.services).filter(entry => Boolean(entry[1])).map(entry => entry[0])
 }
 
-function getStops(traffic: StopTraffic) {
-	const position = traffic.stops.map(stop => stop.id.id).indexOf(parameter.id)
+function getStops(traffic: BoardLine) {
+	const position = traffic.stops.map(stop => stop.id.id).indexOf(route.params.id)
 	return boardType.value === Board.DEPARTURE ? traffic.stops.slice(position + 1) : traffic.stops.slice(0, position)
 }
 
