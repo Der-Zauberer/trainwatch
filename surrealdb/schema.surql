@@ -33,12 +33,19 @@ DEFINE FUNCTION OVERWRITE fn::user::has_permission($user: record<user>, $permiss
     RETURN array::includes($user.permissions, $permissions) || array::includes($user.roles.map(|$role| $role.permissions).flatten(), $permissions)
 };
 
-DEFINE FUNCTION OVERWRITE fn::traffic::stop_board($stop: record<stop>) {
+DEFINE FUNCTION OVERWRITE fn::line::board($stop: record<stop>) {
     RETURN SELECT VALUE (
         SELECT id, arrival, departure, in.{id, route.{id, name, designations.{number, type.*}}} AS line,
         (SELECT VALUE out.{name, id} FROM (SELECT * FROM <-line->connects ORDER BY departure.time)) AS stops
         FROM <-connects
     ) AS lines FROM ONLY $stop;
+};
+
+DEFINE FUNCTION OVERWRITE fn::line::stops($line: record<line>) {
+    RETURN 
+        SELECT id, route.{id, name, designations.{number, type.*}},
+        (SELECT id, arrival, departure.platform, departure.time, out.id AS id, out.name AS name FROM ->connects ORDER BY departure.time) AS stops
+        FROM $line;
 };
 
 ----------

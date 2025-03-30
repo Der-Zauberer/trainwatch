@@ -155,7 +155,7 @@ const stop = resource({
 
 const lines = resource({
 	parameter: { route },
-	loader: (parameter) => surrealdb.query<BoardLine[][]>(`fn::traffic::stop_board(stop:${parameter.route.params.id});`).then(response => response.flat())
+	loader: (parameter) => surrealdb.query<BoardLine[][]>(`fn::line::board(stop:${parameter.route.params.id});`).then(response => response.flat())
 })
 
 const board = resource<BoardLine[], unknown>({
