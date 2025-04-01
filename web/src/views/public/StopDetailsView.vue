@@ -9,28 +9,33 @@
 		<div class="grid-cols-1">
 
 			<div class="tab">
-				<button class="grey-color" :selected="boardType === Board.DEPARTURE ? true : undefined" @click="boardType = Board.DEPARTURE">Departure</button>
-				<button class="grey-color" :selected="boardType === Board.ARRIVAL ? true : undefined" @click="boardType = Board.ARRIVAL">Arrival</button>
+				<button class="grey-color" :selected="boardView === Board.DEPARTURE ? true : undefined" @click="boardView = Board.DEPARTURE">Departure</button>
+				<button class="grey-color" :selected="boardView === Board.ARRIVAL ? true : undefined" @click="boardView = Board.ARRIVAL">Arrival</button>
+				<button class="grey-color" :selected="boardView === Board.STOP ? true : undefined" @click="boardView = Board.STOP" v-if="isMobileView">Stop</button>
 			</div>
 
-			<swd-card v-for="line of board.value" :key="line.id.id">
-				<div class="flex margin-0">
-					<div>{{ dateToTime(boardType === Board.DEPARTURE ? line.departure.time : line.arrival.time) }}</div>
-					<div> 
-						<DesignationChip v-for="designation of line.line.route.designations" :key="designation.type.name + designation.number" :type="designation.type" :number="designation.number"/>
+			<div v-if="!isMobileView || boardView !== Board.STOP">
+
+				<swd-card v-for="line of board.value" :key="line.id.id">
+					<div class="flex margin-0">
+						<div>{{ dateToTime(boardView === Board.DEPARTURE ? line.departure.time : line.arrival.time) }}</div>
+						<div> 
+							<DesignationChip v-for="designation of line.line.route.designations" :key="designation.type.name + designation.number" :type="designation.type" :number="designation.number"/>
+						</div>
+						<h5 class="width-100">
+							{{ line.stops[line.stops.length - 1].name }}
+							<swd-subtitle>{{ line.stops[0].name }}</swd-subtitle>
+						</h5>
+						<div>{{ boardView === Board.DEPARTURE ? line.departure.platform : line.arrival.platform }}</div>
 					</div>
-					<h5 class="width-100">
-						{{ line.stops[line.stops.length - 1].name }}
-						<swd-subtitle>{{ line.stops[0].name }}</swd-subtitle>
-					</h5>
-					<div>{{ boardType === Board.DEPARTURE ? line.departure.platform : line.arrival.platform }}</div>
-				</div>
-				<swd-subtitle>{{ getStops(line).map(stop => stop.name).join(' &middot; ') }}</swd-subtitle>
-			</swd-card>
+					<swd-subtitle>{{ getStops(line).map(stop => stop.name).join(' &middot; ') }}</swd-subtitle>
+				</swd-card>
+				
+			</div>
 
 		</div>
 
-		<div>
+		<div v-if="!isMobileView || boardView === Board.STOP">
 			
 			<swd-card class="grid-cols-1">
 				<h4>
@@ -95,6 +100,7 @@
 .tab button {
 	width: 100%;
 	text-align: center;
+	border-radius: 0;
 }
 
 .tab button:first-child {
@@ -126,16 +132,17 @@ import { resource } from '@/core/resource';
 import type { Stop, BoardLine } from '@/core/types';
 import type Surreal from 'surrealdb';
 import { RecordId } from 'surrealdb';
-import { inject, ref } from 'vue';
+import { inject, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
-enum Board { DEPARTURE, ARRIVAL }
+enum Board { DEPARTURE, ARRIVAL, STOP }
 
 const route = useRoute()
 const router = useRouter()
 const surrealdb = inject('surrealdb') as Surreal
 
-const boardType = ref<Board>(Board.DEPARTURE)
+const isMobileView = ref<boolean>(window.innerWidth < 768)
+const boardView = ref<Board>(Board.DEPARTURE)
 
 const urls = {
 	createDbStationUrl: (stop: Stop) => `https://www.bahnhof.de/${encodeURI(stop.id.id.toString().replace('_', '-'))}`,
@@ -145,6 +152,16 @@ const urls = {
 			.map(entry => encodeURI(entry))
 			.join('%2C')
 		return `https://www.google.com/maps/search/?api=1&query=${querry}`
+	}
+}
+
+onMounted(() => window.addEventListener('resize', updateWindowWidth))
+onUnmounted(() => window.removeEventListener('resize', updateWindowWidth))
+
+function updateWindowWidth() {
+	isMobileView.value = window.innerWidth < 768
+	if (!isMobileView.value && boardView.value == Board.STOP) {
+		boardView.value = Board.DEPARTURE
 	}
 }
 
@@ -159,8 +176,8 @@ const lines = resource({
 })
 
 const board = resource<BoardLine[], unknown>({
-	parameter: { lines, boardType },
-	loader: () => lines.value?.filter(lines => stop.value?.id.id !== (boardType.value == Board.ARRIVAL ? lines.stops[0].id.id : lines.stops.slice(-1)[0].id.id)) || []
+	parameter: { lines, boardView },
+	loader: () => lines.value?.filter(lines => stop.value?.id.id !== (boardView.value == Board.ARRIVAL ? lines.stops[0].id.id : lines.stops.slice(-1)[0].id.id)) || []
 })
 
 function getServices(stop: Stop) {
@@ -169,7 +186,7 @@ function getServices(stop: Stop) {
 
 function getStops(traffic: BoardLine) {
 	const position = traffic.stops.map(stop => stop.id.id).indexOf(route.params.id)
-	return boardType.value === Board.DEPARTURE ? traffic.stops.slice(position + 1) : traffic.stops.slice(0, position)
+	return boardView.value === Board.DEPARTURE ? traffic.stops.slice(position + 1) : traffic.stops.slice(0, position)
 }
 
 </script>
