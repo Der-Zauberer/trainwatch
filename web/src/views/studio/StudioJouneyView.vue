@@ -9,7 +9,7 @@
                 <div><samp class="id">{{ journey.id.id.toString() }}</samp></div>
                 <div class="flex">
                     <span>
-                        <DesignationChip v-for="designation of journey.line.route.designations" :key="designation.type.name + designation.number" :type="designation.type" :number="designation.number"/>
+                        <DesignationChipComponent v-for="designation of journey.line.route.designations" :key="designation.type.name + designation.number" :type="designation.type" :number="designation.number"/>
                     </span>
                     {{ journey.line.route.name }}
                 </div>
@@ -31,7 +31,7 @@
 </style>
 
 <script setup lang="ts">
-import DesignationChip from '@/components/DesignationChip.vue';
+import DesignationChipComponent from '@/components/DesignationChipComponent.vue';
 import EditDialogComponent from '@/components/EditDialogComponent.vue';
 import InputComponent from '@/components/InputComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';

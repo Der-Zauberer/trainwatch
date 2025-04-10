@@ -14,23 +14,8 @@
 				<button class="grey-color" :selected="boardView === Board.STOP ? true : undefined" @click="boardView = Board.STOP" v-if="isMobileView">Stop</button>
 			</div>
 
-			<div v-if="!isMobileView || boardView !== Board.STOP">
-
-				<swd-card v-for="line of board.value" :key="line.id.id">
-					<div class="flex margin-0">
-						<div>{{ dateToTime(boardView === Board.DEPARTURE ? line.departure.time : line.arrival.time) }}</div>
-						<div> 
-							<DesignationChip v-for="designation of line.line.route.designations" :key="designation.type.name + designation.number" :type="designation.type" :number="designation.number"/>
-						</div>
-						<h5 class="width-100">
-							{{ line.stops[line.stops.length - 1].name }}
-							<swd-subtitle>{{ line.stops[0].name }}</swd-subtitle>
-						</h5>
-						<div>{{ boardView === Board.DEPARTURE ? line.departure.platform : line.arrival.platform }}</div>
-					</div>
-					<swd-subtitle>{{ getStops(line).map(stop => stop.name).join(' &middot; ') }}</swd-subtitle>
-				</swd-card>
-				
+			<div v-if="board.value && (!isMobileView || boardView !== Board.STOP)">
+				<BoardLineComponent :line="board.value" :arrival="boardView === Board.ARRIVAL" :stop="stop.value"/>
 			</div>
 
 		</div>
@@ -125,9 +110,8 @@
 </style>
 
 <script setup lang="ts">
-import DesignationChip from '@/components/DesignationChip.vue';
+import BoardLineComponent from '@/components/BoardLineComponent.vue';
 import SearchComponent from '@/components/SearchComponent.vue';
-import { dateToTime } from '@/core/functions';
 import { resource } from '@/core/resource';
 import type { Stop, BoardLine } from '@/core/types';
 import type Surreal from 'surrealdb';
@@ -182,11 +166,6 @@ const board = resource<BoardLine[], unknown>({
 
 function getServices(stop: Stop) {
 	return Object.entries(stop.services).filter(entry => Boolean(entry[1])).map(entry => entry[0])
-}
-
-function getStops(traffic: BoardLine) {
-	const position = traffic.stops.map(stop => stop.id.id).indexOf(route.params.id)
-	return boardView.value === Board.DEPARTURE ? traffic.stops.slice(position + 1) : traffic.stops.slice(0, position)
 }
 
 </script>
