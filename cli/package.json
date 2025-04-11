@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "dev": "esbuild src/main.ts --bundle --platform=node --outfile=dist/trainwatch.js && node ./dist/trainwatch.js",
+    "build": "esbuild src/main.ts --bundle --platform=node --outfile=dist/trainwatch.js --minify"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "esbuild": "^0.25.2",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "surrealdb": "^1.3.1"
+  }
+}

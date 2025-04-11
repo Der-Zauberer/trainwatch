@@ -12,11 +12,6 @@ export enum Classification {
     LONG_DISTANCE,
 }
 
-export type HttpError = {
-    statusCode: number
-    message: string
-}
-
 export type Entity<T extends string = string> = {
     id: RecordId<T>
     name: string
@@ -133,18 +128,4 @@ export type User = Entity<'user'> & {
     password?: string
     roles: Role[]
     permissions: string[]
-}
-
-export type BoardLine = {
-    id: RecordId<'connects'>
-    arrival: { 
-        platform: string,
-        time: Date
-    },
-    departure: {
-        platform: string,
-        time: Date
-    },
-    stops: Entity<'stop'>[]
-    line: Line
 }

@@ -64,9 +64,9 @@ DEFINE FIELD OVERWRITE platforms[*].name ON TABLE stop TYPE string;
 DEFINE FIELD OVERWRITE platforms[*].length ON TABLE stop TYPE float;
 DEFINE FIELD OVERWRITE platforms[*].height ON TABLE stop TYPE int;
 DEFINE FIELD OVERWRITE platforms[*].linkedPlatforms ON TABLE stop TYPE array<string> DEFAULT [];
-DEFINE FIELD OVERWRITE location ON TABLE stop TYPE object;
-DEFINE FIELD OVERWRITE location.latitude ON TABLE stop TYPE option<float>;
-DEFINE FIELD OVERWRITE location.longitude ON TABLE stop TYPE option<float>;
+DEFINE FIELD OVERWRITE location ON TABLE stop TYPE option<object>;
+DEFINE FIELD OVERWRITE location.latitude ON TABLE stop TYPE float;
+DEFINE FIELD OVERWRITE location.longitude ON TABLE stop TYPE float;
 DEFINE FIELD OVERWRITE address ON TABLE stop TYPE option<object>;
 DEFINE FIELD OVERWRITE address.street ON TABLE stop TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
 DEFINE FIELD OVERWRITE address.zipcode ON TABLE stop TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
@@ -98,9 +98,9 @@ DEFINE FIELD OVERWRITE services.lostAndFound ON TABLE stop TYPE bool DEFAULT fal
 DEFINE FIELD OVERWRITE services.barrierFree ON TABLE stop TYPE bool DEFAULT false;
 DEFINE FIELD OVERWRITE services.mobilityService ON TABLE stop TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
 DEFINE FIELD OVERWRITE ids ON TABLE stop TYPE option<object>;
-DEFINE FIELD OVERWRITE ids.uic ON TABLE stop TYPE option<int>;
+DEFINE FIELD OVERWRITE ids.uic ON TABLE stop TYPE option<string>;
 DEFINE FIELD OVERWRITE ids.ril ON TABLE stop TYPE option<array<string>>;
-DEFINE FIELD OVERWRITE ids.stada ON TABLE stop TYPE option<int>;
+DEFINE FIELD OVERWRITE ids.stada ON TABLE stop TYPE option<string>;
 DEFINE FIELD OVERWRITE sources ON TABLE stop TYPE array<object> DEFAULT [];
 DEFINE FIELD OVERWRITE sources[*].name ON TABLE stop TYPE string;
 DEFINE FIELD OVERWRITE sources[*].license ON TABLE stop TYPE string;
@@ -129,7 +129,7 @@ DEFINE EVENT OVERWRITE stop_update ON TABLE stop WHEN $before.name != $after.nam
     IF $after THEN {
         FOR $entry IN fn::search::extract_ids($after.ids) {
             UPSERT ONLY type::thing("search", $entry) SET id = $entry, entries += { id: $after.id, name: $after.name, score: $after.score };
-            UPDATE ONLY type::thing("search", $entry) SET entries = fn::search::sort_beginn_score_matching($entry, entries);
+            UPDATE ONLY type::thing("search", $entry) SET entries = (SELECT * FROM $parent.entries ORDER BY score);
         };
         LET $search = fn::search::normalize($stop.name, "");
         FOR $entry IN fn::search::n_word_edge_ngram(fn::search::normalize($after.name, " ")) {
