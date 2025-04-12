@@ -99,9 +99,12 @@ export type Operator = Entity<'operator'> & {
     website?: string
 }
 
+export type Timetable = Entity<'timetable'>
+
 export type Route = {
     id: RecordId<'route'>
     name?: string
+    timetable: Timetable
     designations: {
         type: Type
         number: string
@@ -109,23 +112,23 @@ export type Route = {
     operator?: Operator
 }
 
+export type RouteCreation = {
+    id?: RecordId<'route'>
+    name?: string
+    timetable: RecordId<'timetable'>
+    designations: {
+        type: RecordId<'type'>
+        number: string
+    }[],
+    operator?: RecordId<'operator'>
+}
+
 export type Line = {
     id: RecordId<'line'>
     route: Route
 }
 
-export type Journey = {
-    id: RecordId<'journey'>
-    line: Line
-}
-
-export type Role = Entity<'role'> & {
-    permissions: string[]
-}
-
-export type User = Entity<'user'> & {
-    email: string
-    password?: string
-    roles: Role[]
-    permissions: string[]
+export type LineCreation = {
+    id?: RecordId<'line'>
+    route: RecordId<'route'>
 }

@@ -1,6 +1,6 @@
 export const CSV = {
 
-    parse(csv: string, seperator: string = ','): Record<string, unknown>[] {
+    parse<T>(csv: string, seperator: string = ','): T[] {
         const lines: string[] = csv.split(/\r?\n/gm).filter(column => column !== '')
         if (lines.length < 2) return []
         const header = CSV.parseHeader(lines.shift() || '', seperator)
@@ -11,8 +11,8 @@ export const CSV = {
         return CSV.splitRow(header, seperator, true).map(row => row.trim())
     },
 
-    parseChunk(header: string[], lines: string[], seperator: string = ',') {
-        const entities: Record<string, unknown>[] = []
+    parseChunk<T>(header: string[], lines: string[], seperator: string = ','): T[] {
+        const entities: T[] = []
         for (const line of lines) {
             const entity: Record<string, unknown> = {}
             const rows = CSV.splitRow(line, seperator).map(row => row.trim())
@@ -26,7 +26,7 @@ export const CSV = {
                 else if (value.length >= 2 && value[0] === '"' && value[value.length - 1] === '"') entity[key] = value.slice(1, -1)
                 else entity[key] = rows[i];
             }
-            entities.push(entity)
+            entities.push(entity as T)
         }
         return entities
     },

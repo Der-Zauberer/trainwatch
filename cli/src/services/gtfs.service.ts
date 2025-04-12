@@ -1,6 +1,11 @@
 import Path from 'path'
 import { readFile } from '../core/files'
 import { CSV } from '../core/csv'
+import { LineCreation, Operator, Route, RouteCreation, Stop, Timetable, Type } from '../core/types'
+import { RecordId } from 'surrealdb'
+import { normalize } from '../core/search'
+import { time } from 'console'
+import { printWarning } from '../core/cli'
 
 export type GtfsAgency = {
     agency_id: string
@@ -11,7 +16,7 @@ export type GtfsAgency = {
     agency_phone: string
 }
 
-export type GtfsStops = {
+export type GtfsStop = {
     stop_id: string
     stop_name: string
     stop_desc?: string
@@ -25,7 +30,7 @@ export type GtfsStops = {
     platform_code?: string
 }
 
-export type GtfsStopTimes = {
+export type GtfsStopTime = {
     trip_id: string
     arrival_time: string
     departure_time: string
@@ -37,7 +42,7 @@ export type GtfsStopTimes = {
     shape_dist_traveled?: string
 }
 
-export type GtfsRoutes = {
+export type GtfsRoute = {
     route_id: string
     agency_id: string
     route_short_name: string
@@ -46,7 +51,7 @@ export type GtfsRoutes = {
     route_type: string
 }
 
-export type GtfsTrips = {
+export type GtfsTrip = {
     route_id: string
     service_id: string
     trip_id: string
@@ -61,15 +66,129 @@ export type GtfsTrips = {
 export class GtfsService {
 
     public readonly agencies: GtfsAgency[]
-    public readonly routes: GtfsRoutes[]
-    public readonly stops: GtfsStops[]
-    public readonly trips: GtfsTrips[]
+    public readonly routes: GtfsRoute[]
+    public readonly stops: GtfsStop[]
+    public readonly trips: GtfsTrip[]
 
     constructor(directory: string) {
-        this.agencies = CSV.parse(readFile(Path.join(directory, 'agency.txt'))) as GtfsAgency[]
-        this.routes = CSV.parse(readFile(Path.join(directory, 'routes.txt'))) as GtfsRoutes[]
-        this.stops = CSV.parse(readFile(Path.join(directory, 'stops.txt'))) as GtfsStops[]
-        this.trips = CSV.parse(readFile(Path.join(directory, 'trips.txt'))) as GtfsTrips[]
+        this.agencies = CSV.parse(readFile(Path.join(directory, 'agency.txt')))
+        this.routes = CSV.parse(readFile(Path.join(directory, 'routes.txt')))
+        this.stops = CSV.parse(readFile(Path.join(directory, 'stops.txt')))
+        this.trips = CSV.parse(readFile(Path.join(directory, 'trips.txt')))
+    }
+
+    convertAgencies(): Map<string, Operator> {
+        const agencies: Map<string, Operator> = new Map()
+        for (const agency of this.agencies) {
+            agencies.set(agency.agency_id, {
+                id: new RecordId('operator', normalize(agency.agency_name, '_')),
+                name: agency.agency_name,
+                address: agency.agency_phone ? { phone: agency.agency_phone }: {},
+                website: agency.agency_url,
+            })
+        }
+        return agencies
+    }
+
+    convertRoutes(timetable: Timetable, types: Map<string, Type>, operators: Map<string, Operator>): Map<string, RouteCreation> {
+        const routes: Map<string, RouteCreation> = new Map()
+        for (const route of this.routes) {
+            const designation = this.splitDesignation(route.route_short_name)
+            const type = types.get((designation.type || route.route_desc || 'B').toLowerCase())
+
+            if (!type) console.log(`Type ${designation.type} not found!`)
+            if (!type) continue
+
+            routes.set(route.route_id, {
+                name: route.route_long_name,
+                timetable: timetable.id,
+                designations: [
+                    {
+                        type: type.id,
+                        number: designation.number
+                    }
+                ],
+                operator: operators.get(route.agency_id)?.id
+            })
+        }
+        return routes
+    }
+
+    convertStops(): Map<string, Stop> {
+        const stops: Map<string, Stop> = new Map()
+        for (const stop of this.stops) {
+            const gtfsIdArray: string[] = stop.stop_id.split(':')
+            const uic: string | undefined = gtfsIdArray[2] !== undefined && gtfsIdArray[2].length === 7 ? gtfsIdArray[2] : undefined
+            const platform: string |undefined = gtfsIdArray[4] || stop.platform_code || undefined
+            const existingStop: Stop | undefined = stops.get(stop.stop_id)
+
+            if (existingStop && platform) {
+                existingStop?.platforms?.push({ name: platform, height: 0, length: 0, linkedPlatforms: [] })
+                existingStop?.platforms?.sort((a, b) => a.name.localeCompare(b.name))
+                stops.set(stop.stop_id, existingStop)
+            } else {
+                stops.set(stop.stop_id, {
+                    id: new RecordId('stop', normalize(stop.stop_name, '_')),
+                    name: stop.stop_name,
+                    score: 9,
+                    platforms: platform ? [{ name: platform, height: 0, length: 0, linkedPlatforms: [] }] : [],
+                    location: {
+                        latitude: Number(stop.stop_lat),
+                        longitude: Number(stop.stop_lon)
+                    },
+                    services: {
+                        parking: false,
+                        localPublicTransport: false,
+                        carRental: false,
+                        taxi: false,
+                        publicFacilities: false,
+                        travelNecessities: false,
+                        locker: false,
+                        wifi: false,
+                        information: false,
+                        railwayMission: false,
+                        lostAndFound: false,
+                        barrierFree: false,
+                        mobilityService: '',
+                    },
+                    ids: uic ? { uic } : undefined,
+                    sources: []
+                })
+            }
+        }
+        return stops
+    }
+
+    convertTrips(routes: Map<string, Route>): Map<string, LineCreation> {
+        const lines: Map<string, LineCreation> = new Map()
+        for (const trip of this.trips) {
+            const route = routes.get(trip.route_id)
+
+            if (!route) continue
+
+            lines.set(trip.trip_id, {
+                route: route.id
+            })
+        }
+
+        return lines;
+    }
+
+    private splitDesignation(string: string): { type?: string, number: string } {
+        const designation: { type?: string, number: string } = { number: '' }
+        let isNumber = false
+        for (const char of string) {
+            if (isNaN(char as unknown as number) && !isNumber) {
+                if (!designation.type) {
+                    designation.type = ''
+                }
+                designation.type += char
+            } else {
+                isNumber = true
+                designation.number += char
+            }
+        }
+        return designation
     }
 
 }

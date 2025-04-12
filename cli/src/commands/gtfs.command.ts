@@ -1,8 +1,11 @@
 import Surreal, { ConnectOptions, RecordId } from "surrealdb"
-import { Logger, printError } from "../core/cli"
+import { Logger, printError, printWarning } from "../core/cli"
+import { Entity, Line, LineCreation, Operator, Route, RouteCreation, Stop, Timetable, Type } from "../core/types"
+import { GtfsService, GtfsStop, GtfsStopTime } from "../services/gtfs.service"
+import { readFileAsStream } from "../core/files"
+import Path from 'path'
+import { CSV } from "../core/csv"
 import { normalize } from "../core/search"
-import { Entity, Operator, Route, Stop, Type } from "../core/types"
-import { GtfsService } from "../services/gtfs.service"
 
 export async function importGtfs(directory: string) {
     if (!directory) printError(`Require directory as arguments!`)
@@ -24,55 +27,13 @@ export async function importGtfs(directory: string) {
 
     const types: Map<string, Type> = await downloadFromSurreal(surreal, 'type')
 
-    logger.printLoading(`Importing GTFS data from ${directory}`)
+    const timetable: Timetable = await surreal.upsert<Timetable, Partial<Timetable>>(new RecordId('timetable', normalize(directory)), { name: directory })
 
+    logger.printLoading(`Importing GTFS data from ${directory}`)
     const gtfsService = new GtfsService(directory)
 
     logger.printLoading(`Collecting stop information`)
-
-    const stops = new Map<string, Stop>()
-    
-    for (const stop of gtfsService.stops) {
-        const id: string = normalize(stop.stop_name, '_')
-        const gtfsIdArray: string[] = stop.stop_id.split(':')
-        const uic: string | undefined = gtfsIdArray[2] !== undefined && gtfsIdArray[2].length === 7 ? gtfsIdArray[2] : undefined
-        const platform: string |undefined = gtfsIdArray[4] || stop.platform_code || undefined
-        const existingStop: Stop | undefined = stops.get(id)
-    
-        if (existingStop && platform) {
-            existingStop?.platforms?.push({ name: platform, height: 0, length: 0, linkedPlatforms: [] })
-            existingStop?.platforms?.sort((a, b) => a.name.localeCompare(b.name))
-            stops.set(id, existingStop)
-        } else {
-            stops.set(id, {
-                id: new RecordId('stop', id),
-                name: stop.stop_name,
-                score: 9,
-                platforms: platform ? [{ name: platform, height: 0, length: 0, linkedPlatforms: [] }] : [],
-                location: {
-                    latitude: Number(stop.stop_lat),
-                    longitude: Number(stop.stop_lon)
-                },
-                services: {
-                    parking: false,
-                    localPublicTransport: false,
-                    carRental: false,
-                    taxi: false,
-                    publicFacilities: false,
-                    travelNecessities: false,
-                    locker: false,
-                    wifi: false,
-                    information: false,
-                    railwayMission: false,
-                    lostAndFound: false,
-                    barrierFree: false,
-                    mobilityService: '',
-                },
-                ids: uic ? { uic } : undefined,
-                sources: []
-            })
-        }
-    }
+    const stops: Map<string, Stop> = new Map()//gtfsService.convertStops()
 
     logger.printLoading(`Upload stops to surrealdb`)
 
@@ -83,16 +44,7 @@ export async function importGtfs(directory: string) {
     }
 
     logger.printLoading(`Collecting agency information`)
-
-    const operator: Map<string, Operator> = new Map(gtfsService.agencies.map(agency => [
-        agency.agency_id,
-        {
-            id: new RecordId('operator', normalize(agency.agency_name, '_')),
-            name: agency.agency_name,
-            address: agency.agency_phone ? { phone: agency.agency_phone }: {},
-            website: agency.agency_url,
-        }
-    ]))
+    const operator: Map<string, Operator> = gtfsService.convertAgencies()
 
     logger.printLoading(`Upload operators to surrealdb`)
 
@@ -103,27 +55,62 @@ export async function importGtfs(directory: string) {
     }
 
     logger.printLoading(`Collecting route information`)
-
-    const routes: Map<string, Route> = new Map(gtfsService.routes.map(route => [ 
-        route.route_id,
-        {
-            name: route.route_long_name,
-            designations: [
-                {
-                    type: new RecordId('type', types.get((splitDesignation(route.route_short_name).type || route.route_desc || 'B').toLowerCase())?.id.id.toString() || 'b'),
-                    number: splitDesignation(route.route_short_name).number
-                }
-            ],
-            operator: operator.get(route.agency_id)?.id
-        } as unknown as Route
-    ]))
+    const routesCreations: Map<string, RouteCreation> = gtfsService.convertRoutes(timetable, types, operator)
 
     logger.printLoading(`Upload routes to surrealdb`)
 
-    for (const [index, route] of Array.from(routes.values()).entries()) {
-        await surreal.insert('route', route)
-        logger.printProgress(index, routes.size, 'Uploading gtfs routes')
+    const routes: Map<string, Route> = new Map()
+    for (const [index, [id, route]] of Array.from(routesCreations.entries()).entries()) {
+        routes.set(id, await surreal.insert<Route, RouteCreation>('route', route).then(result => result[0]))
+        logger.printProgress(index, routesCreations.size, 'Uploading gtfs routes')
     }
+
+    logger.printLoading(`Collecting trip information`)
+    const lineCreations: Map<string, LineCreation> = gtfsService.convertTrips(routes)
+
+    logger.printLoading(`Upload trips to surrealdb`)
+
+    const lines: Map<string, Line> = new Map()
+    for (const [index, [id, line]] of Array.from(lineCreations.entries()).entries()) {
+        lines.set(id, await surreal.insert<Line, LineCreation>('line', line).then(result => result[0]))
+        logger.printProgress(index, lineCreations.size, 'Uploading gtfs trips')
+    }
+    console.log(lines)
+
+    logger.printLoading(`Collecting timetable information`)
+
+    const stop_ids: Map<string, GtfsStop> = new Map(gtfsService.stops.map(stop => [ stop.stop_id, stop ]))
+
+    let header: string[]
+    let index = 0
+    readFileAsStream(Path.join(directory, 'stop_times.txt'), async (lineArray) => {
+        if (!header) header = CSV.parseHeader(lineArray.shift() || '')
+        for (const connects of CSV.parseChunk(header, lineArray) as GtfsStopTime[]) {
+            const stop: GtfsStop | undefined = stop_ids.get(connects.stop_id)
+            const line: Line | undefined = lines.get(connects.trip_id)
+            if (!stop) {
+                printWarning(`Stop ${connects.stop_id} not found`)
+                continue
+            }
+            if (!line) {
+                printWarning(`Line ${connects.trip_id} not found`)
+                continue
+            }
+            await surreal.insertRelation({
+                in: line,
+                out: stops.get(connects.stop_id)?.id,
+                arrival: {
+                    platform: stop.platform_code,
+                    time: connects.arrival_time.split(':').map(time => time.padStart(2, '0')).slice(0, 2).join(':')
+                },
+                departure: {
+                    platform: stop.platform_code,
+                    time: connects.departure_time.split(':').map(time => time.padStart(2, '0')).slice(0, 2).join(':')
+                }
+            })
+        }
+        logger.printProgress(index++, Math.ceil(50564128 / 1000), 'reading', 'stop_times')
+    }, 1000)
 
 }
 
@@ -143,21 +130,4 @@ async function uploadToSurreal<T>(surreal: Surreal, type: string, entities: T): 
 
 function splitArray<T>(array: T[], size: number): T[][] {
     return [...Array(Math.ceil(array.length / size))].map((_, i) => array.slice(i * size, (i + 1) * size));
-}
-
-function splitDesignation(string: string): { type?: string, number: string } {
-    const designation: { type?: string, number: string } = { number: '' }
-    let isNumber = false
-    for (const char of string) {
-        if (isNaN(char as unknown as number) && !isNumber) {
-            if (!designation.type) {
-                designation.type = ''
-            }
-            designation.type += char
-        } else {
-            isNumber = true
-            designation.number += char
-        }
-    }
-    return designation
 }
