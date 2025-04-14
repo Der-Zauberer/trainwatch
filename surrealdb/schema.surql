@@ -13,7 +13,8 @@ DEFINE FUNCTION OVERWRITE fn::search::normalize($name: string, $seperator: optio
     RETURN $result;
 };
 
-DEFINE FUNCTION OVERWRITE fn::search::extract_ids($object: object) {
+DEFINE FUNCTION OVERWRITE fn::search::extract_ids($object: option<object>) {
+    IF $object == NONE { RETURN [] };
     RETURN $object.values().flatten().map(|$id| type::string($id).lowercase());
 };
 
@@ -131,7 +132,7 @@ DEFINE EVENT OVERWRITE stop_update ON TABLE stop WHEN $before.name != $after.nam
             UPSERT ONLY type::thing("search", $entry) SET id = $entry, entries += { id: $after.id, name: $after.name, score: $after.score };
             UPDATE ONLY type::thing("search", $entry) SET entries = (SELECT * FROM $parent.entries ORDER BY score);
         };
-        LET $search = fn::search::normalize($stop.name, "");
+        LET $search = fn::search::normalize($after.name, "");
         FOR $entry IN fn::search::n_word_edge_ngram(fn::search::normalize($after.name, " ")) {
             LET $score = IF string::starts_with($search, $entry) { 10 } ELSE { 20 };
             UPSERT ONLY type::thing("search", $entry) SET id = $entry, entries += { id: $after.id, name: $after.name, score: $after.score + $score };

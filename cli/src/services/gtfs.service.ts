@@ -1,10 +1,9 @@
 import Path from 'path'
-import { readFile } from '../core/files'
+import { readFile, readFileAsStream } from '../core/files'
 import { CSV } from '../core/csv'
 import { LineCreation, Operator, Route, RouteCreation, Stop, Timetable, Type } from '../core/types'
 import { RecordId } from 'surrealdb'
 import { normalize } from '../core/search'
-import { time } from 'console'
 import { printWarning } from '../core/cli'
 
 export type GtfsAgency = {
@@ -70,11 +69,22 @@ export class GtfsService {
     public readonly stops: GtfsStop[]
     public readonly trips: GtfsTrip[]
 
-    constructor(directory: string) {
+    constructor(private directory: string) {
         this.agencies = CSV.parse(readFile(Path.join(directory, 'agency.txt')))
         this.routes = CSV.parse(readFile(Path.join(directory, 'routes.txt')))
         this.stops = CSV.parse(readFile(Path.join(directory, 'stops.txt')))
         this.trips = CSV.parse(readFile(Path.join(directory, 'trips.txt')))
+    }
+
+    async streamStopTimes(connection: (connects: GtfsStopTime) => void) {
+        let header: string[]
+        let chunk = 100
+        await readFileAsStream(Path.join(this.directory, 'stop_times.txt'), async (lines) => {
+            if (!header) header = CSV.parseHeader(lines.shift() || '')
+            for (const connects of CSV.parseChunk(header, lines) as GtfsStopTime[]) {
+                connection(connects)
+            }
+        }, chunk)
     }
 
     convertAgencies(): Map<string, Operator> {
@@ -91,26 +101,26 @@ export class GtfsService {
     }
 
     convertRoutes(timetable: Timetable, types: Map<string, Type>, operators: Map<string, Operator>): Map<string, RouteCreation> {
+        const unknown: Set<string> = new Set()
         const routes: Map<string, RouteCreation> = new Map()
         for (const route of this.routes) {
             const designation = this.splitDesignation(route.route_short_name)
             const type = types.get((designation.type || route.route_desc || 'B').toLowerCase())
 
-            if (!type) console.log(`Type ${designation.type} not found!`)
-            if (!type) continue
+            if (!type && designation.type) {
+                unknown.add(designation.type)
+            }
 
             routes.set(route.route_id, {
                 name: route.route_long_name,
                 timetable: timetable.id,
                 designations: [
-                    {
-                        type: type.id,
-                        number: designation.number
-                    }
+                    type ? { type: type.id, number: designation.number } : { type: new RecordId('type', 'b'), number: route.route_short_name }
                 ],
                 operator: operators.get(route.agency_id)?.id
             })
         }
+        printWarning(`Can't find the following types: ${Array.from(unknown)}`)
         return routes
     }
 
@@ -164,7 +174,10 @@ export class GtfsService {
         for (const trip of this.trips) {
             const route = routes.get(trip.route_id)
 
-            if (!route) continue
+            if (!route) {
+                printWarning(`Route ${trip.route_id} not found`)
+                continue
+            }
 
             lines.set(trip.trip_id, {
                 route: route.id

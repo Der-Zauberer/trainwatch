@@ -11,21 +11,26 @@ export function readFileOrUndefined(name: string): string | undefined {
     return FileSystem.readFileSync(name, 'utf8')
 }
 
-export function readFileAsStream(name: string, callback: (lines: string[])  => void, lineAmount: number = 100) {
-    const fileStream = FileSystem.openSync(name, 'r');
-    const bufferSize = 1024 * 1024;
-    const buffer = Buffer.alloc(bufferSize);
-    let lines: string[] = [];
-    let bytesRead;
+export async function readFileAsStream(name: string, callback: (lines: string[]) => Promise<void>, lineAmount: number = 100) {
+    const fileStream = FileSystem.openSync(name, 'r')
+    const bufferSize = 1024 * 1024
+    const buffer = Buffer.alloc(bufferSize)
+    let leftover: string | undefined = undefined
+    let lines: string[] = []
+    let bytesRead: number
 
     while ((bytesRead = FileSystem.readSync(fileStream, buffer, 0, bufferSize, null)) > 0) {
-        buffer.toString('utf8', 0, bytesRead).split(/\r?\n/gm).forEach(line => lines.push(line));
-        while (lines.length > lineAmount) callback(lines.splice(0, lineAmount))
+        const chunk = buffer.toString('utf8', 0, bytesRead)
+        const linesOfChunks: string[] = chunk.split(/\r?\n/gm)
+        if (leftover) linesOfChunks[0] = leftover + linesOfChunks[0]
+        leftover = linesOfChunks.pop()
+        lines.push(...linesOfChunks)
+        while (lines.length > lineAmount) await callback(lines.splice(0, lineAmount))
         lines = lines.splice(lineAmount)
     }
 
-    if (lines.length > 0) callback(lines)
-    FileSystem.closeSync(fileStream);
+    if (lines.length > 0) await callback(lines)
+    FileSystem.closeSync(fileStream)
 }
 
 export function writeFile(name: string, content: string | object | unknown[]) {

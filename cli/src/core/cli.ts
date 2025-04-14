@@ -153,7 +153,7 @@ export class Logger {
      * @param { number } index 
      * @param { number } amount 
      * @param { string } status 
-     * @param { string | number | boolean | object | any[] } [message]
+     * @param { string | number | boolean | object | unknown[] } [message]
      */
     printProgress(index: number, amount: number, status: string, message?: unknown) {
         stopLoading?.()

@@ -1,14 +1,12 @@
 import Surreal, { ConnectOptions, RecordId } from "surrealdb"
 import { Logger, printError, printWarning } from "../core/cli"
 import { Entity, Line, LineCreation, Operator, Route, RouteCreation, Stop, Timetable, Type } from "../core/types"
-import { GtfsService, GtfsStop, GtfsStopTime } from "../services/gtfs.service"
-import { readFileAsStream } from "../core/files"
-import Path from 'path'
-import { CSV } from "../core/csv"
+import { GtfsService, GtfsStop } from "../services/gtfs.service"
 import { normalize } from "../core/search"
 
 export async function importGtfs(directory: string) {
     if (!directory) printError(`Require directory as arguments!`)
+
     const logger = new Logger('GTFS-Import')
 
     const options: ConnectOptions = {
@@ -33,14 +31,14 @@ export async function importGtfs(directory: string) {
     const gtfsService = new GtfsService(directory)
 
     logger.printLoading(`Collecting stop information`)
-    const stops: Map<string, Stop> = new Map()//gtfsService.convertStops()
+    const stops: Map<string, Stop> = gtfsService.convertStops()
 
     logger.printLoading(`Upload stops to surrealdb`)
 
-    const stopArrays = splitArray(Array.from(stops.values()), 100)
-    for (const [index, stopArray] of stopArrays.entries()) {
+    const stopChunks = splitArray(Array.from(stops.values()), 100)
+    for (const [index, stopArray] of stopChunks.entries()) {
         await uploadToSurreal(surreal, 'stop', stopArray)
-        logger.printProgress(index, stopArrays.length, 'Uploading gtfs stops')
+        logger.printProgress(index * 100, stops.size, 'Uploading gtfs stops')
     }
 
     logger.printLoading(`Collecting agency information`)
@@ -48,10 +46,10 @@ export async function importGtfs(directory: string) {
 
     logger.printLoading(`Upload operators to surrealdb`)
 
-    const operatorArrays = splitArray(Array.from(operator.values()), 100)
-    for (const [index, operatorArray] of operatorArrays.entries()) {
+    const operatorChunks = splitArray(Array.from(operator.values()), 100)
+    for (const [index, operatorArray] of operatorChunks.entries()) {
         await uploadToSurreal(surreal, 'operator', operatorArray)
-        logger.printProgress(index, operatorArrays.length, 'Uploading gtfs agencies')
+        logger.printProgress(index * 100, operator.size, 'Uploading gtfs agencies')
     }
 
     logger.printLoading(`Collecting route information`)
@@ -62,7 +60,7 @@ export async function importGtfs(directory: string) {
     const routes: Map<string, Route> = new Map()
     for (const [index, [id, route]] of Array.from(routesCreations.entries()).entries()) {
         routes.set(id, await surreal.insert<Route, RouteCreation>('route', route).then(result => result[0]))
-        logger.printProgress(index, routesCreations.size, 'Uploading gtfs routes')
+        if (index % 100 == 0) logger.printProgress(index, routesCreations.size, 'Uploading gtfs routes')
     }
 
     logger.printLoading(`Collecting trip information`)
@@ -73,44 +71,40 @@ export async function importGtfs(directory: string) {
     const lines: Map<string, Line> = new Map()
     for (const [index, [id, line]] of Array.from(lineCreations.entries()).entries()) {
         lines.set(id, await surreal.insert<Line, LineCreation>('line', line).then(result => result[0]))
-        logger.printProgress(index, lineCreations.size, 'Uploading gtfs trips')
+        if (index % 100 == 0) logger.printProgress(index, lineCreations.size, 'Uploading gtfs trips')
     }
-    console.log(lines)
 
     logger.printLoading(`Collecting timetable information`)
 
     const stop_ids: Map<string, GtfsStop> = new Map(gtfsService.stops.map(stop => [ stop.stop_id, stop ]))
 
-    let header: string[]
     let index = 0
-    readFileAsStream(Path.join(directory, 'stop_times.txt'), async (lineArray) => {
-        if (!header) header = CSV.parseHeader(lineArray.shift() || '')
-        for (const connects of CSV.parseChunk(header, lineArray) as GtfsStopTime[]) {
-            const stop: GtfsStop | undefined = stop_ids.get(connects.stop_id)
-            const line: Line | undefined = lines.get(connects.trip_id)
-            if (!stop) {
-                printWarning(`Stop ${connects.stop_id} not found`)
-                continue
-            }
-            if (!line) {
-                printWarning(`Line ${connects.trip_id} not found`)
-                continue
-            }
-            await surreal.insertRelation({
-                in: line,
-                out: stops.get(connects.stop_id)?.id,
-                arrival: {
-                    platform: stop.platform_code,
-                    time: connects.arrival_time.split(':').map(time => time.padStart(2, '0')).slice(0, 2).join(':')
-                },
-                departure: {
-                    platform: stop.platform_code,
-                    time: connects.departure_time.split(':').map(time => time.padStart(2, '0')).slice(0, 2).join(':')
-                }
-            })
+    gtfsService.streamStopTimes(async connects => {
+        const stop: GtfsStop | undefined = stop_ids.get(connects.stop_id)
+        const line: Line | undefined = lines.get(connects.trip_id)
+        if (!stop) {
+            printWarning(`Stop ${connects.stop_id} not found for ${JSON.stringify(connects)}`)
+            return
         }
-        logger.printProgress(index++, Math.ceil(50564128 / 1000), 'reading', 'stop_times')
-    }, 1000)
+        if (!line) {
+            printWarning(`Line ${connects.trip_id} not found for ${JSON.stringify(connects)}`)
+            return
+        }
+        const relation = {
+            in: line,
+            out: stops.get(connects.stop_id)?.id,
+            arrival: {
+                platform: stop.platform_code,
+                time: connects.arrival_time.split(':').map(time => time.padStart(2, '0')).slice(0, 2).join(':')
+            },
+            departure: {
+                platform: stop.platform_code,
+                time: connects.departure_time.split(':').map(time => time.padStart(2, '0')).slice(0, 2).join(':')
+            }
+        }
+        await surreal.insertRelation(relation).catch(error => printWarning(`${error}: ${JSON.stringify(relation)} ${JSON.stringify(connects)}`))
+        logger.printProgress(index++, 50564128, 'reading', 'stop_times')
+    })
 
 }
 
