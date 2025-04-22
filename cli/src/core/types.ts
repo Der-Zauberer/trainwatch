@@ -132,3 +132,16 @@ export type LineCreation = {
     id?: RecordId<'line'>
     route: RecordId<'route'>
 }
+
+export type Connects = {
+    in: RecordId<'line'>
+    out: RecordId<'stop'>
+    arrival: {
+        platform: string
+        time: Date
+    },
+    departure: {
+        platform: string
+        time: Date
+    }
+}

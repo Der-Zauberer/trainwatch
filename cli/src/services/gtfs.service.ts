@@ -76,14 +76,12 @@ export class GtfsService {
         this.trips = CSV.parse(readFile(Path.join(directory, 'trips.txt')))
     }
 
-    async streamStopTimes(connection: (connects: GtfsStopTime) => void) {
+    async streamStopTimes(connection: (connects: GtfsStopTime[]) => Promise<void>) {
         let header: string[]
-        let chunk = 100
+        const chunk = 100
         await readFileAsStream(Path.join(this.directory, 'stop_times.txt'), async (lines) => {
             if (!header) header = CSV.parseHeader(lines.shift() || '')
-            for (const connects of CSV.parseChunk(header, lines) as GtfsStopTime[]) {
-                connection(connects)
-            }
+            await connection(CSV.parseChunk<GtfsStopTime>(header, lines))
         }, chunk)
     }
 

@@ -1,6 +1,6 @@
-import Surreal, { ConnectOptions, RecordId } from "surrealdb"
+import Surreal, { ConnectOptions, RecordId, surrealql } from "surrealdb"
 import { Logger, printError, printWarning } from "../core/cli"
-import { Entity, Line, LineCreation, Operator, Route, RouteCreation, Stop, Timetable, Type } from "../core/types"
+import { Connects, Entity, Line, LineCreation, Operator, Route, RouteCreation, Stop, Timetable, Type } from "../core/types"
 import { GtfsService, GtfsStop } from "../services/gtfs.service"
 import { normalize } from "../core/search"
 
@@ -79,31 +79,39 @@ export async function importGtfs(directory: string) {
     const stop_ids: Map<string, GtfsStop> = new Map(gtfsService.stops.map(stop => [ stop.stop_id, stop ]))
 
     let index = 0
-    gtfsService.streamStopTimes(async connects => {
-        const stop: GtfsStop | undefined = stop_ids.get(connects.stop_id)
-        const line: Line | undefined = lines.get(connects.trip_id)
-        if (!stop) {
-            printWarning(`Stop ${connects.stop_id} not found for ${JSON.stringify(connects)}`)
-            return
-        }
-        if (!line) {
-            printWarning(`Line ${connects.trip_id} not found for ${JSON.stringify(connects)}`)
-            return
-        }
-        const relation = {
-            in: line,
-            out: stops.get(connects.stop_id)?.id,
-            arrival: {
-                platform: stop.platform_code,
-                time: connects.arrival_time.split(':').map(time => time.padStart(2, '0')).slice(0, 2).join(':')
-            },
-            departure: {
-                platform: stop.platform_code,
-                time: connects.departure_time.split(':').map(time => time.padStart(2, '0')).slice(0, 2).join(':')
+    await gtfsService.streamStopTimes(async connections => {
+        let relations: Connects[] = [];
+        for (const connects of connections) {
+            const gtfsStop: GtfsStop | undefined = stop_ids.get(connects.stop_id)
+            const stop: Stop | undefined = stops.get(connects.stop_id)
+            const line: Line | undefined = lines.get(connects.trip_id)
+            if (!gtfsStop || !stop) {
+                printWarning(`Stop ${connects.stop_id} not found for ${JSON.stringify(connects)}`)
+                return
             }
+            if (!line) {
+                printWarning(`Line ${connects.trip_id} not found for ${JSON.stringify(connects)}`)
+                return
+            }
+            const relation: Connects = {
+                in: line.id,
+                out: stop.id,
+                arrival: {
+                    platform: gtfsStop.platform_code || '',
+                    time: new Date(`0000-01-01T${connects.arrival_time.split(':').map(time => time.padStart(2, '0')).slice(0, 2).join(':')}:00Z`)
+                },
+                departure: {
+                    platform: gtfsStop.platform_code || '',
+                    time: new Date(`0000-01-01T${connects.departure_time.split(':').map(time => time.padStart(2, '0')).slice(0, 2).join(':')}:00Z`)
+                }
+            }
+            relations.push(relation)
+
+            //surreal.insertRelation('connects', relation).catch(error => printWarning(`${error}: ${JSON.stringify(relation)} ${JSON.stringify(connects)}`))
         }
-        await surreal.insertRelation(relation).catch(error => printWarning(`${error}: ${JSON.stringify(relation)} ${JSON.stringify(connects)}`))
-        logger.printProgress(index++, 50564128, 'reading', 'stop_times')
+        await surreal.insertRelation('connects', relations).catch(error => printWarning(`${error}`))
+        logger.printProgress(index * 100, 50564128 / 100, 'reading', 'stop_times')
+        index++
     })
 
 }

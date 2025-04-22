@@ -166,7 +166,7 @@ export class Logger {
             time = `${CLI_GREY}${Math.floor((estimation / 60))}m ${Math.floor(estimation % 60)}s${CLI_RESET}`
         }
         this.timestamp = now;
-        if (amount === index - 1) {
+        if (amount === index - 1 || index == 0) {
             this.timestamp = 0
             this.durations = 0
         }
