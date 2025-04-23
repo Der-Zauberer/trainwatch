@@ -1,10 +1,6 @@
 <template>
     <div class="container-xl">
-        <TableComponent v-model="parameter.name" :loading="lines.loading" @add="edit = create" >
-            <div>
-                <div>{{ $t('entity.general.id') }}</div>
-                <div>{{ $t('entity.general.name') }}</div>
-            </div>
+        <TableComponent v-model="parameter.name" :resource="lines" :header="[ $t('entity.general.id'), $t('entity.general.name') ]" @add="edit = create" >
             <a v-for="line of lines.value" :key="line.id.id.toString()"  @click="editRecord = line.id">
                 <div><samp class="id">{{ line.id.id.toString() }}</samp></div>
                 <div class="flex">

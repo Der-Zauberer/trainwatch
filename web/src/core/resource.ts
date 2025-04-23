@@ -3,12 +3,20 @@ import { isReactive, isRef, reactive, toRaw, watch, type Reactive, type Ref } fr
 export type ResourceValue<T, P> = ((parameter: P, abortSignal: AbortSignal) => Promise<T> | T | undefined) | Promise<T> | T | undefined
 export type ResourceParameter<P> = Reactive<P> | { [K in keyof P]: Ref<P[K]> | Reactive<P[K]> }
 
+export type UnknownResource = {
+    readonly error?: Error
+    readonly loading: boolean
+    readonly empty: boolean
+    readonly status: ResourceStatus
+    readonly value?: unknown
+}
+
 export type Resource<T, P> = {
     readonly error?: Error
     readonly loading: boolean
     readonly empty: boolean
     readonly status: ResourceStatus
-    readonly value: T | undefined
+    readonly value?: T
     reload: (value?: ResourceValue<T, P>) => Promise<T>
 }
 
@@ -17,7 +25,7 @@ type MutableResource<T, P> = {
     loading: boolean
     empty: boolean
     status: ResourceStatus
-    value: T | undefined
+    value?: T
     reload: (value?: ResourceValue<T, P>) => Promise<T>
 }
 
@@ -67,7 +75,7 @@ export function unwrapParameters<P>(parameters?: ResourceParameter<P>): P | unde
     return Object.fromEntries(Object.entries(parameters).map(([key, value]) => [key, isRef(value) || isReactive(parameters) ? toRaw(value) : value])) as P;
 }
 
-async function resolve<T, P>(value: ResourceValue<T, P>, resource: MutableResource<T, P>, options: ResourceOptions<T, P>, abort: { value: AbortController | undefined }): Promise<T> {
+async function resolve<T, P>(value: ResourceValue<T, P>, resource: MutableResource<T, P>, options: ResourceOptions<T, P>, abort: { value?: AbortController }): Promise<T> {
     const parameter = unwrapParameters(options.parameter)
     const newAbort = new AbortController()
     resource.loading = true

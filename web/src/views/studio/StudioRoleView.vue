@@ -1,10 +1,6 @@
 <template>
     <div class="container-xl">
-        <TableComponent v-model="parameter.name" :loading="roles.loading" @add="edit = create">
-            <div>
-                <div>{{ $t('entity.general.id') }}</div>
-                <div>{{ $t('entity.general.name') }}</div>
-            </div>
+        <TableComponent v-model="parameter.name" :resource="roles" :header="[ $t('entity.general.id'), $t('entity.general.name') ]" @add="edit = create">
             <a v-for="role of roles.value" :key="role.id.id.toString()" @click="editRecord = role.id">
                 <div><samp class="id">{{ role.id.id.toString() }}</samp></div>
                 <div>{{ role.name }}</div>

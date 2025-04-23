@@ -1,10 +1,6 @@
 <template>
     <div class="container-xl">
-        <TableComponent v-model="parameter.name" :loading="journeys.loading"  @add="edit = create">
-            <div>
-                <div>{{ $t('entity.general.id') }}</div>
-                <div>{{ $t('entity.general.name') }}</div>
-            </div>
+        <TableComponent v-model="parameter.name" :resource="journeys" :header="[ $t('entity.general.id'), $t('entity.general.name') ]"  @add="edit = create">
             <div v-for="journey of journeys.value" :key="journey.id.id.toString()" @click="editRecord = journey.id">
                 <div><samp class="id">{{ journey.id.id.toString() }}</samp></div>
                 <div class="flex">

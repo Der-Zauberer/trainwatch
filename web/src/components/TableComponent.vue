@@ -1,23 +1,67 @@
 <template>
-    <div class="header flex width-100">
-        <swd-input>
-            <input type="text" :placeholder="$t('action.search')" v-model="search">
-            <swd-icon class="search-icon" swd-input-icon></swd-icon>
-            <swd-icon class="close-icon" swd-input-reset-icon hidden></swd-icon>
-        </swd-input>
-        <button @click="emits('add')"><swd-icon class="add-icon"></swd-icon> {{ $t('action.new') }}</button>
-    </div>
-    <swd-loading-spinner :loading="props.loading">
-        <div class="table" :style="props.columns ? 'grid-template-columns: ' + props.columns : ''">
-            <slot></slot>
+
+    <swd-card v-if="resource.error" class="red-color">
+        {{ resource.error }}
+    </swd-card>
+
+    <div v-if="!resource.error">
+        
+        <div class="header">
+            <swd-input>
+                <input type="text" :placeholder="$t('action.search')" v-model="search" ref="searchInput">
+                <swd-icon class="search-icon" swd-input-icon></swd-icon>
+                <swd-icon class="close-icon" swd-input-reset-icon hidden></swd-icon>
+            </swd-input>
+            <button class="header--action" @click="emits('add')"><swd-icon class="add-icon"></swd-icon> {{ $t('action.new') }}</button>
         </div>
-    </swd-loading-spinner>
+
+        <div v-if="resource.loading || !resource.empty" class="table" :class="resource.loading ? 'table--loading' : undefined" :style="`grid-template-columns: repeat(${header.length - 1}, minmax(80px, max-content)) auto`">
+            <div><div v-for="headline of header" :key="headline">{{ headline }}</div></div>
+            <slot v-if="!resource.loading"></slot>
+            <div v-if="resource.loading"><div v-for="headline of header" :key="headline"><swd-skeleton-text></swd-skeleton-text></div></div>
+            <div v-if="resource.loading"><div v-for="headline of header" :key="headline"><swd-skeleton-text></swd-skeleton-text></div></div>
+            <div v-if="resource.loading"><div v-for="headline of header" :key="headline"><swd-skeleton-text></swd-skeleton-text></div></div>
+            <div v-if="resource.loading"><div v-for="headline of header" :key="headline"><swd-skeleton-text></swd-skeleton-text></div></div>
+            <div v-if="resource.loading"><div v-for="headline of header" :key="headline"><swd-skeleton-text></swd-skeleton-text></div></div>
+        </div>
+
+        <swd-card-outline v-if="!resource.loading && resource.empty" class="empty">
+            <h4>{{ $t('status.empty.title') }}</h4>
+            <p>{{ $t('status.empty.description') }}</p>
+            <div class="flex">
+                <button v-if="search" class="outline grey-color" @click="resetSearch()"><swd-icon class="delete-icon"></swd-icon> {{ $t('action.resetSearch') }}</button>
+                <button @click="emits('add')"><swd-icon class="add-icon"></swd-icon> {{ $t('action.create') }}</button>
+            </div>
+        </swd-card-outline>
+        
+    </div>
+
 </template>
 
 <style scoped>
 
-swd-loading-spinner {
+.header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--theme-inner-element-spacing);
+    margin-bottom: var(--theme-inner-element-spacing);
     width: 100%;
+}
+
+.header .header--action {
+    margin-left: auto
+}
+
+.empty {
+    display: flex;
+    flex-direction: column;
+}
+
+.empty > * {
+    display: flex;
+    width: fit-content;
+    text-align: center;
+    margin: 0 auto;
 }
 
 .table {
@@ -28,11 +72,17 @@ swd-loading-spinner {
     background-color: var(--theme-element-primary-color);
     border: solid var(--theme-border-width) var(--theme-element-primary-color);
     border-radius: var(--theme-border-radius);
+    margin-bottom: var(--theme-element-spacing);
+}
+
+.table--loading {
+    cursor: wait;
 }
 
 .table > * {
     display: contents;
     color: unset;
+    text-decoration: none;
 }
 
 .table > *:first-child {
@@ -45,23 +95,63 @@ swd-loading-spinner {
 
 .table > *:not(:first-child) > * {
     padding: round(0.5em, 1px);
-    background-color: var(--theme-background-color);
+    background: var(--theme-background-color);   
 }
 
-.table > *:last-child > *:first-child { border-bottom-left-radius: var(--theme-border-radius); }
-.table > *:last-child > *:last-child { border-bottom-right-radius: var(--theme-border-radius); }
+.table:not(.table--loading) > *:not(:first-child):hover, .table:not(.table--loading) > *:not(:first-child):hover > * {
+    background: var(--theme-element-primary-color);
+    cursor: pointer;
+}
 
+.table > *:last-child > *:first-child { border-bottom-left-radius: var(--theme-border-radius) }
+.table > *:last-child > *:last-child { border-bottom-right-radius: var(--theme-border-radius) }
+
+@media only screen and (max-width: 575px) {
+
+    .table {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .table > * {
+        display: flex;
+        flex-direction: column;
+        gap: var(--theme-border-width);
+        padding: round(0.5em, 1px);
+        background: var(--theme-background-color);
+    }
+
+    .table > *:not(:first-child) > * { padding: initial }
+    .table > *:first-child { display: none }
+
+    .table > *:nth-child(2) { border-top-left-radius: var(--theme-border-radius); border-top-right-radius: var(--theme-border-radius); }
+    .table > *:last-child { border-bottom-left-radius: var(--theme-border-radius); border-bottom-right-radius: var(--theme-border-radius); }
+
+}
 </style>
 
 <script lang="ts" setup>
+import type { UnknownResource } from '@/core/resource';
+import { useTemplateRef } from 'vue';
+
 const search = defineModel()
 
-const props = defineProps<{
-    loading: boolean
-    columns?: string
+defineProps<{
+    resource: UnknownResource,
+    header: string[]
 }>()
 
 const emits = defineEmits<{
     (e: 'add'): void
 }>()
+
+const searchInput = useTemplateRef('searchInput')
+
+function resetSearch() {
+    if (searchInput.value) {
+        searchInput.value.value = ''
+        searchInput.value.dispatchEvent(new Event('input', { bubbles: true }))
+    }
+}
+
 </script>

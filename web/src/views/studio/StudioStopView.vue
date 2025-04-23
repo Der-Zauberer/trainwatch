@@ -1,13 +1,9 @@
 <template>
     <div class="container-xl">
-        <TableComponent v-model="parameter.name" :loading="stops.loading" @add="edit = create">
-            <div>
-                <div>{{ $t('entity.general.id') }}</div>
-                <div>{{ $t('entity.general.name') }}</div>
-            </div>
+        <TableComponent v-model="parameter.name" :header="[ $t('entity.general.id'), $t('entity.general.name') ]" :resource="stops" @add="edit = create">
             <a v-for="stop of stops.value" :key="stop.id.id.toString()" @click="editRecord = stop.id">
                 <div><samp class="id">{{ stop.id.id.toString() }}</samp></div>
-                <div>{{ stop.name }}<swd-subtitle v-if="stop.address.federalState || stop.address.country">{{ [stop.address.federalState, stop.address.country].join(', ') }}</swd-subtitle></div>
+                <div>{{ stop.name }}<swd-subtitle v-if="stop.address?.federalState || stop.address?.country">{{ [stop.address.federalState, stop.address.country].join(', ') }}</swd-subtitle></div>
             </a>
         </TableComponent>
     </div>
@@ -45,8 +41,6 @@
                 <InputComponent :label="$t('entity.stop.open.saturday')" v-model="edit.open.saturday"></InputComponent>
                 <InputComponent :label="$t('entity.stop.open.sunday')" v-model="edit.open.sunday"></InputComponent>
             </div>
-
-            
             
         </div>
     </EditDialogComponent>

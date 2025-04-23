@@ -1,6 +1,6 @@
 <template>
     <div class="container-xl">
-        <TableComponent v-model="parameter.name" :loading="users.loading" @add="edit = create">
+        <TableComponent v-model="parameter.name" :resource="users" :header="[ $t('entity.general.id'), $t('entity.general.name') ]" @add="edit = create">
             <div>
                 <div>{{ $t('entity.general.id') }}</div>
                 <div>{{ $t('entity.general.name') }}</div>

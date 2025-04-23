@@ -1,11 +1,6 @@
 <template>
     <div class="container-xl">
-        <TableComponent v-model="parameter.name" :loading="types.loading" @add="edit = create" columns="max-content max-content auto">
-            <div>
-                <div>{{ $t('entity.general.id') }}</div>
-                <div>{{ $t('entity.general.name') }}</div>
-                <div>{{ $t('entity.general.description') }}</div>
-            </div>
+        <TableComponent v-model="parameter.name" :resource="types" :header="[ $t('entity.general.id'), $t('entity.general.name'), $t('entity.general.description') ]" @add="edit = create" columns="max-content max-content auto">
             <a v-for="type of types.value" :key="type.id.id.toString()" @click="editRecord = type.id">
                 <div><samp class="id">{{ type.id.id }}</samp></div>
                 <div><swd-chip :style="`color: ${type.color.text}; background-color: ${type.color.background};`">{{ type.name }}</swd-chip></div>

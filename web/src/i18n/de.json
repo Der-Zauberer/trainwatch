@@ -9,10 +9,18 @@
     "action": {
         "new": "Neu",
         "add": "Hinzufügen",
+        "create": "Erstellen",
         "search": "Suchen",
+        "resetSearch": "Suche Zurücksetzen",
         "delete": "Löschen",
         "save": "Speichern",
         "cancel": "Abbrechen"
+    },
+    "status": {
+        "empty": {
+            "title": "Keine Einträge",
+            "description": "Sieht ziemlich leer aus. Erstelle einen neuen Eintrag, wenn du soweit bist."
+        }
     },
     "entity": {
         "general": {

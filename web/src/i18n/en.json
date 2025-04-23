@@ -9,10 +9,18 @@
     "action": {
         "new": "New",
         "add": "Add",
+        "create": "Create",
         "search": "Search",
+        "resetSearch": "Reset Search",
         "delete": "Delete",
         "save": "Save",
         "cancel": "Cancel"
+    },
+    "status": {
+        "empty": {
+            "title": "No entries",
+            "description": "Looks like there’s nothing here. Create a new entry when you’re ready."
+        }
     },
     "entity": {
         "general": {

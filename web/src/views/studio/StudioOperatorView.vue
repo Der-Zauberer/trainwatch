@@ -1,10 +1,6 @@
 <template>
     <div class="container-xl">
-        <TableComponent v-model="parameter.name" :loading="operators.loading" @add="edit = create">
-            <div>
-                <div>Id</div>
-                <div>Name</div>
-            </div>
+        <TableComponent v-model="parameter.name" :resource="operators" :header="[ $t('entity.general.id'), $t('entity.general.name') ]" @add="edit = create">
             <a v-for="operator of operators.value" :key="operator.id.id.toString()" @click="editRecord = operator.id">
                 <div><samp class="id">{{ operator.id.id.toString() }}</samp></div>
                 <div>{{ operator.name }}<swd-subtitle v-if="operator.address.federalState || operator.address.country">{{ [operator.address.federalState, operator.address.country].join(', ') }}</swd-subtitle></div>
