@@ -1,10 +1,6 @@
 <template>
     <div class="container-xl">
         <TableComponent v-model="parameter.name" :resource="users" :header="[ $t('entity.general.id'), $t('entity.general.name') ]" @add="edit = create">
-            <div>
-                <div>{{ $t('entity.general.id') }}</div>
-                <div>{{ $t('entity.general.name') }}</div>
-            </div>
             <a v-for="user of users.value" :key="user.id.id.toString()" @click="editRecord = user.id">
                 <div><samp class="id">{{ user.id.id.toString() }}</samp></div>
                 <div>{{ user.name }}<swd-subtitle>{{ user.email }}</swd-subtitle></div>

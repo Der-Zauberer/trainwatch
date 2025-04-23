@@ -3,7 +3,7 @@
         <TableComponent v-model="parameter.name" :resource="types" :header="[ $t('entity.general.id'), $t('entity.general.name'), $t('entity.general.description') ]" @add="edit = create" columns="max-content max-content auto">
             <a v-for="type of types.value" :key="type.id.id.toString()" @click="editRecord = type.id">
                 <div><samp class="id">{{ type.id.id }}</samp></div>
-                <div><swd-chip :style="`color: ${type.color.text}; background-color: ${type.color.background};`">{{ type.name }}</swd-chip></div>
+                <div> <DesignationChipComponent :type="type"/></div>
                 <div>{{ type.description }}</div>
             </a>
         </TableComponent>
@@ -28,6 +28,7 @@
 </template>
 
 <script setup lang="ts">
+import DesignationChipComponent from '@/components/DesignationChipComponent.vue';
 import EditDialogComponent from '@/components/EditDialogComponent.vue';
 import InputComponent from '@/components/InputComponent.vue';
 import InputDropdownComponent from '@/components/InputDropdownComponent.vue';

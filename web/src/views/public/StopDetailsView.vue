@@ -26,12 +26,12 @@
 				<h4>
 					{{ stop.value.name }}
 					<swd-subtitle> 
-						{{ [stop.value.address.federalState, stop.value.address.country].join(', ') }} 
+						{{ [stop.value.address?.federalState, stop.value.address?.country].join(', ') }} 
 					</swd-subtitle>
 				</h4>
 				<div>
-					<div>{{ stop.value.address.street }}</div>
-					<div>{{ [stop.value.address.zipcode, stop.value.address.city].join(' ') }}</div>
+					<div>{{ stop.value.address?.street }}</div>
+					<div>{{ [stop.value.address?.zipcode, stop.value.address?.city].join(' ') }}</div>
 				</div>
 				<div class="flex flex-wrap">
 					<swd-chip v-for="service of getServices(stop.value)" :key="service">

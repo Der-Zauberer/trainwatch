@@ -4,9 +4,7 @@
             <a v-for="line of lines.value" :key="line.id.id.toString()"  @click="editRecord = line.id">
                 <div><samp class="id">{{ line.id.id.toString() }}</samp></div>
                 <div class="flex">
-                    <span>
-                        <DesignationChipComponent v-for="designation of line.route.designations" :key="designation.type.name + designation.number" :type="designation.type" :number="designation.number"/>
-                    </span>
+                    <span><DesignationChipComponent :type="line.route"/></span>
                     {{ line.route.name }}
                 </div>
             </a>

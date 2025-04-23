@@ -3,7 +3,7 @@
 		<div class="flex margin-0">
 			<div>{{ dateToTime(arrival ? line.arrival.time : line.departure.time) }}</div>
 			<div>
-				<DesignationChipComponent v-for="designation of line.line.route.designations" :key="designation.type.name + designation.number" :type="designation.type" :number="designation.number"/>
+				<DesignationChipComponent :type="line.line.route"/>
 			</div>
 			<h5 class="width-100">
                 {{ line.stops[line.stops.length - 1].name }}
