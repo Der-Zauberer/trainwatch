@@ -1,6 +1,6 @@
 <template>
     <div class="container-xl">
-        <TableComponent v-model="parameter.name" :resource="journeys" :header="[ $t('entity.general.id'), $t('entity.general.name') ]"  @add="edit = create">
+        <TableComponent v-model="parameter" :resource="journeys" :header="[ $t('entity.general.id'), $t('entity.general.name') ]"  @add="edit = create">
             <div v-for="journey of journeys.value" :key="journey.id.id.toString()" @click="editRecord = journey.id">
                 <div><samp class="id">{{ journey.id.id.toString() }}</samp></div>
                 <div class="flex">
@@ -30,17 +30,21 @@ import EditDialogComponent from '@/components/EditDialogComponent.vue';
 import InputComponent from '@/components/InputComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
 import { resource } from '@/core/resource';
-import type { Journey, Line } from '@/core/types';
+import type { Journey, Line, Parameter } from '@/core/types';
 import type Surreal from 'surrealdb';
 import { RecordId } from 'surrealdb';
 import { inject, reactive, ref } from 'vue';
 
 const surrealdb = inject('surrealdb') as Surreal
 
-const parameter = reactive({ name: '' })
+const parameter =  reactive<Parameter>({ search: '', page: 1, size: 100, count: 0 })
 const journeys = resource({
     parameter,
-	loader: (parameter) => surrealdb.query<Journey[][]>(`SELECT *, line.*, line.route.*, line.route.designations.{type.*, number} FROM journey ${ parameter.name ? 'WHERE line.route.name CONTAINS $name' : '' } LIMIT 1000`, parameter).then(response => response[0].slice(0, 100))
+	loader: async (parameter) => {
+        const [result, count] = await surrealdb.query<[Journey[], number]>(`SELECT *, line.*, line.route.*, line.route.designations.{type.*, number} FROM journey ${parameter.search ? 'WHERE name CONTAINS $search' : ''} START ($page - 1) * $size LIMIT $size; (SELECT count() FROM journey ${parameter.search ? 'WHERE name CONTAINS $search' : ''} GROUP ALL)[0].count`, parameter)
+        parameter.count = count
+        return result
+    }
 })
 
 const editRecord = ref<RecordId<string> | undefined>(undefined)

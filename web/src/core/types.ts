@@ -17,6 +17,13 @@ export type HttpError = {
     message: string
 }
 
+export type Parameter = {
+    search: string
+    page: number
+    size: number
+    count: number
+}
+
 export type Entity<T extends string = string> = {
     id: RecordId<T>
     name: string

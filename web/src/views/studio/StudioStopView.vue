@@ -1,6 +1,6 @@
 <template>
     <div class="container-xl">
-        <TableComponent v-model="parameter.name" :header="[ $t('entity.general.id'), $t('entity.general.name') ]" :resource="stops" @add="edit = create">
+        <TableComponent v-model="parameter" :header="[ $t('entity.general.id'), $t('entity.general.name') ]" :resource="stops" @add="edit = create">
             <a v-for="stop of stops.value" :key="stop.id.id.toString()" @click="editRecord = stop.id">
                 <div><samp class="id">{{ stop.id.id.toString() }}</samp></div>
                 <div>{{ stop.name }}<swd-subtitle v-if="stop.address?.federalState || stop.address?.country">{{ [stop.address.federalState, stop.address.country].join(', ') }}</swd-subtitle></div>
@@ -51,17 +51,21 @@ import EditDialogComponent from '@/components/EditDialogComponent.vue';
 import InputComponent from '@/components/InputComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
 import { resource } from '@/core/resource';
-import type { Stop } from '@/core/types';
+import type { Parameter, Stop } from '@/core/types';
 import type Surreal from 'surrealdb';
 import { RecordId } from 'surrealdb';
 import { inject, reactive, ref } from 'vue';
 
 const surrealdb = inject('surrealdb') as Surreal
 
-const parameter = reactive({ name: '' })
+const parameter = reactive<Parameter>({ search: '', page: 1, size: 100, count: 0 })
 const stops = resource({
     parameter,
-	loader: (parameter) => surrealdb.query<Stop[][]>(`SELECT * FROM stop ${parameter.name ? 'WHERE name CONTAINS $name' : ''} LIMIT 1000`, parameter).then(response => response[0].slice(0, 100))
+	loader: async (parameter) => {
+        const [result, count] = await surrealdb.query<[Stop[], number]>(`SELECT * FROM stop ${parameter.search ? 'WHERE name CONTAINS $search' : ''} START ($page - 1) * $size LIMIT $size; (SELECT count() FROM stop ${parameter.search ? 'WHERE name CONTAINS $search' : ''} GROUP ALL)[0].count`, parameter)
+        parameter.count = count
+        return result
+    }
 })
 
 const editRecord = ref<RecordId<string> | undefined>(undefined)

@@ -8,7 +8,7 @@
         
         <div class="header">
             <swd-input>
-                <input type="text" :placeholder="$t('action.search')" v-model="search" ref="searchInput">
+                <input type="text" :placeholder="$t('action.search')" v-model="parameter.search" @input="parameter.page = 1" ref="searchInput">
                 <swd-icon class="search-icon" swd-input-icon></swd-icon>
                 <swd-icon class="close-icon" swd-input-reset-icon hidden></swd-icon>
             </swd-input>
@@ -25,11 +25,19 @@
             <div v-if="resource.loading"><div v-for="headline of header" :key="headline"><swd-skeleton-text></swd-skeleton-text></div></div>
         </div>
 
+        <div class="pager" v-if="parameter.count > parameter.size">
+            <button v-if="parameter.page > 1" @click="parameter.page--"><swd-icon class="left-icon"></swd-icon></button>
+            <button v-if="parameter.page > 1" @click="parameter.page = 1">1</button>
+            <button selected>{{ parameter.page }}</button>
+            <button v-if="parameter.page < maxPage()" @click="parameter.page = maxPage()">{{ maxPage() }}</button>
+            <button v-if="parameter.page < maxPage()" @click="parameter.page++"><swd-icon class="right-icon"></swd-icon></button>
+        </div>
+
         <swd-card-outline v-if="!resource.loading && resource.empty" class="empty">
             <h4>{{ $t('status.empty.title') }}</h4>
             <p>{{ $t('status.empty.description') }}</p>
             <div class="flex">
-                <button v-if="search" class="outline grey-color" @click="resetSearch()"><swd-icon class="delete-icon"></swd-icon> {{ $t('action.resetSearch') }}</button>
+                <button v-if="parameter.search" class="outline grey-color" @click="resetSearch()"><swd-icon class="delete-icon"></swd-icon> {{ $t('action.resetSearch') }}</button>
                 <button @click="emits('add')"><swd-icon class="add-icon"></swd-icon> {{ $t('action.create') }}</button>
             </div>
         </swd-card-outline>
@@ -50,6 +58,21 @@
 
 .header .header--action {
     margin-left: auto
+}
+
+.pager {
+    display: flex;
+    justify-content: end;
+}
+
+.pager > button:not(:first-child) {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.pager > button:not(:last-child) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
 }
 
 .empty {
@@ -132,9 +155,14 @@
 
 <script lang="ts" setup>
 import type { UnknownResource } from '@/core/resource';
-import { useTemplateRef } from 'vue';
+import type { Parameter } from '@/core/types';
+import { useTemplateRef, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
-const search = defineModel()
+const router = useRouter()
+const route = useRoute()
+const parameter = defineModel<Parameter>({ required: true })
+const searchInput = useTemplateRef('searchInput')
 
 defineProps<{
     resource: UnknownResource,
@@ -145,12 +173,35 @@ const emits = defineEmits<{
     (e: 'add'): void
 }>()
 
-const searchInput = useTemplateRef('searchInput')
+if (route.query.search && route.query.search !== parameter.value.search) {
+    parameter.value.search = route.query.search as string
+}
+if (route.query.page && Number(route.query.page) !== parameter.value.page) {
+    parameter.value.page = Number(route.query.page)
+}
+
+watch(parameter.value, () => {
+    refreshQueryParameter('search', parameter.value.search, '')
+    refreshQueryParameter('page', parameter.value.page, 1)
+})
 
 function resetSearch() {
     if (searchInput.value) {
         searchInput.value.value = ''
         searchInput.value.dispatchEvent(new Event('input', { bubbles: true }))
+    }
+    parameter.value.search = ''
+}
+
+function maxPage() {
+    return Math.floor(parameter.value.count / parameter.value.size) + 1
+}
+
+function refreshQueryParameter<T extends string | number>(name: string, value: T, initial: T) {
+    if (value !== initial) {
+        router.push({ query: { ...route.query, [name]: value }})
+    } else {
+        router.replace({ query: Object.fromEntries(Object.entries(route.query).filter(([key]) => key !== name)) })
     }
 }
 

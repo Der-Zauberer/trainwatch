@@ -1,6 +1,6 @@
 <template>
     <div class="container-xl">
-        <TableComponent v-model="parameter.name" :resource="types" :header="[ $t('entity.general.id'), $t('entity.general.name'), $t('entity.general.description') ]" @add="edit = create" columns="max-content max-content auto">
+        <TableComponent v-model="parameter" :resource="types" :header="[ $t('entity.general.id'), $t('entity.general.name'), $t('entity.general.description') ]" @add="edit = create" columns="max-content max-content auto">
             <a v-for="type of types.value" :key="type.id.id.toString()" @click="editRecord = type.id">
                 <div><samp class="id">{{ type.id.id }}</samp></div>
                 <div> <DesignationChipComponent :type="type"/></div>
@@ -35,17 +35,21 @@ import InputDropdownComponent from '@/components/InputDropdownComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
 import { enumToArray } from '@/core/functions';
 import { resource } from '@/core/resource';
-import { Classification, Vehicle, type Type } from '@/core/types';
+import { Classification, Vehicle, type Parameter, type Type } from '@/core/types';
 import type Surreal from 'surrealdb';
 import { RecordId } from 'surrealdb';
 import { inject, reactive, ref } from 'vue';
 
 const surrealdb = inject('surrealdb') as Surreal
 
-const parameter = reactive({ name: '' })
+const parameter = reactive<Parameter>({ search: '', page: 1, size: 100, count: 0 })
 const types = resource({
     parameter,
-	loader: (parameter) => surrealdb.query<Type[][]>(`SELECT * FROM type ${ parameter.name ? 'WHERE name CONTAINS $name' : ''} ORDER BY priority LIMIT 1000`, parameter).then(response => response[0].slice(0, 100))
+	loader: async (parameter) => {
+        const [result, count] = await surrealdb.query<[Type[], number]>(`SELECT * FROM type ${parameter.search ? 'WHERE name CONTAINS $search' : 'ORDER BY priority'} START ($page - 1) * $size LIMIT $size; (SELECT count() FROM type ${parameter.search ? 'WHERE name CONTAINS $search' : ''} GROUP ALL)[0].count`, parameter)
+        parameter.count = count
+        return result
+    }
 })
 
 const editRecord = ref<RecordId<string> | undefined>(undefined)

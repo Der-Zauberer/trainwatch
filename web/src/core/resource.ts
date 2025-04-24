@@ -55,8 +55,6 @@ export function resource<T, P>(options: ResourceOptions<T, P>): Resource<T, P> {
         resolve(options.loader, resource, options, abort);
     }
 
-    
-
     if (options.parameter) {
         if (isReactive(options.parameter)) {
             watch(options.parameter, () => resource.reload())
@@ -94,7 +92,7 @@ async function resolve<T, P>(value: ResourceValue<T, P>, resource: MutableResour
         resource.error = error as Error
         resource.status = ResourceStatus.ERROR
     }
-    resource.empty = resource.value === undefined ||  resolved === null
+    resource.empty = resource.value === undefined || resolved === null || resolved === '' || (Array.isArray(resolved) && resolved.length === 0)
     abort.value = newAbort
     return resolved as T
 }
