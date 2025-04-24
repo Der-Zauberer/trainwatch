@@ -4,6 +4,12 @@
 		<SearchComponent :name="stop.value?.name" @search="router.replace({ params: { id: $event } })"/>
 	</div>
 
+	<div class="container-xl">
+		<swd-card v-if="stop.error || lines.error" class="red-color">
+			{{ stop.error || lines.error }}
+		</swd-card>
+	</div>
+
 	<div class="container-xl grid-cols-md-2 grid-cols-1" v-if="stop.value">
 
 		<div class="grid-cols-1">
