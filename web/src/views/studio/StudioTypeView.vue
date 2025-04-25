@@ -1,6 +1,6 @@
 <template>
     <div class="container-xl">
-        <TableComponent v-model="parameter" :resource="types" :header="[ $t('entity.general.id'), $t('entity.general.name'), $t('entity.general.description') ]" @add="edit = create" columns="max-content max-content auto">
+        <TableComponent v-model="parameter" :resource="types" :header="[ $t('entity.general.id'), $t('entity.general.name'), $t('entity.general.description') ]" @add="edit = create">
             <a v-for="type of types.value" :key="type.id.id.toString()" @click="editRecord = type.id">
                 <div><samp class="id">{{ type.id.id }}</samp></div>
                 <div> <DesignationChipComponent :type="type"/></div>

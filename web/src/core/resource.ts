@@ -52,7 +52,7 @@ export function resource<T, P>(options: ResourceOptions<T, P>): Resource<T, P> {
     if (options.initializer) {
         resolve(options.initializer, resource, options, abort)
     } else if (options.loader) {
-        resolve(options.loader, resource, options, abort);
+        resolve(options.loader, resource, options, abort)
     }
 
     if (options.parameter) {
