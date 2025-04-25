@@ -181,8 +181,9 @@ if (route.query.page && Number(route.query.page) !== parameter.value.page) {
 }
 
 watch(parameter.value, () => {
-    refreshQueryParameter('search', parameter.value.search, '')
-    refreshQueryParameter('page', parameter.value.page, 1)
+    const search = parameter.value.search
+    const page = parameter.value.page
+    router.replace({ query: { search: search ? search : undefined, page: page > 1 ? page : undefined } })
 })
 
 function resetSearch() {
@@ -195,14 +196,6 @@ function resetSearch() {
 
 function maxPage() {
     return Math.floor(parameter.value.count / parameter.value.size) + 1
-}
-
-function refreshQueryParameter<T extends string | number>(name: string, value: T, initial: T) {
-    if (value !== initial) {
-        router.push({ query: { ...route.query, [name]: value }})
-    } else {
-        router.replace({ query: Object.fromEntries(Object.entries(route.query).filter(([key]) => key !== name)) })
-    }
 }
 
 </script>
