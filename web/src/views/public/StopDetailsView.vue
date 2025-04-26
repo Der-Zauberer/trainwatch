@@ -4,8 +4,8 @@
 		<SearchComponent :name="stop.value?.name" @search="router.replace({ params: { id: $event } })"/>
 	</div>
 
-	<div class="container-xl">
-		<swd-card v-if="stop.error || lines.error" class="red-color">
+	<div v-if="stop.error || lines.error" class="container-xl">
+		<swd-card class="red-color">
 			{{ stop.error || lines.error }}
 		</swd-card>
 	</div>
@@ -15,9 +15,9 @@
 		<div class="grid-cols-1">
 
 			<div class="tab">
-				<button class="grey-color" :selected="boardView === Board.DEPARTURE ? true : undefined" @click="boardView = Board.DEPARTURE">Departure</button>
-				<button class="grey-color" :selected="boardView === Board.ARRIVAL ? true : undefined" @click="boardView = Board.ARRIVAL">Arrival</button>
-				<button class="grey-color" :selected="boardView === Board.STOP ? true : undefined" @click="boardView = Board.STOP" v-if="isMobileView">Stop</button>
+				<button class="grey-color" :selected="boardView === Board.DEPARTURE ? true : undefined" @click="boardView = Board.DEPARTURE">{{ $t('entity.traffic.departure') }}</button>
+				<button class="grey-color" :selected="boardView === Board.ARRIVAL ? true : undefined" @click="boardView = Board.ARRIVAL">{{ $t('entity.traffic.arrival') }}</button>
+				<button class="grey-color" :selected="boardView === Board.STOP ? true : undefined" @click="boardView = Board.STOP" v-if="isMobileView">{{ $t('entity.stop.stop') }}</button>
 			</div>
 
 			<div v-if="board.value && (!isMobileView || boardView !== Board.STOP)">
@@ -137,7 +137,7 @@ const boardView = ref<Board>(Board.DEPARTURE)
 const urls = {
 	createDbStationUrl: (stop: Stop) => `https://www.bahnhof.de/${encodeURI(stop.id.id.toString().replace('_', '-'))}`,
 	createGoogleMapsUrl: (stop: Stop) => {
-		const querry = [stop.name, stop.address.street, stop.address.zipcode, stop.address.city, stop.address.country]
+		const querry = [stop.name, stop.address?.street, stop.address?.zipcode, stop.address?.city, stop.address?.country]
 			.filter(entry => entry !== undefined)
 			.map(entry => encodeURI(entry))
 			.join('%2C')

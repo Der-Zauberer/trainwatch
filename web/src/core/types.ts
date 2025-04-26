@@ -126,6 +126,21 @@ export type Line = {
     route: Route
 }
 
+export type LineStops = Line & {
+    stops: {
+        id: RecordId<'stop'>
+        name: string,
+        arrival: { 
+            platform: string,
+            time: Date
+        },
+        departure: {
+            platform: string,
+            time: Date
+        }
+    }[]
+}
+
 export type Journey = {
     id: RecordId<'journey'>
     line: Line

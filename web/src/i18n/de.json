@@ -30,6 +30,8 @@
             "description": "Beschreibung"
         },
         "traffic": {
+            "from": "von",
+            "to": "nach",
             "arrival": "Ankunft",
             "departure": "Abfahrt",
             "platform": "Gleis",

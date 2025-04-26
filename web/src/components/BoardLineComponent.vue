@@ -5,10 +5,10 @@
 			<div>
 				<DesignationChipComponent :type="line.line.route"/>
 			</div>
-			<h5 class="width-100">
+			<div class="width-100">
                 {{ line.stops[line.stops.length - 1].name }}
-			    <swd-subtitle>{{ line.stops[0].name }}</swd-subtitle>
-			</h5>
+			    <swd-subtitle>{{ $t('entity.traffic.from') }} {{ line.stops[0].name }}</swd-subtitle>
+			</div>
 			<div>{{ arrival ? line.arrival.platform : line.departure.platform }}</div>
 		</div>
 	    <swd-subtitle>{{ getStops(line).join(' &middot; ') }}</swd-subtitle>

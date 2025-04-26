@@ -8,8 +8,9 @@ import i18n, { initializeI18n } from './services/i18n.service'
 import surrealdb from './services/surrealdb.service'
 import cookieService, { CookieService } from './services/cookies.service'
 import HomeView from './views/public/HomeView.vue'
-import StopDetailsView from './views/public/StopDetailsView.vue'
 import LoginView from './views/public/LoginView.vue'
+import StopDetailsView from './views/public/StopDetailsView.vue'
+import LineDetailsView from './views/public/LineDetailsView.vue'
 import StudioHome from './views/studio/StudioHome.vue'
 import StudioStopView from './views/studio/StudioStopView.vue'
 import StudioOperatorView from './views/studio/StudioOperatorView.vue'
@@ -26,6 +27,7 @@ const router = createRouter({
         { path: '/', name: 'home', component: HomeView },
         { path: '/login', name: 'login', component: LoginView },
         { path: '/stop/:id', name: 'stop', component: StopDetailsView },
+        { path: '/line/:id', name: 'line', component: LineDetailsView },
         { path: '/studio', name: 'studio', component: StudioHome, beforeEnter: CookieService.auth },
         { path: '/studio/stop', name: 'studio_stop', component: StudioStopView, beforeEnter: CookieService.auth },
         { path: '/studio/operator', name: 'studio_operator', component: StudioOperatorView, beforeEnter: CookieService.auth },

@@ -46,7 +46,7 @@ DEFINE FUNCTION OVERWRITE fn::line::stops($line: record<line>) {
     RETURN 
         SELECT id, route.{id, name, designations.{number, type.*}},
         (SELECT id, arrival, departure.platform, departure.time, out.id AS id, out.name AS name FROM ->connects ORDER BY departure.time) AS stops
-        FROM $line;
+        FROM ONLY $line;
 };
 
 ----------
