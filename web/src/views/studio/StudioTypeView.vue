@@ -77,13 +77,7 @@ const types = resource({
 
 const edit = resource({
     parameter: { route },
-	loader: async (parameter) => {
-        if (parameter.route.params.id === 'new') {
-            return create()
-        } else if (parameter.route.params.id) {
-            return await surrealdb.select<Type>(new RecordId('type', parameter.route.params.id))
-        }
-    }
+	loader: async (parameter) => parameter.route.params.id === 'new' ? create() : await surrealdb.select<Type>(new RecordId('type', parameter.route.params.id))
 })
 
 </script>

@@ -1,7 +1,7 @@
 <template>
-    <div class="container-xl">
-        <TableComponent v-model="parameter" :resource="journeys" :header="[ $t('entity.general.id'), $t('entity.general.name') ]"  @add="edit = create">
-            <div v-for="journey of journeys.value" :key="journey.id.id.toString()" @click="editRecord = journey.id">
+    <div class="container-xl" v-if="!route.params.id">
+        <TableComponent v-model="parameter" :resource="journeys" :header="[ $t('entity.general.id'), $t('entity.general.name') ]"  @add="router.push({ name: 'studio_journey_edit', params: { id: 'new' } })">
+            <div v-for="journey of journeys.value" :key="journey.id.id.toString()" @click="router.push({ name: 'studio_journey_edit', params: { id: journey.id.id.toString() } })">
                 <div><samp class="id">{{ journey.id.id.toString() }}</samp></div>
                 <div class="flex">
                     <span><DesignationChipComponent :type="journey.line.route" /></span>
@@ -10,11 +10,13 @@
             </div>
         </TableComponent>
     </div>
-    <EditDialogComponent @update="journeys.reload()" v-model:record="editRecord" v-model:edit="edit">
-        <div class="grid-cols-sm-2 grid-cols-1" v-if="edit">
-            <InputComponent :label="$t('entity.general.id')" :disabled="!!editRecord" v-model="edit.id.id"></InputComponent>
-        </div>
-    </EditDialogComponent>
+
+    <div class="container-xl" v-if="route.params.id">
+        <EditFormComponent v-if="edit.value" :id="edit.value.id" :name="''" :events="events">
+            <h6>{{ $t('entity.general.general') }}</h6>
+            <InputComponent :label="$t('entity.general.id')" :disabled="$route.params.id !== 'new'" v-model="edit.value.id.id" :required="true"/>
+        </EditFormComponent>
+    </div>
 </template>
 
 <style scoped>
@@ -26,16 +28,30 @@
 
 <script setup lang="ts">
 import DesignationChipComponent from '@/components/DesignationChipComponent.vue';
-import EditDialogComponent from '@/components/EditDialogComponent.vue';
+import EditFormComponent from '@/components/EditFormComponent.vue';
 import InputComponent from '@/components/InputComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
 import { resource } from '@/core/resource';
 import type { Journey, Line, Parameter } from '@/core/types';
 import type Surreal from 'surrealdb';
 import { RecordId } from 'surrealdb';
-import { inject, reactive, ref } from 'vue';
+import { inject, reactive } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
+const route = useRoute()
+const router = useRouter()
 const surrealdb = inject('surrealdb') as Surreal
+
+const create: () => Journey = () => ({
+    id: new RecordId('journey', ''),
+    line: undefined as unknown as Line
+})
+
+const events = {
+    close: async () => (router.back(), journeys.reload()),
+    delete: async () => await surrealdb.delete(new RecordId('journey', route.params.id)),
+    save: async () => route.params.id === 'new' ? await surrealdb.insert(edit.value) : await surrealdb.upsert(new RecordId('journey', route.params.id), edit.value)
+}
 
 const parameter =  reactive<Parameter>({ search: '', page: 1, size: 100, count: 0 })
 const journeys = resource({
@@ -47,13 +63,9 @@ const journeys = resource({
     }
 })
 
-const editRecord = ref<RecordId<string> | undefined>(undefined)
-const edit = ref<Journey | undefined>(undefined)
-
-const create: Journey = {
-    id: new RecordId('journey', ''),
-    line: undefined as unknown as Line
-}
-
+const edit = resource({
+    parameter: { route },
+	loader: async (parameter) => parameter.route.params.id === 'new' ? create() : await surrealdb.select<Journey>(new RecordId('journey', parameter.route.params.id))
+})
 
 </script>
