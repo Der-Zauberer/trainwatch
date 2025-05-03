@@ -52,7 +52,7 @@
 
 .header .header__content, .header .header__actions {
     display: flex;
-    align-content: center;
+    align-items: center;
     gap: var(--theme-inner-element-spacing);
 }
 
