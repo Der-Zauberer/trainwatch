@@ -7,7 +7,7 @@ export type UnknownResource = {
     readonly error?: Error
     readonly loading: boolean
     readonly empty: boolean
-    readonly status: ResourceStatus
+    readonly status: 'EMPTY' | 'LOADING' | 'RESOLVED' | 'ERROR'
     readonly value?: unknown
 }
 
@@ -15,7 +15,7 @@ export type Resource<T, P> = {
     readonly error?: Error
     readonly loading: boolean
     readonly empty: boolean
-    readonly status: ResourceStatus
+    readonly status: 'EMPTY' | 'LOADING' | 'RESOLVED' | 'ERROR'
     readonly value?: T
     reload: (value?: ResourceValue<T, P>) => Promise<T>
 }
@@ -24,7 +24,7 @@ type MutableResource<T, P> = {
     error?: Error
     loading: boolean
     empty: boolean
-    status: ResourceStatus
+    status: 'EMPTY' | 'LOADING' | 'RESOLVED' | 'ERROR'
     value?: T
     reload: (value?: ResourceValue<T, P>) => Promise<T>
 }
@@ -35,14 +35,12 @@ export type ResourceOptions<T, P> = {
     loader: ResourceValue<T, P>
 }
 
-export enum ResourceStatus { EMPTY, LOADING, RESOLVED, ERROR }
-
 export function resource<T, P>(options: ResourceOptions<T, P>): Resource<T, P> {
     const resource: Resource<T, P> = reactive({
         error: undefined,
         loading: false,
         empty: true,
-        status: ResourceStatus.EMPTY,
+        status: 'EMPTY',
         value: undefined,
         reload: async (value) => await resolve(value || options.loader, resource, options, abort)
     })
@@ -77,7 +75,7 @@ async function resolve<T, P>(value: ResourceValue<T, P>, resource: MutableResour
     const parameter = unwrapParameters(options.parameter)
     const newAbort = new AbortController()
     resource.loading = true
-    resource.status = ResourceStatus.LOADING
+    resource.status = 'LOADING'
     let resolved
     try {
         abort.value?.abort()
@@ -85,12 +83,12 @@ async function resolve<T, P>(value: ResourceValue<T, P>, resource: MutableResour
         resource.loading = false
         resource.value = resolved
         resource.error = undefined
-        resource.status = resolved === undefined || resolved === null ? ResourceStatus.EMPTY : ResourceStatus.RESOLVED
+        resource.status = resolved === undefined || resolved === null ? 'EMPTY' : 'RESOLVED'
     } catch (error: unknown) {
         resource.loading = false
         resource.value = undefined
         resource.error = error as Error
-        resource.status = ResourceStatus.ERROR
+        resource.status = 'ERROR'
     }
     resource.empty = resource.value === undefined || resolved === null || resolved === '' || (Array.isArray(resolved) && resolved.length === 0)
     abort.value = newAbort

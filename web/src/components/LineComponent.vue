@@ -22,7 +22,7 @@
                     <div class="stops__graph--line"></div>
                     <div class="stops__graph--dot"></div>
                 </div>
-                <div>{{ stop.name }}</div>
+                <div><RouterLink :to="{ name: 'stop', params: { id: stop.id.id.toString() } }" class="dark-text">{{ stop.name }}</RouterLink></div>
                 <div>
                     <div>{{ stop.arrival.platform }}</div>
                     <div>{{ stop.departure.platform }}</div>

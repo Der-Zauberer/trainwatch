@@ -1,19 +1,27 @@
 <template>
-    <swd-card v-for="line of Array.isArray(line) ? line : [line]" :key="line.id.id">
-		<div class="flex margin-0">
-			<div>{{ dateToTime(arrival ? line.arrival.time : line.departure.time) }}</div>
-			<div>
-				<DesignationChipComponent :type="line.line.route"/>
+	<RouterLink v-for="line of Array.isArray(line) ? line : [line]" :key="line.id.id.toString()" :to="{ name: 'line', params: { id: line.line.id.id.toString() } }">
+		<swd-card class="swd-card-hover">
+			<div class="flex margin-0">
+				<div>{{ dateToTime(arrival ? line.arrival.time : line.departure.time) }}</div>
+				<div>
+					<DesignationChipComponent :type="line.line.route"/>
+				</div>
+				<div class="width-100">
+					{{ line.stops[line.stops.length - 1].name }}
+					<swd-subtitle>{{ $t('entity.traffic.from') }} {{ line.stops[0].name }}</swd-subtitle>
+				</div>
+				<div>{{ arrival ? line.arrival.platform : line.departure.platform }}</div>
 			</div>
-			<div class="width-100">
-                {{ line.stops[line.stops.length - 1].name }}
-			    <swd-subtitle>{{ $t('entity.traffic.from') }} {{ line.stops[0].name }}</swd-subtitle>
-			</div>
-			<div>{{ arrival ? line.arrival.platform : line.departure.platform }}</div>
-		</div>
-	    <swd-subtitle>{{ getStops(line).join(' &middot; ') }}</swd-subtitle>
-	</swd-card>
+			<swd-subtitle>{{ getStops(line).join(' &middot; ') }}</swd-subtitle>
+		</swd-card>
+	</RouterLink>
 </template>
+
+<style scoped>
+a { 
+	text-decoration: none;
+}
+</style>
 
 <script lang="ts" setup>
 import type { BoardLine, Stop } from '@/core/types';
