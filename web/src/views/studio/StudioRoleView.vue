@@ -8,25 +8,26 @@
         </TableComponent>
     </div>
 
-    <div class="container-xl" v-if="route.params.id">
-        <EditFormComponent v-if="edit.value" :id="edit.value.id" :name="edit.value.name" :events="events">
-            <h6>{{ $t('entity.general.general') }}</h6>
+    <EditFormComponent v-if="edit.value" :type="'role'" :value="edit.value" @close="(router.back(), roles.reload())">
+        <h6>{{ $t('entity.general.general') }}</h6>
+        <div class="grid-cols-sm-2 grid-cols-1">
             <InputComponent :label="$t('entity.general.id')" :disabled="$route.params.id !== 'new'" v-model="edit.value.id.id" :required="true"/>
             <InputComponent :label="$t('entity.general.name')" v-model="edit.value.name" :required="true"/>
-            <h6>{{ $t('entity.user.permissions') }}</h6>
-            <div class="flex margin-bottom-0" v-for="(permission, index) in edit.value.permissions" :key="index">
-                <InputComponent v-model="edit.value.permissions[index]"></InputComponent>
-                <button class="grey-color" @click.prevent="edit.value.permissions.splice(index, 1);"><swd-icon class="delete-icon"></swd-icon></button>
-            </div>
-            <button class="grey-color" @click.prevent="edit.value.permissions.push('')"><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>
-        </EditFormComponent>
-    </div>
+        </div>
+        <h6>{{ $t('entity.user.permissions') }}</h6>
+        <div class="flex margin-bottom-0" v-for="(permission, index) in edit.value.permissions" :key="index">
+            <InputComponent v-model="edit.value.permissions[index]"></InputComponent>
+            <button class="grey-color" @click.prevent="edit.value.permissions.splice(index, 1);"><swd-icon class="delete-icon"></swd-icon></button>
+        </div>
+        <button class="grey-color" @click.prevent="edit.value.permissions.push('')"><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>
+    </EditFormComponent>
 </template>
 
 <script setup lang="ts">
 import EditFormComponent from '@/components/EditFormComponent.vue';
 import InputComponent from '@/components/InputComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
+import { RoleEditDto } from '@/core/dtos';
 import { resource } from '@/core/resource';
 import type { Parameter, Role } from '@/core/types';
 import type Surreal from 'surrealdb';
@@ -37,18 +38,6 @@ import { useRoute, useRouter } from 'vue-router';
 const route = useRoute()
 const router = useRouter()
 const surrealdb = inject('surrealdb') as Surreal
-
-const create: () => Role = () => ({
-    id: new RecordId('role', ''),
-    name: '',
-    permissions: []
-})
-
-const events = {
-    close: async () => (router.back(), roles.reload()),
-    delete: async () => await surrealdb.delete(new RecordId('role', route.params.id)),
-    save: async () => route.params.id === 'new' ? await surrealdb.insert(edit.value) : await surrealdb.upsert(new RecordId('role', route.params.id), edit.value)
-}
 
 const parameter = reactive<Parameter>({ search: '', page: 1, size: 100, count: 0 })
 const roles = resource({
@@ -62,7 +51,7 @@ const roles = resource({
 
 const edit = resource({
     parameter: { route },
-	loader: async (parameter) => parameter.route.params.id === 'new' ? create() : await surrealdb.select<Role>(new RecordId('role', parameter.route.params.id))
+	loader: async (parameter) => new RoleEditDto(parameter.route.params.id === 'new' ? {} : await surrealdb.select<Role>(new RecordId('role', parameter.route.params.id)))
 })
 
 </script>

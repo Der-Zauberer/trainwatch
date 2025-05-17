@@ -119,10 +119,13 @@
             "operator": "Operator | Operators",
             "website": "Website"
         },
+        "timetable": {
+            "timetable": "Timetable | Timetables"
+        },
         "route": {
             "route": "Route | Routes",
             "designations": {
-                "designations": "Designations",
+                "designations": "Designation | Designations",
                 "number": "Number"
             }
         },

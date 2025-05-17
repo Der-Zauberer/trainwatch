@@ -23,15 +23,3 @@
 h5 {
     font-weight: normal;
 }
-
-/**
-Unfixed workaround
-**/
-
-swd-menu {
-    overflow: unset !important;
-}
-
-swd-navigation[shown] {
-    left: 0 !important;
-}

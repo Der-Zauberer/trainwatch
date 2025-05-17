@@ -8,17 +8,20 @@
         </TableComponent>
     </div>
 
-    <div class="container-xl" v-if="route.params.id">
-
-        <EditFormComponent v-if="edit.value" :id="edit.value.id" :name="edit.value.name" :events="events">
-            <h6>{{ $t('entity.general.general') }}</h6>
+    <EditFormComponent v-if="edit.value" :type="'stop'" :value="edit.value" @close="(router.back(), stops.reload())">
+        <h6>{{ $t('entity.general.general') }}</h6>
+        <div class="grid-cols-sm-2 grid-cols-1">
             <InputComponent :label="$t('entity.general.id')" :disabled="$route.params.id !== 'new'" v-model="edit.value.id.id"/>
             <InputComponent :label="$t('entity.general.name')" v-model="edit.value.name"/>
             <InputComponent :label="$t('entity.stop.score')" type="number" v-model="edit.value.score"/>
-            <h6>{{ $t('entity.location.location') }}</h6>
+        </div>
+        <h6>{{ $t('entity.location.location') }}</h6>
+        <div class="grid-cols-sm-2 grid-cols-1">
             <InputComponent :label="$t('entity.location.latitude')" type="number" v-model="edit.value.location.latitude"/>
             <InputComponent :label="$t('entity.location.longitude')" type="number" v-model="edit.value.location.longitude"/>
-            <h6>{{ $t('entity.address.address') }}</h6>
+        </div>
+        <h6>{{ $t('entity.address.address') }}</h6>
+        <div class="grid-cols-sm-2 grid-cols-1">
             <InputComponent :label="$t('entity.address.street')" v-model="edit.value.address.street"/>
             <InputComponent :label="$t('entity.address.zipcode')" v-model="edit.value.address.zipcode"/>
             <InputComponent :label="$t('entity.address.city')" v-model="edit.value.address.city"/>
@@ -26,7 +29,9 @@
             <InputComponent :label="$t('entity.address.country')" v-model="edit.value.address.country"/>
             <InputComponent :label="$t('entity.address.email')" type="email" v-model="edit.value.address.email"/>
             <InputComponent :label="$t('entity.address.phone')" type="tel" v-model="edit.value.address.phone"/>
-            <h6>{{ $t('entity.stop.open.open') }}</h6>
+        </div>
+        <h6>{{ $t('entity.stop.open.open') }}</h6>
+        <div class="grid-cols-sm-2 grid-cols-1">
             <InputComponent :label="$t('entity.stop.open.monday')" v-model="edit.value.open.monday"/>
             <InputComponent :label="$t('entity.stop.open.tuesday')" v-model="edit.value.open.tuesday"/>
             <InputComponent :label="$t('entity.stop.open.wednesday')" v-model="edit.value.open.wednesday"/>
@@ -34,8 +39,8 @@
             <InputComponent :label="$t('entity.stop.open.friday')" v-model="edit.value.open.friday"/>
             <InputComponent :label="$t('entity.stop.open.saturday')" v-model="edit.value.open.saturday"/>
             <InputComponent :label="$t('entity.stop.open.sunday')" v-model="edit.value.open.sunday"/>
-        </EditFormComponent>
-    </div>
+        </div>
+    </EditFormComponent>
 
 </template>
 
@@ -43,6 +48,7 @@
 import EditFormComponent from '@/components/EditFormComponent.vue';
 import InputComponent from '@/components/InputComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
+import { StopEditDto } from '@/core/dtos';
 import { resource } from '@/core/resource';
 import type { Parameter, Stop } from '@/core/types';
 import type Surreal from 'surrealdb';
@@ -54,56 +60,6 @@ const surrealdb = inject('surrealdb') as Surreal
 
 const route = useRoute()
 const router = useRouter()
-
-const create: () => Stop = () => ({
-    id: new RecordId('stop', ''),
-    name: '',
-    score: 99,
-    platforms: [],
-    location: {
-        latitude: 0,
-        longitude: 0
-    },
-    address: {
-        street: '',
-        zipcode: '',
-        city: '',
-        federalState: '',
-        country: ''
-    },
-    open: {
-        monday: '',
-        tuesday: '',
-        wednesday: '',
-        thursday: '',
-        friday: '',
-        saturday: '',
-        sunday: '',
-    },
-    services: {
-        parking: false,
-        localPublicTransport: false,
-        carRental: false,
-        taxi: false,
-        publicFacilities: false,
-        travelNecessities: false,
-        locker: false,
-        wifi: false,
-        information: false,
-        railwayMission: false,
-        lostAndFound: false,
-        barrierFree: false,
-        mobilityService: '',
-    },
-    ids: {},
-    sources: [],
-})
-
-const events = {
-    close: async () => router.back(),
-    delete: async () => await surrealdb.delete(new RecordId('stop', route.params.id)),
-    save: async () => route.params.id === 'new' ? await surrealdb.insert(edit.value) : await surrealdb.upsert(new RecordId('stop', route.params.id), edit.value)
-}
 
 const parameter = reactive<Parameter>({ search: '', page: 1, size: 100, count: 0 })
 const stops = resource({
@@ -117,13 +73,7 @@ const stops = resource({
 
 const edit = resource({
     parameter: { route },
-	loader: async (parameter) => {
-        if (parameter.route.params.id === 'new') {
-            return create()
-        } else if (parameter.route.params.id) {
-            return await surrealdb.select<Stop>(new RecordId('stop', parameter.route.params.id))
-        }
-    }
+	loader: async (parameter) => new StopEditDto(parameter.route.params.id === 'new' ? {} : await surrealdb.select(new RecordId('stop', parameter.route.params.id)))
 })
 
 </script>

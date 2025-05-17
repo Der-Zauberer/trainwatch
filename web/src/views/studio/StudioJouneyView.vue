@@ -11,12 +11,13 @@
         </TableComponent>
     </div>
 
-    <div class="container-xl" v-if="route.params.id">
-        <EditFormComponent v-if="edit.value" :id="edit.value.id" :name="''" :events="events">
-            <h6>{{ $t('entity.general.general') }}</h6>
+    <EditFormComponent v-if="edit.value" :type="'role'" :value="edit.value" @close="(router.back(), journeys.reload())">
+        <h6>{{ $t('entity.general.general') }}</h6>
+        <div class="grid-cols-sm-2 grid-cols-1">
             <InputComponent :label="$t('entity.general.id')" :disabled="$route.params.id !== 'new'" v-model="edit.value.id.id" :required="true"/>
-        </EditFormComponent>
-    </div>
+            <InputRecordComponent :label="$t('entity.line.line')" v-model="edit.value.line" type="line" :required="true"/>
+        </div>        
+    </EditFormComponent>
 </template>
 
 <style scoped>
@@ -30,9 +31,11 @@
 import DesignationChipComponent from '@/components/DesignationChipComponent.vue';
 import EditFormComponent from '@/components/EditFormComponent.vue';
 import InputComponent from '@/components/InputComponent.vue';
+import InputRecordComponent from '@/components/InputRecordComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
+import { JourneyEditDto } from '@/core/dtos';
 import { resource } from '@/core/resource';
-import type { Journey, Line, Parameter } from '@/core/types';
+import type { Journey, Parameter } from '@/core/types';
 import type Surreal from 'surrealdb';
 import { RecordId } from 'surrealdb';
 import { inject, reactive } from 'vue';
@@ -41,17 +44,6 @@ import { useRoute, useRouter } from 'vue-router';
 const route = useRoute()
 const router = useRouter()
 const surrealdb = inject('surrealdb') as Surreal
-
-const create: () => Journey = () => ({
-    id: new RecordId('journey', ''),
-    line: undefined as unknown as Line
-})
-
-const events = {
-    close: async () => (router.back(), journeys.reload()),
-    delete: async () => await surrealdb.delete(new RecordId('journey', route.params.id)),
-    save: async () => route.params.id === 'new' ? await surrealdb.insert(edit.value) : await surrealdb.upsert(new RecordId('journey', route.params.id), edit.value)
-}
 
 const parameter =  reactive<Parameter>({ search: '', page: 1, size: 100, count: 0 })
 const journeys = resource({
@@ -65,7 +57,7 @@ const journeys = resource({
 
 const edit = resource({
     parameter: { route },
-	loader: async (parameter) => parameter.route.params.id === 'new' ? create() : await surrealdb.select<Journey>(new RecordId('journey', parameter.route.params.id))
+	loader: async (parameter) => new JourneyEditDto(parameter.route.params.id === 'new' ? {} : await surrealdb.select<Journey>(new RecordId('journey', parameter.route.params.id)))
 })
 
 </script>

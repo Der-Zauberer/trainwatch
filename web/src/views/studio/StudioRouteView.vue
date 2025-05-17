@@ -11,13 +11,24 @@
         </TableComponent>
     </div>
 
-    <div class="container-xl" v-if="route.params.id">
-        <EditFormComponent v-if="edit.value" :id="edit.value.id" :name="edit.value.name" :events="events">
-            <h6>{{ $t('entity.general.general') }}</h6>
+    <EditFormComponent v-if="edit.value" :type="'route'" :value="edit.value" @close="(router.back(), routes.reload())">
+        <h6>{{ $t('entity.general.general') }}</h6>
+        <div class="grid-cols-sm-2 grid-cols-1">
             <InputComponent :label="$t('entity.general.id')" :disabled="$route.params.id !== 'new'" v-model="edit.value.id.id" :required="true"/>
             <InputComponent :label="$t('entity.general.name')" v-model="edit.value.name" :required="true"/>
-        </EditFormComponent>
-    </div>
+            <InputRecordComponent :label="$t('entity.timetable.timetable')" v-model="edit.value.timetable" type="timetable" :required="true" />
+            <InputRecordComponent :label="$t('entity.operator.operator')" v-model="edit.value.operator" type="operator" :required="true" />
+        </div>
+        <h6>{{ $t('entity.route.designations.designations', 0) }}</h6>
+        <div class="array">
+            <div v-for="(designation, index) in edit.value.designations" :key="designation.number + designation.type">
+                <InputRecordComponent :label="$t('entity.type.type')" v-model="designation.type" type="type" :required="true"/>
+                <InputComponent :label="$t('entity.route.designations.number')" v-model="designation.number" :required="true"/>
+                <button class="grey-color" @click.prevent="edit.value.designations.splice(index, 1);"><swd-icon class="delete-icon"></swd-icon></button>
+            </div>
+        </div>
+        <button class="grey-color" @click.prevent="edit.value.designations.push({ type: undefined, number: '' })"><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>
+    </EditFormComponent>
 </template>
 
 <style scoped>
@@ -25,13 +36,27 @@
     margin: 0;
     --theme-element-spacing: calc(var(--theme-inner-element-spacing) / 2)
 }
+
+.array {
+    display: grid;
+    grid-template-columns: 1fr 1fr fit-content(0);
+    gap: var(--theme-inner-element-spacing);
+    margin-bottom: var(--theme-element-spacing);
+    align-items: center;
+}
+
+.array div {
+    display: contents;
+}
 </style>
 
 <script setup lang="ts">
 import DesignationChipComponent from '@/components/DesignationChipComponent.vue';
 import EditFormComponent from '@/components/EditFormComponent.vue';
 import InputComponent from '@/components/InputComponent.vue';
+import InputRecordComponent from '@/components/InputRecordComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
+import { RouteEditDto } from '@/core/dtos';
 import { resource } from '@/core/resource';
 import type { Parameter, Route } from '@/core/types';
 import type Surreal from 'surrealdb';
@@ -42,19 +67,6 @@ import { useRoute, useRouter } from 'vue-router';
 const route = useRoute()
 const router = useRouter()
 const surrealdb = inject('surrealdb') as Surreal
-
-const create: () => Route = () => ({
-    id: new RecordId('route', ''),
-    name: '',
-    designations: [],
-    operator: undefined
-})
-
-const events = {
-    close: async () => (router.back(), routes.reload()),
-    delete: async () => await surrealdb.delete(new RecordId('route', route.params.id)),
-    save: async () => route.params.id === 'new' ? await surrealdb.insert(edit.value) : await surrealdb.upsert(new RecordId('route', route.params.id), edit.value)
-}
 
 const parameter = reactive<Parameter>({ search: '', page: 1, size: 100, count: 0 })
 const routes = resource({
@@ -68,7 +80,7 @@ const routes = resource({
 
 const edit = resource({
     parameter: { route },
-	loader: async (parameter) => parameter.route.params.id === 'new' ? create() : await surrealdb.select<Route>(new RecordId('route', parameter.route.params.id))
+	loader: async (parameter) => new RouteEditDto(parameter.route.params.id === 'new' ? {} : await surrealdb.select(new RecordId('route', parameter.route.params.id)))
 })
 
 </script>

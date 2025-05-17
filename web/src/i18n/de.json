@@ -119,10 +119,13 @@
             "operator": "Betreiber | Betreiber",
             "website": "Webseite"
         },
+        "timetable": {
+            "timetable": "Fahrplan | Fahrpläne"
+        },
         "route": {
             "route": "Route | Routen",
             "designations": {
-                "designations": "Bezeichnung",
+                "designations": "Bezeichnung | Bezeichnungen",
                 "number": "Nummer"
             }
         },

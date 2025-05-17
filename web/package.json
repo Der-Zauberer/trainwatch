@@ -13,7 +13,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "simplewebdesign": "^2.3.1",
+    "simplewebdesign": "^2.4.0",
     "surrealdb": "^1.1.0",
     "vue": "^3.5.12",
     "vue-i18n": "^10.0.6",

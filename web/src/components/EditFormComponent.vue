@@ -1,22 +1,29 @@
 <template>
 
-    <div class="header">
-        <div class="header__content">
-            <button class="grey-color" @click="events.close()"><swd-icon class="arrow-left-icon"></swd-icon></button>
-            <div v-if="name">{{ name }}</div>
-        </div>
-        <div class="header__actions">
+    <form @submit.prevent="save($event)">
+
+        <div class="container-xl header">
+            <button class="grey-color" @click="emits('close')"><swd-icon class="arrow-left-icon"></swd-icon></button>
+            <div class="header__title" v-if="props.value.name">{{ props.value.name }}</div>
             <swd-loading-spinner :loading="loading.delete">
-                <button v-if="id?.id" class="red-color" @click="deleteDialog = true">{{ $t('action.delete') }}</button>
+                <button v-if="props.value.id?.id" class="red-color" @click="deleteDialog = true">{{ $t('action.delete') }}</button>
             </swd-loading-spinner>
             <swd-loading-spinner :loading="loading.save">
-                <button @click="save()">{{ $t('action.save') }}</button>
+                <input type="submit" :value="$t('action.save')">
             </swd-loading-spinner>
         </div>
-    </div>
+        <hr>
 
-    <form ref="form">
-        <slot></slot>
+        <!--
+        <swd-card class="red-color" v-if="error">
+            {{ error }}
+        </swd-card>
+        -->
+
+        <div class="container-xl" >
+            <slot></slot>
+        </div>
+
     </form>
 
     <swd-dialog v-if="deleteDialog" shown>
@@ -26,8 +33,8 @@
             <p>Do you want to delete the following entry?</p>
 
             <swd-card class="entity light-color">
-                <div><samp class="id">{{ id?.id }}</samp></div>
-                <div v-if="name">{{ name }}</div>
+                <div><samp class="id">{{ props.value.id?.id }}</samp></div>
+                <div v-if="props.value.name">{{ props.value.name }}</div>
             </swd-card>
 
             <div class="flex" v-if="deleteDialog">
@@ -42,29 +49,25 @@
 <style scoped>
 
 .header {
-    display: flex;
-    align-content: center;
-    justify-content: space-between;
-    gap: var(--theme-inner-element-spacing);
-    width: 100%;
-    margin-bottom: var(--theme-element-spacing);
-}
-
-.header .header__content, .header .header__actions {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
     align-items: center;
     gap: var(--theme-inner-element-spacing);
+    padding-top: var(--theme-inner-element-spacing);
+    padding-bottom: var(--theme-inner-element-spacing);
+    margin-bottom: 0;
 }
 
-form {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--theme-element-spacing);
+.header .header__title {
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-form > *:is(h1), form > *:is(h2), form > *:is(h3), form > *:is(h4), form > *:is(h5), form > *:is(h6) {
+hr {
+    border: none;
+    border-bottom: solid var(--theme-border-width) var(--theme-element-primary-color);
     margin: 0;
-    grid-column: span 2;
 }
 
 .entity {
@@ -76,39 +79,54 @@ form > *:is(h1), form > *:is(h2), form > *:is(h3), form > *:is(h4), form > *:is(
     border-color: var(--theme-primary-color);
 }
 
+swd-loading-spinner::after {
+    background: white !important;
+}
+
 </style>
 
 <script setup lang="ts">
-import type { RecordId } from 'surrealdb';
-import { reactive, ref, useTemplateRef } from 'vue';
+import type { Filterable } from '@/core/dtos';
+import Surreal, { RecordId } from 'surrealdb';
+import { inject, reactive, ref } from 'vue';
+import { useRoute } from 'vue-router';
 
-const props = defineProps<{ id?: RecordId, name?: string, events: { close: () => Promise<unknown>, delete: () => Promise<unknown>, save: () => Promise<unknown> } }>()
-    
+const route = useRoute()
+const surrealdb = inject('surrealdb') as Surreal
+
+const props = defineProps<{ type: string, value: Filterable<unknown> & { id?: RecordId<string>, name?: string } }>()
+const emits = defineEmits<{ (e: 'close'): void }>() 
+
 const deleteDialog = ref(false)
 const loading = reactive({ delete: false, save: false })
-    
-const form = useTemplateRef('form')
 
 async function remove() {
     loading.delete = true
     try {
-        await props.events.delete()
-        await props.events.close()
+        await surrealdb.delete(new RecordId(props.type, route.params.id))
+        emits('close')
     } catch {}
     loading.delete = false
 }
 
-async function save() {
-    if ((form.value as HTMLFormElement).checkValidity()) {
-        loading.save = true
-        try {
-            await props.events.save()
-            await props.events.close()
-        } catch {}
-        loading.save = false
-    } else {
-        (form.value as HTMLFormElement).reportValidity()
+async function save(event: Event) {
+    const form = event.target as HTMLFormElement
+    if (!form.checkValidity()) {
+        form.reportValidity()
+        return
     }
+    loading.save = true
+    try {
+        if (route.params.id === 'new') {
+            await surrealdb.insert(props.value.filterBeforeSubmit())
+        } else {
+            await surrealdb.upsert(new RecordId(props.type, route.params.id), props.value.filterBeforeSubmit())
+        }
+        emits('close')
+    } catch (error: unknown) {
+        console.log(error)
+    }
+    loading.save = false
 }
 
 </script>
