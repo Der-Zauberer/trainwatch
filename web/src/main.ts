@@ -20,6 +20,7 @@ import StudioRoleView from './views/studio/StudioRoleView.vue'
 import StudioRouteView from './views/studio/StudioRouteView.vue'
 import StudioLineView from './views/studio/StudioLineView.vue'
 import StudioJouneyView from './views/studio/StudioJouneyView.vue'
+import StudioTimetableView from './views/studio/StudioTimetableView.vue'
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -35,6 +36,8 @@ const router = createRouter({
         { path: '/studio/operator/:id', name: 'studio_operator_edit', component: StudioOperatorView, beforeEnter: CookieService.auth },
         { path: '/studio/type', name: 'studio_type', component: StudioTypeView, beforeEnter: CookieService.auth },
         { path: '/studio/type/:id', name: 'studio_type_edit', component: StudioTypeView, beforeEnter: CookieService.auth },
+        { path: '/studio/timetable', name: 'studio_timetable', component: StudioTimetableView, beforeEnter: CookieService.auth },
+        { path: '/studio/timetable/:id', name: 'studio_timetable_edit', component: StudioTimetableView, beforeEnter: CookieService.auth },
         { path: '/studio/route', name: 'studio_route', component: StudioRouteView, beforeEnter: CookieService.auth },
         { path: '/studio/route/:id', name: 'studio_route_edit', component: StudioRouteView, beforeEnter: CookieService.auth },
         { path: '/studio/line', name: 'studio_line', component: StudioLineView, beforeEnter: CookieService.auth },

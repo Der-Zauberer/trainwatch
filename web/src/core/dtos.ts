@@ -102,6 +102,16 @@ export class OperatorEditDto extends Filterable<OperatorEditDto> {
     }
 }
 
+export class TimetableEditDto extends Filterable<TimetableEditDto> {
+    id: RecordId<'timetable'> = new RecordId('timetable', '')
+    name?: string
+
+    constructor(initial?: object) {
+        super()
+        if (initial) Object.assign(this, initial)
+    }
+}
+
 export class RouteEditDto extends Filterable<RouteEditDto> {
     id: RecordId<'route'> = new RecordId('route', '')
     name?: string

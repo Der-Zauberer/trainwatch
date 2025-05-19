@@ -1,12 +1,13 @@
 <template>
     <div class="container-xl" v-if="!route.params.id">
-        <TableComponent v-model="parameter" :resource="lines" :header="[ $t('entity.general.id'), $t('entity.general.name') ]" @add="router.push({ name: 'studio_line_edit', params: { id: 'new' } })" >
+        <TableComponent v-model="parameter" :resource="lines" :header="[ $t('entity.general.id'), $t('entity.general.name'), $t('entity.timetable.timetable') ]" @add="router.push({ name: 'studio_line_edit', params: { id: 'new' } })" >
             <a v-for="line of lines.value" :key="line.id.id.toString()"  @click="router.push({ name: 'studio_line_edit', params: { id: line.id.id.toString() } })">
                 <div><samp class="id">{{ line.id.id.toString() }}</samp></div>
                 <div class="flex">
                     <span><DesignationChipComponent :type="line.route"/></span>
                     {{ line.route.name }}
                 </div>
+                <div>{{ line.route.timetable.name }}</div>
             </a>
         </TableComponent>
     </div>
@@ -49,8 +50,9 @@ const parameter = reactive<Parameter>({ search: '', page: 1, size: 100, count: 0
 const lines = resource({
     parameter,
 	loader: async (parameter) => {
-        const [result, count] = await surrealdb.query<[Line[], number]>(`SELECT *, route.designations.{type.*, number} FROM line ${parameter.search ? 'WHERE name CONTAINS $search' : ''} START ($page - 1) * $size LIMIT $size; (SELECT count() FROM line ${parameter.search ? 'WHERE name CONTAINS $search' : ''} GROUP ALL)[0].count`, parameter)
+        const [result, count] = await surrealdb.query<[Line[], number]>(`SELECT *, route.*, route.designations.{type.*, number}, route.timetable.* FROM line ${parameter.search ? 'WHERE name CONTAINS $search' : ''} START ($page - 1) * $size LIMIT $size; (SELECT count() FROM line ${parameter.search ? 'WHERE name CONTAINS $search' : ''} GROUP ALL)[0].count`, parameter)
         parameter.count = count
+        console.log(result)
         return result
     }
 })

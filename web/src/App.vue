@@ -30,6 +30,7 @@
     <RouterLink to="/studio/stop">{{ $t('entity.stop.stop', 0) }}</RouterLink>
     <RouterLink to="/studio/operator">{{ $t('entity.operator.operator', 0) }}</RouterLink>
     <RouterLink to="/studio/type">{{ $t('entity.type.type', 0) }}</RouterLink>
+    <RouterLink to="/studio/timetable">{{ $t('entity.timetable.timetable', 0) }}</RouterLink>
     <RouterLink to="/studio/route">{{ $t('entity.route.route', 0) }}</RouterLink>
     <RouterLink to="/studio/line">{{ $t('entity.line.line', 0) }}</RouterLink>
     <RouterLink to="/studio/journey">{{ $t('entity.journey.journey', 0) }}</RouterLink>

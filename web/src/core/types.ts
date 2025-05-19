@@ -111,9 +111,7 @@ export type Operator = Entity<'operator'> & {
     website?: string
 }
 
-export type Timetable = Entity<'timetable'> & {
-
-}
+export type Timetable = Entity<'timetable'> & {}
 
 export type Route = {
     id: RecordId<'route'>

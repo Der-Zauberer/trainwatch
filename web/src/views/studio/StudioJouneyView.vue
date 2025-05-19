@@ -1,12 +1,13 @@
 <template>
     <div class="container-xl" v-if="!route.params.id">
-        <TableComponent v-model="parameter" :resource="journeys" :header="[ $t('entity.general.id'), $t('entity.general.name') ]"  @add="router.push({ name: 'studio_journey_edit', params: { id: 'new' } })">
+        <TableComponent v-model="parameter" :resource="journeys" :header="[ $t('entity.general.id'), $t('entity.general.name'), $t('entity.timetable.timetable') ]"  @add="router.push({ name: 'studio_journey_edit', params: { id: 'new' } })">
             <div v-for="journey of journeys.value" :key="journey.id.id.toString()" @click="router.push({ name: 'studio_journey_edit', params: { id: journey.id.id.toString() } })">
                 <div><samp class="id">{{ journey.id.id.toString() }}</samp></div>
                 <div class="flex">
                     <span><DesignationChipComponent :type="journey.line.route" /></span>
                     {{ journey.line.route.name }}
                 </div>
+                <div>{{ journey.line.route.timetable.name }}</div>
             </div>
         </TableComponent>
     </div>
@@ -49,7 +50,7 @@ const parameter =  reactive<Parameter>({ search: '', page: 1, size: 100, count: 
 const journeys = resource({
     parameter,
 	loader: async (parameter) => {
-        const [result, count] = await surrealdb.query<[Journey[], number]>(`SELECT *, line.*, line.route.*, line.route.designations.{type.*, number} FROM journey ${parameter.search ? 'WHERE name CONTAINS $search' : ''} START ($page - 1) * $size LIMIT $size; (SELECT count() FROM journey ${parameter.search ? 'WHERE name CONTAINS $search' : ''} GROUP ALL)[0].count`, parameter)
+        const [result, count] = await surrealdb.query<[Journey[], number]>(`SELECT *, line.*, line.route.*, line.route.designations.{type.*, number}, line.route.timetable.* FROM journey ${parameter.search ? 'WHERE name CONTAINS $search' : ''} START ($page - 1) * $size LIMIT $size; (SELECT count() FROM journey ${parameter.search ? 'WHERE name CONTAINS $search' : ''} GROUP ALL)[0].count`, parameter)
         parameter.count = count
         return result
     }
