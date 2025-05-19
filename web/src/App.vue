@@ -26,16 +26,16 @@
   </swd-menu>
 
   <swd-navigation navigation-collapse-md v-if="$route.path.startsWith('/studio')">
-    <RouterLink to="/studio">{{ $t('page.dashboard') }}</RouterLink>
-    <RouterLink to="/studio/stop">{{ $t('entity.stop.stop', 0) }}</RouterLink>
-    <RouterLink to="/studio/operator">{{ $t('entity.operator.operator', 0) }}</RouterLink>
-    <RouterLink to="/studio/type">{{ $t('entity.type.type', 0) }}</RouterLink>
-    <RouterLink to="/studio/timetable">{{ $t('entity.timetable.timetable', 0) }}</RouterLink>
-    <RouterLink to="/studio/route">{{ $t('entity.route.route', 0) }}</RouterLink>
-    <RouterLink to="/studio/line">{{ $t('entity.line.line', 0) }}</RouterLink>
-    <RouterLink to="/studio/journey">{{ $t('entity.journey.journey', 0) }}</RouterLink>
-    <RouterLink to="/studio/role">{{ $t('entity.role.role', 0) }}</RouterLink>
-    <RouterLink to="/studio/user">{{ $t('entity.user.user', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio' }">{{ $t('page.dashboard') }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_stop' }">{{ $t('entity.stop.stop', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_operator' }">{{ $t('entity.operator.operator', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_type' }">{{ $t('entity.type.type', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_timetable' }">{{ $t('entity.timetable.timetable', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_route' }">{{ $t('entity.route.route', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_line' }">{{ $t('entity.line.line', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_journey' }">{{ $t('entity.journey.journey', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_role' }">{{ $t('entity.role.role', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_user' }">{{ $t('entity.user.user', 0) }}</RouterLink>
   </swd-navigation>
 
   <swd-navigation-content navigation-collapse-md :style="$route.path.startsWith('/studio') ? '' : 'margin-left: 0'">
