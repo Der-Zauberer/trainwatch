@@ -26,16 +26,16 @@
   </swd-menu>
 
   <swd-navigation navigation-collapse-md v-if="$route.path.startsWith('/studio')">
-    <RouterLink :to="{ name: 'studio' }">{{ $t('page.dashboard') }}</RouterLink>
-    <RouterLink :to="{ name: 'studio_stop' }">{{ $t('entity.stop.stop', 0) }}</RouterLink>
-    <RouterLink :to="{ name: 'studio_operator' }">{{ $t('entity.operator.operator', 0) }}</RouterLink>
-    <RouterLink :to="{ name: 'studio_type' }">{{ $t('entity.type.type', 0) }}</RouterLink>
-    <RouterLink :to="{ name: 'studio_timetable' }">{{ $t('entity.timetable.timetable', 0) }}</RouterLink>
-    <RouterLink :to="{ name: 'studio_route' }">{{ $t('entity.route.route', 0) }}</RouterLink>
-    <RouterLink :to="{ name: 'studio_line' }">{{ $t('entity.line.line', 0) }}</RouterLink>
-    <RouterLink :to="{ name: 'studio_journey' }">{{ $t('entity.journey.journey', 0) }}</RouterLink>
-    <RouterLink :to="{ name: 'studio_role' }">{{ $t('entity.role.role', 0) }}</RouterLink>
-    <RouterLink :to="{ name: 'studio_user' }">{{ $t('entity.user.user', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio' }" :selected="isRoute(['studio'])">{{ $t('page.dashboard') }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_stop' }" :selected="isRoute(['studio_stop', 'studio_stop_edit'])">{{ $t('entity.stop.stop', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_operator' }" :selected="isRoute(['studio_operator', 'studio_operator_edit'])">{{ $t('entity.operator.operator', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_type' }" :selected="isRoute(['studio_type', 'studio_type_edit'])">{{ $t('entity.type.type', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_timetable' }" :selected="isRoute(['studio_timetable', 'studio_timetable_edit'])">{{ $t('entity.timetable.timetable', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_route' }" :selected="isRoute(['studio_route', 'studio_route_edit'])">{{ $t('entity.route.route', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_line' }" :selected="isRoute(['studio_line', 'studio_line_edit'])">{{ $t('entity.line.line', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_journey' }" :selected="isRoute(['studio_journey','studio_journey_edit'])">{{ $t('entity.journey.journey', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_role' }" :selected="isRoute(['studio_role','studio_role_edit'])">{{ $t('entity.role.role', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_user' }" :selected="isRoute(['studio_user', 'studio_user_edit'])">{{ $t('entity.user.user', 0) }}</RouterLink>
   </swd-navigation>
 
   <swd-navigation-content navigation-collapse-md :style="$route.path.startsWith('/studio') ? '' : 'margin-left: 0'">
@@ -58,11 +58,16 @@ swd-dropdown swd-selection div {
 
 <script setup lang="ts">
 import { inject } from 'vue';
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
 import type { CookieService } from './services/cookies.service';
 
+const route = useRoute()
 const cookieService = inject('cookieService') as CookieService
 
 const user = cookieService.getUserAsRef()
+
+function isRoute(names: string[]): boolean | undefined {
+  return names.includes((route.name || '').toString()) || undefined
+}
 
 </script>

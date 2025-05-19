@@ -4,7 +4,7 @@
 
         <div class="container-xl header">
             <button class="grey-color" @click="emits('close')"><swd-icon class="arrow-left-icon"></swd-icon></button>
-            <div class="header__title" v-if="props.value.name">{{ props.value.name }}</div>
+            <div class="header__title">{{ props.value.name }}</div>
             <swd-loading-spinner :loading="loading.delete">
                 <button v-if="props.value.id?.id" class="red-color" @click="deleteDialog = true">{{ $t('action.delete') }}</button>
             </swd-loading-spinner>
