@@ -33,7 +33,6 @@ import TableComponent from '@/components/TableComponent.vue';
 import InputComponent from '@/components/InputComponent.vue';
 import { resource } from '@/core/resource';
 import type { Line, Parameter } from '@/core/types';
-import type Surreal from 'surrealdb';
 import { RecordId } from 'surrealdb';
 import { inject, reactive } from 'vue';
 import DesignationChipComponent from '@/components/DesignationChipComponent.vue';
@@ -41,10 +40,11 @@ import { useRoute, useRouter } from 'vue-router';
 import EditFormComponent from '@/components/EditFormComponent.vue';
 import { LineEditDto } from '@/core/dtos';
 import InputRecordComponent from '@/components/InputRecordComponent.vue';
+import type { SurrealDbService } from '@/services/surrealdb.service';
 
 const route = useRoute()
 const router = useRouter()
-const surrealdb = inject('surrealdb') as Surreal
+const surrealdb = inject('surrealDbService') as SurrealDbService
 
 const parameter = reactive<Parameter>({ search: '', page: 1, size: 100, count: 0 })
 const lines = resource({

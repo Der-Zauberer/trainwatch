@@ -18,7 +18,7 @@
           </div>
           <a>Account</a>
           <RouterLink to="/studio">{{ $t('page.studio') }}</RouterLink>
-          <a @click="cookieService.logoutAndRedirect()">{{ $t('page.logout') }}</a>
+          <a @click="surrealdb.invalidateAndRedirect()">{{ $t('page.logout') }}</a>
         </swd-selection>
       </swd-dropdown-content>
     </swd-dropdown>
@@ -57,14 +57,16 @@ swd-dropdown swd-selection div {
 </style>
 
 <script setup lang="ts">
-import { inject } from 'vue';
+import { inject, toRaw, watch } from 'vue';
 import { RouterLink, RouterView, useRoute } from 'vue-router'
-import type { CookieService } from './services/cookies.service';
+import type { SurrealDbService } from './services/surrealdb.service';
 
 const route = useRoute()
-const cookieService = inject('cookieService') as CookieService
+const surrealdb = inject('surrealDbService') as SurrealDbService
 
-const user = cookieService.getUserAsRef()
+const user = surrealdb.getUserAsRef()
+console.log('Init', toRaw(user.value))
+watch(user, () => console.log('Update', user.value))
 
 function isRoute(names: string[]): boolean | undefined {
   return names.includes((route.name || '').toString()) || undefined

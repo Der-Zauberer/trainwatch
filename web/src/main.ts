@@ -5,8 +5,7 @@ import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
 import i18n, { initializeI18n } from './services/i18n.service'
-import surrealdb from './services/surrealdb.service'
-import cookieService, { CookieService } from './services/cookies.service'
+import surrealdbService, { auth } from './services/surrealdb.service'
 import HomeView from './views/public/HomeView.vue'
 import LoginView from './views/public/LoginView.vue'
 import StopDetailsView from './views/public/StopDetailsView.vue'
@@ -29,25 +28,25 @@ const router = createRouter({
         { path: '/login', name: 'login', component: LoginView },
         { path: '/stop/:id', name: 'stop', component: StopDetailsView },
         { path: '/line/:id', name: 'line', component: LineDetailsView },
-        { path: '/studio', name: 'studio', component: StudioHome, beforeEnter: CookieService.auth },
-        { path: '/studio/stop', name: 'studio_stop', component: StudioStopView, beforeEnter: CookieService.auth },
-        { path: '/studio/stop/:id', name: 'studio_stop_edit', component: StudioStopView, beforeEnter: CookieService.auth },
-        { path: '/studio/operator', name: 'studio_operator', component: StudioOperatorView, beforeEnter: CookieService.auth },
-        { path: '/studio/operator/:id', name: 'studio_operator_edit', component: StudioOperatorView, beforeEnter: CookieService.auth },
-        { path: '/studio/type', name: 'studio_type', component: StudioTypeView, beforeEnter: CookieService.auth },
-        { path: '/studio/type/:id', name: 'studio_type_edit', component: StudioTypeView, beforeEnter: CookieService.auth },
-        { path: '/studio/timetable', name: 'studio_timetable', component: StudioTimetableView, beforeEnter: CookieService.auth },
-        { path: '/studio/timetable/:id', name: 'studio_timetable_edit', component: StudioTimetableView, beforeEnter: CookieService.auth },
-        { path: '/studio/route', name: 'studio_route', component: StudioRouteView, beforeEnter: CookieService.auth },
-        { path: '/studio/route/:id', name: 'studio_route_edit', component: StudioRouteView, beforeEnter: CookieService.auth },
-        { path: '/studio/line', name: 'studio_line', component: StudioLineView, beforeEnter: CookieService.auth },
-        { path: '/studio/line/:id', name: 'studio_line_edit', component: StudioLineView, beforeEnter: CookieService.auth },
-        { path: '/studio/journey', name: 'studio_journey', component: StudioJouneyView, beforeEnter: CookieService.auth },
-        { path: '/studio/journey/:id', name: 'studio_journey_edit', component: StudioJouneyView, beforeEnter: CookieService.auth },
-        { path: '/studio/role', name: 'studio_role', component: StudioRoleView, beforeEnter: CookieService.auth },
-        { path: '/studio/role/:id', name: 'studio_role_edit', component: StudioRoleView, beforeEnter: CookieService.auth },
-        { path: '/studio/user', name: 'studio_user', component: StudioUserView, beforeEnter: CookieService.auth },
-        { path: '/studio/user/:id', name: 'studio_user_edit', component: StudioUserView, beforeEnter: CookieService.auth }
+        { path: '/studio', name: 'studio', component: StudioHome, beforeEnter: auth },
+        { path: '/studio/stop', name: 'studio_stop', component: StudioStopView, beforeEnter: auth },
+        { path: '/studio/stop/:id', name: 'studio_stop_edit', component: StudioStopView, beforeEnter: auth },
+        { path: '/studio/operator', name: 'studio_operator', component: StudioOperatorView, beforeEnter: auth },
+        { path: '/studio/operator/:id', name: 'studio_operator_edit', component: StudioOperatorView, beforeEnter: auth },
+        { path: '/studio/type', name: 'studio_type', component: StudioTypeView, beforeEnter: auth },
+        { path: '/studio/type/:id', name: 'studio_type_edit', component: StudioTypeView, beforeEnter: auth },
+        { path: '/studio/timetable', name: 'studio_timetable', component: StudioTimetableView, beforeEnter: auth },
+        { path: '/studio/timetable/:id', name: 'studio_timetable_edit', component: StudioTimetableView, beforeEnter: auth },
+        { path: '/studio/route', name: 'studio_route', component: StudioRouteView, beforeEnter: auth },
+        { path: '/studio/route/:id', name: 'studio_route_edit', component: StudioRouteView, beforeEnter: auth },
+        { path: '/studio/line', name: 'studio_line', component: StudioLineView, beforeEnter: auth },
+        { path: '/studio/line/:id', name: 'studio_line_edit', component: StudioLineView, beforeEnter: auth },
+        { path: '/studio/journey', name: 'studio_journey', component: StudioJouneyView, beforeEnter: auth },
+        { path: '/studio/journey/:id', name: 'studio_journey_edit', component: StudioJouneyView, beforeEnter: auth },
+        { path: '/studio/role', name: 'studio_role', component: StudioRoleView, beforeEnter: auth },
+        { path: '/studio/role/:id', name: 'studio_role_edit', component: StudioRoleView, beforeEnter: auth },
+        { path: '/studio/user', name: 'studio_user', component: StudioUserView, beforeEnter: auth },
+        { path: '/studio/user/:id', name: 'studio_user_edit', component: StudioUserView, beforeEnter: auth }
     ],
 })
 
@@ -59,6 +58,5 @@ await initializeI18n({
 const app = createApp(App)
 app.use(router)
 app.use(i18n)
-app.use(surrealdb)
-app.use(cookieService)
+app.use(surrealdbService)
 app.mount('#app')

@@ -10,13 +10,13 @@
 import LineComponent from '@/components/LineComponent.vue';
 import { resource } from '@/core/resource';
 import type { LineStops } from '@/core/types';
-import type Surreal from 'surrealdb';
+import type { SurrealDbService } from '@/services/surrealdb.service';
 import { RecordId } from 'surrealdb';
 import { inject } from 'vue';
 import { useRoute } from 'vue-router';
 
 const route = useRoute()
-const surrealdb = inject('surrealdb') as Surreal
+const surrealdb = inject('surrealDbService') as SurrealDbService
 
 const line = resource({
     parameter: route,

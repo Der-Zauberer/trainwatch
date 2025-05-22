@@ -120,7 +120,7 @@ import BoardLineComponent from '@/components/BoardLineComponent.vue';
 import SearchComponent from '@/components/SearchComponent.vue';
 import { resource } from '@/core/resource';
 import type { Stop, BoardLine } from '@/core/types';
-import type Surreal from 'surrealdb';
+import type { SurrealDbService } from '@/services/surrealdb.service';
 import { RecordId } from 'surrealdb';
 import { inject, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -129,7 +129,7 @@ enum Board { DEPARTURE, ARRIVAL, STOP }
 
 const route = useRoute()
 const router = useRouter()
-const surrealdb = inject('surrealdb') as Surreal
+const surrealdb = inject('surrealDbService') as SurrealDbService
 
 const isMobileView = ref<boolean>(window.innerWidth < 768)
 const boardView = ref<Board>(Board.DEPARTURE)

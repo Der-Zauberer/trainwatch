@@ -30,14 +30,14 @@ import TableComponent from '@/components/TableComponent.vue';
 import { RoleEditDto } from '@/core/dtos';
 import { resource } from '@/core/resource';
 import type { Parameter, Role } from '@/core/types';
-import type Surreal from 'surrealdb';
+import type { SurrealDbService } from '@/services/surrealdb.service';
 import { RecordId } from 'surrealdb';
 import { inject, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 const route = useRoute()
 const router = useRouter()
-const surrealdb = inject('surrealdb') as Surreal
+const surrealdb = inject('surrealDbService') as SurrealDbService
 
 const parameter = reactive<Parameter>({ search: '', page: 1, size: 100, count: 0 })
 const roles = resource({

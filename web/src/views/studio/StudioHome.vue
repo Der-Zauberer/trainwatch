@@ -29,8 +29,7 @@
 
 <script lang="ts" setup>
 import { resource } from '@/core/resource';
-import type { CookieService } from '@/services/cookies.service';
-import type Surreal from 'surrealdb';
+import type { SurrealDbService } from '@/services/surrealdb.service';
 import { inject } from 'vue';
 
 type Amounts = {
@@ -44,10 +43,9 @@ type Amounts = {
     users: number
 }
 
-const surrealdb = inject('surrealdb') as Surreal
-const cookieService = inject('cookieService') as CookieService
+const surrealdb = inject('surrealDbService') as SurrealDbService
 
-const user = cookieService.getUserAsRef()
+const user = surrealdb.getUserAsRef()
 
 const QUARRY = `
 RETURN {

@@ -46,18 +46,18 @@ form * { margin: 0 }
 </style>
 
 <script setup lang="ts">
-import type { CookieService } from '@/services/cookies.service';
+import type { SurrealDbService } from '@/services/surrealdb.service';
 import { SurrealDbError } from 'surrealdb';
 import { inject, ref, reactive, toRaw } from 'vue';
 
-const cookies = inject('cookieService') as CookieService
+const surrealdb = inject('surrealDbService') as SurrealDbService
 
 const credentials = reactive({ username: '', password: '' })
 const error = ref()
 
 async function login() {
     try {
-        await cookies.loginAndRedirect(toRaw(credentials), '/studio')
+        await surrealdb.signinAndRedirect(toRaw(credentials), '/studio')
         error.value = undefined
 
     } catch (exception) {
