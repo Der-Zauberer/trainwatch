@@ -57,14 +57,15 @@ swd-dropdown swd-selection div {
 </style>
 
 <script setup lang="ts">
-import { inject } from 'vue';
+import { inject, type Ref } from 'vue';
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import type { SurrealDbService } from './services/surrealdb.service';
+import type { User } from './core/types';
 
 const route = useRoute()
 const surrealdb = inject('surrealDbService') as SurrealDbService
 
-const user = surrealdb.getUserAsRef()
+const user : Ref<User | undefined> = surrealdb.getUserAsRef()
 
 function isRoute(names: string[]): boolean | undefined {
   return names.includes((route.name || '').toString()) || undefined

@@ -83,20 +83,28 @@ function loadToken(): JwtToken | undefined {
 }
 
 function addSurrealInitializer(SurrealDbService: SurrealDbService): SurrealDbService {
+    const isUninitialized = (surrealdb: SurrealDbService) => (surrealdb.status === ConnectionStatus.Disconnected || surrealdb.status === ConnectionStatus.Error)
+    const initialize = async (surrealdb: SurrealDbService) => {
+        for (let tries = 2; tries > 0 && isUninitialized(surrealdb); tries--) {
+            await surrealdb.connect(import.meta.env.VITE_SURREALDB_ADDRESS, {
+                namespace: import.meta.env.VITE_SURREALDB_NAMESPACE,
+                database: import.meta.env.VITE_SURREALDB_DATABASE
+            })
+            await surrealdb.ready
+            await surrealdb.authenticate()
+        }
+    }
+    let connected: Promise<void> | null = null;
     return new Proxy(SurrealDbService, {
         get(target, property) {
-            const original = target[property as keyof Surreal]
-            if (typeof original !== "function") {
+            const original = target[property as keyof SurrealDbService]
+            if (typeof original !== "function" || original.constructor.name !== "AsyncFunction") {
                 return original
             }
             return async <T extends (...args: unknown[]) => unknown>(...args: Parameters<T>) => {
-                if (original !== target.connect && (target.status === ConnectionStatus.Disconnected || target.status === ConnectionStatus.Error)) {
-                    await target.connect(import.meta.env.VITE_SURREALDB_ADDRESS, {
-                        namespace: import.meta.env.VITE_SURREALDB_NAMESPACE,
-                        database: import.meta.env.VITE_SURREALDB_DATABASE
-                    })
-                    await target.ready
-                    await target.authenticate()
+                if (original !== target.connect && isUninitialized(target)) {
+                    if (!connected) connected = (async () => initialize(target))()
+                    await connected                    
                 }
                 return (original as T).apply(target, args)
             }
