@@ -87,12 +87,13 @@ swd-loading-spinner::after {
 
 <script setup lang="ts">
 import type { Filterable } from '@/core/dtos';
-import Surreal, { RecordId } from 'surrealdb';
+import type { SurrealDbService } from '@/services/surrealdb.service';
+import  { RecordId } from 'surrealdb';
 import { inject, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
 
 const route = useRoute()
-const surrealdb = inject('surrealdb') as Surreal
+const surrealdb = inject('surrealDbService') as SurrealDbService
 
 const props = defineProps<{ type: string, value: Filterable<unknown> & { id?: RecordId<string>, name?: string } }>()
 const emits = defineEmits<{ (e: 'close'): void }>() 

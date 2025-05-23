@@ -31,11 +31,11 @@
 
 <script setup lang="ts">
 import { resource } from '@/core/resource';
+import type { SurrealDbService } from '@/services/surrealdb.service';
 import { StringRecordId, type RecordId } from 'surrealdb';
-import type Surreal from 'surrealdb';
 import { inject, reactive, useTemplateRef } from 'vue';
 
-const surrealdb = inject('surrealdb') as Surreal
+const surrealdb = inject('surrealDbService') as SurrealDbService
 
 const props = defineProps<{ id?: string, label: string, type: string, required: boolean}>()
 const model = defineModel()

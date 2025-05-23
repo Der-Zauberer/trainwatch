@@ -24,13 +24,13 @@ swd-dropdown {
 <script setup lang="ts">
 import { resource } from '@/core/resource';
 import type { Entity } from '@/core/types';
-import type Surreal from 'surrealdb';
+import type { SurrealDbService } from '@/services/surrealdb.service';
 import { inject, reactive, watch } from 'vue';
 
 const props = defineProps<{ name?: string }>()
 const emits = defineEmits<{ (e: 'search', value: string): void }>()
 
-const surrealdb = inject('surrealdb') as Surreal
+const surrealdb = inject('surrealDbService') as SurrealDbService
 
 const parameter = reactive({ name: '' })
 
