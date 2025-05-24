@@ -3,7 +3,9 @@
 
         <h3>Login</h3>
 
-        <form @submit="$event.preventDefault(); login()">
+        <swd-loading-spinner loading="true" v-if="loading"></swd-loading-spinner>
+
+        <form @submit="$event.preventDefault(); login()" v-if="!loading">
 
             <swd-input>
                 <label for="login-username" >Username</label>
@@ -36,6 +38,10 @@ swd-card-outline {
     border-color: var(--theme-primary-color);
 }
 
+swd-loading-spinner {
+    height: calc(3 * var(--theme-inner-element-spacing) + round(2.2em, 1px) + 2 * 58px) !important;
+}
+
 form { display: contents }
 form * { margin: 0 }
 
@@ -53,14 +59,18 @@ import { inject, ref, reactive, toRaw } from 'vue';
 const surrealdb = inject('surrealDbService') as SurrealDbService
 
 const credentials = reactive({ username: '', password: '' })
-const error = ref()
+const loading = ref<boolean>()
+const error = ref<string>()
 
 async function login() {
+    loading.value = true
     try {
         await surrealdb.signinAndRedirect(toRaw(credentials), '/studio')
+        loading.value = false
         error.value = undefined
 
     } catch (exception) {
+        loading.value = false
         error.value = (exception as SurrealDbError).message
     }
 }
