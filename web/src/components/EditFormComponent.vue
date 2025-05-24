@@ -1,29 +1,22 @@
 <template>
 
-    <form @submit.prevent="save($event)">
+     <div class="container-xl header">
+        <button class="grey-color" @click="emits('close')"><swd-icon class="arrow-left-icon"></swd-icon></button>
+        <div class="header__title">{{ props.value.name }}</div>
+        <swd-loading-spinner :loading="loading.delete">
+            <button v-if="props.value.id?.id" class="red-color" @click="deleteDialog = true">{{ $t('action.delete') }}</button>
+        </swd-loading-spinner>
+        <swd-loading-spinner :loading="loading.save">
+            <button @click="save()">{{ $t('action.save') }}</button>
+        </swd-loading-spinner>
+    </div>
+    <hr>
 
-        <div class="container-xl header">
-            <button class="grey-color" @click="emits('close')"><swd-icon class="arrow-left-icon"></swd-icon></button>
-            <div class="header__title">{{ props.value.name }}</div>
-            <swd-loading-spinner :loading="loading.delete">
-                <button v-if="props.value.id?.id" class="red-color" @click="deleteDialog = true">{{ $t('action.delete') }}</button>
-            </swd-loading-spinner>
-            <swd-loading-spinner :loading="loading.save">
-                <input type="submit" :value="$t('action.save')">
-            </swd-loading-spinner>
-        </div>
-        <hr>
-
-        <!--
+    <form class="container-xl" ref="form">
         <swd-card class="red-color" v-if="error">
             {{ error }}
         </swd-card>
-        -->
-
-        <div class="container-xl" >
-            <slot></slot>
-        </div>
-
+        <slot></slot>
     </form>
 
     <swd-dialog v-if="deleteDialog" shown>
@@ -88,18 +81,21 @@ swd-loading-spinner::after {
 <script setup lang="ts">
 import type { Filterable } from '@/core/dtos';
 import type { SurrealDbService } from '@/services/surrealdb.service';
-import  { RecordId } from 'surrealdb';
-import { inject, reactive, ref } from 'vue';
+import  { RecordId, SurrealDbError } from 'surrealdb';
+import { inject, reactive, ref, useTemplateRef } from 'vue';
 import { useRoute } from 'vue-router';
 
 const route = useRoute()
 const surrealdb = inject('surrealDbService') as SurrealDbService
 
 const props = defineProps<{ type: string, value: Filterable<unknown> & { id?: RecordId<string>, name?: string } }>()
-const emits = defineEmits<{ (e: 'close'): void }>() 
+const emits = defineEmits<{ (e: 'close'): void }>()
 
-const deleteDialog = ref(false)
+const formRef = useTemplateRef('form')
+
 const loading = reactive({ delete: false, save: false })
+const error = ref<string>()
+const deleteDialog = ref(false)
 
 async function remove() {
     loading.delete = true
@@ -110,8 +106,9 @@ async function remove() {
     loading.delete = false
 }
 
-async function save(event: Event) {
-    const form = event.target as HTMLFormElement
+async function save() {
+    const form = formRef.value
+    if (!form) return
     if (!form.checkValidity()) {
         form.reportValidity()
         return
@@ -124,8 +121,8 @@ async function save(event: Event) {
             await surrealdb.upsert(new RecordId(props.type, route.params.id), props.value.filterBeforeSubmit())
         }
         emits('close')
-    } catch (error: unknown) {
-        console.log(error)
+    } catch (exception: unknown) {
+        error.value = (exception as SurrealDbError).message
     }
     loading.save = false
 }
