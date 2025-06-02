@@ -102,12 +102,12 @@ const commands: Commands = {
     download: {
         'DB/Stada': { 
             execute: downloadApiDBStada,
-            usage: 'download DB/Stada <client-id> <api-key> [file]',
+            usage: 'download DB/Stada [file]',
             description: 'Downloads stops from the DB Stada API to a file'
         },
         'DB/RIS/Stations': { 
             execute: downloadApiDBRisStationsPlatform,
-            usage: 'download DB/RIS/Stations <client-id> <api-key> [file]',
+            usage: 'download DB/RIS/Stations [file]',
             description: 'Downloads platforms for already downloaded stops from the DB Ris::Stations API to a file'
         }
     },
@@ -115,7 +115,7 @@ const commands: Commands = {
         import: {
             execute: importGtfs,
             usage: 'gtfs import <file>',
-            description: 'Imports GTFS data from a CSV files'
+            description: 'Imports GTFS data from CSV files'
         }
     },
     test: {

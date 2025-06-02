@@ -1,14 +1,16 @@
 import FileSystem from 'node:fs'
 import Path from 'path'
 
+const CHARSET = 'utf8'
+
 export function readFile(name: string): string {
     if (!FileSystem.existsSync(name)) throw new Error(`File "${name}" doesn't exist!`)
-    return FileSystem.readFileSync(name, 'utf8')
+    return FileSystem.readFileSync(name, CHARSET)
 }
 
 export function readFileOrUndefined(name: string): string | undefined {
     if (!FileSystem.existsSync(name)) return undefined
-    return FileSystem.readFileSync(name, 'utf8')
+    return FileSystem.readFileSync(name, CHARSET)
 }
 
 export async function readFileAsStream(name: string, callback: (lines: string[]) => Promise<void>, lineAmount: number = 100) {
@@ -20,7 +22,7 @@ export async function readFileAsStream(name: string, callback: (lines: string[])
     let bytesRead: number
 
     while ((bytesRead = FileSystem.readSync(fileStream, buffer, 0, bufferSize, null)) > 0) {
-        const chunk = buffer.toString('utf8', 0, bytesRead)
+        const chunk = buffer.toString(CHARSET, 0, bytesRead)
         const linesOfChunks: string[] = chunk.split(/\r?\n/gm)
         if (leftover) linesOfChunks[0] = leftover + linesOfChunks[0]
         leftover = linesOfChunks.pop()
@@ -36,7 +38,7 @@ export async function readFileAsStream(name: string, callback: (lines: string[])
 export function writeFile(name: string, content: string | object | unknown[]) {
     const directory = Path.dirname(name)
     if (directory && !FileSystem.existsSync(directory)) FileSystem.mkdirSync(directory)
-    FileSystem.writeFileSync(name, typeof content === 'object' || Array.isArray(content) ? JSON.stringify(content, undefined, '\t') : content, 'utf8')
+    FileSystem.writeFileSync(name, typeof content === 'object' || Array.isArray(content) ? JSON.stringify(content, undefined, '\t') : content, CHARSET)
 }
 
 

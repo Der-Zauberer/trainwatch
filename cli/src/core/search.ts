@@ -73,3 +73,10 @@ export function beginnScoreMatching(search: string, a: Entity, b: Entity): numbe
 export function sortBeginnScoreMatching(search: string, entities: Entity[]): Entity[] {
     return entities.sort((a, b) => beginnScoreMatching(search, a, b))
 }
+
+export function guid() {
+    const chars = '0123456789abcdefghijklmnopqrstuvwxyz'
+    let guid = ''
+    for (let i = 0; i < 20; i++) guid += chars[Math.floor(Math.random() * chars.length)]
+    return guid
+}

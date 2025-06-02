@@ -104,17 +104,6 @@ export type Timetable = Entity<'timetable'>
 export type Route = {
     id: RecordId<'route'>
     name?: string
-    timetable: Timetable
-    designations: {
-        type: Type
-        number: string
-    }[],
-    operator?: Operator
-}
-
-export type RouteCreation = {
-    id?: RecordId<'route'>
-    name?: string
     timetable: RecordId<'timetable'>
     designations: {
         type: RecordId<'type'>
@@ -125,11 +114,6 @@ export type RouteCreation = {
 
 export type Line = {
     id: RecordId<'line'>
-    route: Route
-}
-
-export type LineCreation = {
-    id?: RecordId<'line'>
     route: RecordId<'route'>
 }
 

@@ -1,9 +1,9 @@
 import Path from 'path'
 import { readFile, readFileAsStream } from '../core/files'
 import { CSV } from '../core/csv'
-import { LineCreation, Operator, Route, RouteCreation, Stop, Timetable, Type } from '../core/types'
+import { Line, Operator, Route, Stop, Timetable, Type } from '../core/types'
 import { RecordId } from 'surrealdb'
-import { normalize } from '../core/search'
+import { guid, normalize } from '../core/search'
 import { printWarning } from '../core/cli'
 
 export type GtfsAgency = {
@@ -76,52 +76,6 @@ export class GtfsService {
         this.trips = CSV.parse(readFile(Path.join(directory, 'trips.txt')))
     }
 
-    async streamStopTimes(connection: (connects: GtfsStopTime[]) => Promise<void>) {
-        let header: string[]
-        const chunk = 100
-        await readFileAsStream(Path.join(this.directory, 'stop_times.txt'), async (lines) => {
-            if (!header) header = CSV.parseHeader(lines.shift() || '')
-            await connection(CSV.parseChunk<GtfsStopTime>(header, lines))
-        }, chunk)
-    }
-
-    convertAgencies(): Map<string, Operator> {
-        const agencies: Map<string, Operator> = new Map()
-        for (const agency of this.agencies) {
-            agencies.set(agency.agency_id, {
-                id: new RecordId('operator', normalize(agency.agency_name, '_')),
-                name: agency.agency_name,
-                address: agency.agency_phone ? { phone: agency.agency_phone }: {},
-                website: agency.agency_url,
-            })
-        }
-        return agencies
-    }
-
-    convertRoutes(timetable: Timetable, types: Map<string, Type>, operators: Map<string, Operator>): Map<string, RouteCreation> {
-        const unknown: Set<string> = new Set()
-        const routes: Map<string, RouteCreation> = new Map()
-        for (const route of this.routes) {
-            const designation = this.splitDesignation(route.route_short_name)
-            const type = types.get((designation.type || route.route_desc || 'B').toLowerCase())
-
-            if (!type && designation.type) {
-                unknown.add(designation.type)
-            }
-
-            routes.set(route.route_id, {
-                name: route.route_long_name,
-                timetable: timetable.id,
-                designations: [
-                    type ? { type: type.id, number: designation.number } : { type: new RecordId('type', 'b'), number: route.route_short_name }
-                ],
-                operator: operators.get(route.agency_id)?.id
-            })
-        }
-        printWarning(`Can't find the following types: ${Array.from(unknown)}`)
-        return routes
-    }
-
     convertStops(): Map<string, Stop> {
         const stops: Map<string, Stop> = new Map()
         for (const stop of this.stops) {
@@ -167,8 +121,46 @@ export class GtfsService {
         return stops
     }
 
-    convertTrips(routes: Map<string, Route>): Map<string, LineCreation> {
-        const lines: Map<string, LineCreation> = new Map()
+    convertAgencies(): Map<string, Operator> {
+        const agencies: Map<string, Operator> = new Map()
+        for (const agency of this.agencies) {
+            agencies.set(agency.agency_id, {
+                id: new RecordId('operator', normalize(agency.agency_name, '_')),
+                name: agency.agency_name,
+                address: agency.agency_phone ? { phone: agency.agency_phone }: {},
+                website: agency.agency_url,
+            })
+        }
+        return agencies
+    }
+
+    convertRoutes(timetable: Timetable, types: Map<string, Type>, operators: Map<string, Operator>): Map<string, Route> {
+        const unknown: Set<string> = new Set()
+        const routes: Map<string, Route> = new Map()
+        for (const route of this.routes) {
+            const designation = this.splitDesignation(route.route_short_name)
+            const type = types.get((designation.type || route.route_desc || 'B').toLowerCase())
+
+            if (!type && designation.type) {
+                unknown.add(designation.type)
+            }
+
+            routes.set(route.route_id, {
+                id: new RecordId('route', [timetable.id, guid()]),
+                name: route.route_long_name,
+                timetable: timetable.id,
+                designations: [
+                    type ? { type: type.id, number: designation.number } : { type: new RecordId('type', 'b'), number: route.route_short_name }
+                ],
+                operator: operators.get(route.agency_id)?.id
+            })
+        }
+        printWarning(`Can't find the following types: ${Array.from(unknown)}`)
+        return routes
+    }
+
+    convertTrips(routes: Map<string, Route>): Map<string, Line> {
+        const lines: Map<string, Line> = new Map()
         for (const trip of this.trips) {
             const route = routes.get(trip.route_id)
 
@@ -178,11 +170,21 @@ export class GtfsService {
             }
 
             lines.set(trip.trip_id, {
+                id: new RecordId('line', [route.id, guid()]),
                 route: route.id
             })
         }
 
         return lines;
+    }
+
+    async streamStopTimes(connection: (connects: GtfsStopTime[]) => Promise<void>) {
+        let header: string[]
+        const chunk = 100
+        await readFileAsStream(Path.join(this.directory, 'stop_times.txt'), async (lines) => {
+            if (!header) header = CSV.parseHeader(lines.shift() || '')
+            await connection(CSV.parseChunk<GtfsStopTime>(header, lines))
+        }, chunk)
     }
 
     private splitDesignation(string: string): { type?: string, number: string } {

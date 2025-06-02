@@ -1,27 +1,30 @@
-import Surreal, { ConnectOptions, RecordId, surrealql } from "surrealdb"
+import Surreal, { ConnectOptions, RecordId } from "surrealdb"
 import { Logger, printError, printWarning } from "../core/cli"
-import { Connects, Entity, Line, LineCreation, Operator, Route, RouteCreation, Stop, Timetable, Type } from "../core/types"
+import { Connects, Entity, Line, Operator, Route, Stop, Timetable, Type } from "../core/types"
 import { GtfsService, GtfsStop } from "../services/gtfs.service"
 import { normalize } from "../core/search"
+import { getConfig } from "../core/config"
 
 export async function importGtfs(directory: string) {
     if (!directory) printError(`Require directory as arguments!`)
 
     const logger = new Logger('GTFS-Import')
+    const config = getConfig()
 
     const options: ConnectOptions = {
-        namespace: 'pis.derzauberer.eu',
-        database: 'gtfs',
+        namespace: config.surrealdb.namespace,
+        database: config.surrealdb.databse,
         auth: {
-            username: 'admin',
-		    password: 'admin'
+            username: config.surrealdb.username,
+		    password: config.surrealdb.password
         }
     }
 
     logger.printLoading(`Connect to database ${options.namespace} ${options.database}`)
 
     const surreal = new Surreal()
-    await surreal.connect('ws://localhost:8080/rpc', options)
+    await surreal.connect(config.surrealdb.address, options)
+    await surreal.ready
 
     const types: Map<string, Type> = await downloadFromSurreal(surreal, 'type')
 
@@ -53,25 +56,23 @@ export async function importGtfs(directory: string) {
     }
 
     logger.printLoading(`Collecting route information`)
-    const routesCreations: Map<string, RouteCreation> = gtfsService.convertRoutes(timetable, types, operator)
+    const routes: Map<string, Route> = gtfsService.convertRoutes(timetable, types, operator)
 
     logger.printLoading(`Upload routes to surrealdb`)
 
-    const routes: Map<string, Route> = new Map()
-    for (const [index, [id, route]] of Array.from(routesCreations.entries()).entries()) {
-        routes.set(id, await surreal.insert<Route, RouteCreation>('route', route).then(result => result[0]))
-        if (index % 100 == 0) logger.printProgress(index, routesCreations.size, 'Uploading gtfs routes')
+    for (const [index, [id, route]] of Array.from(routes.entries()).entries()) {
+        await surreal.insert<Route, Route>('route', route)
+        if (index % 100 == 0) logger.printProgress(index, routes.size, 'Uploading gtfs routes')
     }
 
     logger.printLoading(`Collecting trip information`)
-    const lineCreations: Map<string, LineCreation> = gtfsService.convertTrips(routes)
+    const lines: Map<string, Line> = gtfsService.convertTrips(routes)
 
     logger.printLoading(`Upload trips to surrealdb`)
 
-    const lines: Map<string, Line> = new Map()
-    for (const [index, [id, line]] of Array.from(lineCreations.entries()).entries()) {
-        lines.set(id, await surreal.insert<Line, LineCreation>('line', line).then(result => result[0]))
-        if (index % 100 == 0) logger.printProgress(index, lineCreations.size, 'Uploading gtfs trips')
+    for (const [index, [id, line]] of Array.from(lines.entries()).entries()) {
+        await surreal.insert<Line, Line>('line', line)
+        if (index % 100 == 0) logger.printProgress(index, lines.size, 'Uploading gtfs trips')
     }
 
     logger.printLoading(`Collecting timetable information`)

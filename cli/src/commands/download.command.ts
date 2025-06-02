@@ -3,12 +3,14 @@ import { Logger, printError, printWarning } from "../core/cli"
 import { readFileOrUndefined, writeFile } from "../core/files"
 import { normalize } from "../core/search"
 import { Source, Stop } from "../core/types"
+import { getConfig } from "../core/config"
 
-export async function downloadApiDBStada(clientId: string, apikey: string, file: string) {
+export async function downloadApiDBStada(file: string) {
     const logger = new Logger('DB/Stada')
-    if (!clientId || !apikey || !file) printError(`Require client-id, api-key and file as arguments!`)
+    const config = getConfig()
+    if (!file) printError(`Require the file as arguments!`)
     const url = 'https://apis.deutschebahn.com/db-api-marketplace/apis/station-data/v2/stations'
-    const headers = { 'DB-Client-Id': clientId, 'DB-Api-Key': apikey }
+    const headers = { 'DB-Client-Id': config.dbMarketplace.clientId, 'DB-Api-Key': config.dbMarketplace.apiKey }
     const stops: Map<string, Stop> = new Map(JSON.parse(readFileOrUndefined(file) || '[]').map((value: { id: string }) => [value.id, value]))
     logger.printLoading(`Downloading stops from ${url}`)
     const response = await fetch(url, { headers })
@@ -62,7 +64,7 @@ export async function downloadApiDBStada(clientId: string, apikey: string, file:
                     mobilityService: stop.hasMobilityService,
                 },
                 ids: {
-                    eva: stop.evaNumbers[0].number,
+                    uic: stop.evaNumbers[0].number,
                     ril: stop.ril100Identifiers.map((ril: { rilIdentifier: any }) => ril.rilIdentifier),
                     stada: stop.number,
                 },
@@ -86,18 +88,19 @@ export async function downloadApiDBStada(clientId: string, apikey: string, file:
 }
 
 
-export async function downloadApiDBRisStationsPlatform(clientId: string, apikey: string, file: string) {
+export async function downloadApiDBRisStationsPlatform(file: string) {
     const logger = new Logger('DB/Ris::Stations')
-    if (!clientId || !apikey || !file) printError(`Require client-id, api-key and file as arguments!`)
-    const headers = { 'DB-Client-Id': clientId, 'DB-Api-Key': apikey }
+    const config = getConfig()
+    if (!file) printError(`Require the file as arguments!`)
+    const headers = { 'DB-Client-Id': config.dbMarketplace.clientId, 'DB-Api-Key': config.dbMarketplace.apiKey }
     const stops: Map<string, Stop> = new Map(JSON.parse(readFileOrUndefined(file) || '[]').map((value: { id: string }) => [value.id, value]))
     logger.printLoading(`Downloading stops from https://apis.deutschebahn.com/db-api-marketplace/apis/ris-stations/v1/platforms`)
     let i = 1
     for (const [id, stop] of stops) {
-        const eva = stop.ids.eva
-        if (!eva) return
+        const uic = stop.ids?.uic
+        if (!uic) return
         try {
-            const url = `https://apis.deutschebahn.com/db-api-marketplace/apis/ris-stations/v1/platforms/${eva}`
+            const url = `https://apis.deutschebahn.com/db-api-marketplace/apis/ris-stations/v1/platforms/${uic}`
             const response = await fetch(url, { headers }).then(response => response.ok ? response.json() : Promise.reject())
             const platforms = []
             for (const platform of response.platforms) {

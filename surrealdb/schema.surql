@@ -556,8 +556,8 @@ DEFINE TABLE OVERWRITE timetable TYPE NORMAL SCHEMAFULL
 DEFINE FIELD OVERWRITE id ON TABLE timetable;
 DEFINE FIELD OVERWRITE name ON TABLE timetable TYPE string;
 
-DEFINE EVENT OVERWRITE timetable_delete ON TABLE timetable WHEN $after == NONE THEN {
-    DELETE FROM route WHERE timetable == $before.id;
+DEFINE EVENT OVERWRITE timetable_delete ON TABLE timetable WHEN $event = "DELETE" THEN {
+    DELETE route:[$before.id, NONE]..=[$before.id, ..];
 };
 
 -----------
@@ -576,10 +576,8 @@ DEFINE FIELD OVERWRITE designations[*].type ON TABLE route TYPE record<type>;
 DEFINE FIELD OVERWRITE designations[*].number ON TABLE route TYPE string;
 DEFINE FIELD OVERWRITE operator ON TABLE route TYPE option<record<operator>>;
 
-DEFINE INDEX OVERWRITE route_timetable_index ON TABLE route COLUMNS timetable;
-
-DEFINE EVENT OVERWRITE route_delete ON TABLE route WHEN $after == NONE THEN {
-    DELETE FROM line WHERE route == $before.id;
+DEFINE EVENT OVERWRITE route_delete ON TABLE route WHEN $event = "DELETE" THEN {
+    DELETE line:[$before.id, NONE]..=[$before.id, ..];
 };
 
 -----------
@@ -593,11 +591,9 @@ DEFINE TABLE OVERWRITE line SCHEMAFULL
 DEFINE FIELD OVERWRITE id ON TABLE line;
 DEFINE FIELD OVERWRITE route ON TABLE line TYPE record<route>;
 
-DEFINE INDEX OVERWRITE line_route_index ON TABLE line COLUMNS route;
-
-DEFINE EVENT OVERWRITE line_delete ON TABLE line WHEN $after == NONE THEN {
-    DELETE FROM connects WHERE in == $before.id;
-    DELETE FROM journey WHERE line == $before.id;
+DEFINE EVENT OVERWRITE line_delete ON TABLE line WHEN $event = "DELETE" THEN {
+    DELETE FROM $before.id WHERE ->connects;
+    DELETE journey:[$before.id, NONE]..=[$before.id, ..];
 };
 
 DEFINE TABLE OVERWRITE connects SCHEMAFULL TYPE RELATION
@@ -614,12 +610,6 @@ DEFINE FIELD OVERWRITE departure ON TABLE connects TYPE object;
 DEFINE FIELD OVERWRITE departure.time ON TABLE connects TYPE datetime;
 DEFINE FIELD OVERWRITE departure.platform ON TABLE connects TYPE string;
 
-DEFINE INDEX OVERWRITE connects_line_index ON TABLE connects COLUMNS in;
-
-DEFINE EVENT OVERWRITE connects_delete ON TABLE line WHEN $after == NONE THEN {
-    DELETE FROM visits WHERE sceduled == $before.id;
-};
-
 -------------
 -- journey --
 -------------
@@ -631,10 +621,8 @@ DEFINE TABLE OVERWRITE journey SCHEMAFULL
 DEFINE FIELD OVERWRITE id ON TABLE journey;
 DEFINE FIELD OVERWRITE line ON TABLE journey TYPE record<line>;
 
-DEFINE INDEX OVERWRITE journey_line_index ON TABLE journey COLUMNS line;
-
-DEFINE EVENT OVERWRITE journey_delete ON TABLE line WHEN $after == NONE THEN {
-    DELETE FROM visits WHERE in == $before.id;
+DEFINE EVENT OVERWRITE journey_delete ON TABLE journey WHEN $event = "DELETE" THEN {
+    DELETE FROM $before.id WHERE ->visits;
 };
 
 DEFINE TABLE OVERWRITE visits SCHEMAFULL TYPE RELATION
@@ -652,8 +640,6 @@ DEFINE FIELD OVERWRITE realtime.arrival.platform ON TABLE visits TYPE string;
 DEFINE FIELD OVERWRITE realtime.departure ON TABLE visits TYPE object;
 DEFINE FIELD OVERWRITE realtime.departure.time ON TABLE visits TYPE datetime;
 DEFINE FIELD OVERWRITE realtime.departure.platform ON TABLE visits TYPE string;
-
-DEFINE INDEX OVERWRITE visits_journey_index ON TABLE visits COLUMNS in;
 
 ----------
 -- role --
