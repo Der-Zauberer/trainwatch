@@ -1,4 +1,4 @@
-import Surreal, { ConnectOptions, RecordId } from "surrealdb"
+import Surreal, { ConnectOptions, Gap, jsonify, RecordId, surql, Table } from "surrealdb"
 import { Logger, printError, printWarning } from "../core/cli"
 import { Connects, Entity, Line, Operator, Route, Stop, Timetable, Type } from "../core/types"
 import { GtfsService, GtfsStop } from "../services/gtfs.service"
@@ -40,7 +40,7 @@ export async function importGtfs(directory: string) {
 
     const stopChunks = splitArray(Array.from(stops.values()), 100)
     for (const [index, stopArray] of stopChunks.entries()) {
-        await uploadToSurreal(surreal, 'stop', stopArray)
+        await uploadToSurreal(surreal, new Table('stop'), stopArray)
         logger.printProgress(index * 100, stops.size, 'Uploading gtfs stops')
     }
 
@@ -51,7 +51,7 @@ export async function importGtfs(directory: string) {
 
     const operatorChunks = splitArray(Array.from(operator.values()), 100)
     for (const [index, operatorArray] of operatorChunks.entries()) {
-        await uploadToSurreal(surreal, 'operator', operatorArray)
+        await uploadToSurreal(surreal, new Table('operator'), operatorArray)
         logger.printProgress(index * 100, operator.size, 'Uploading gtfs agencies')
     }
 
@@ -60,9 +60,10 @@ export async function importGtfs(directory: string) {
 
     logger.printLoading(`Upload routes to surrealdb`)
 
-    for (const [index, [id, route]] of Array.from(routes.entries()).entries()) {
-        await surreal.insert<Route, Route>('route', route)
-        if (index % 100 == 0) logger.printProgress(index, routes.size, 'Uploading gtfs routes')
+    const routeChunks = splitArray(Array.from(routes.values()), 500)
+    for (const [index, routeArray] of routeChunks.entries()) {
+        await surreal.insert(routeArray)
+        logger.printProgress(index * 500, routes.size, 'Uploading gtfs routes')
     }
 
     logger.printLoading(`Collecting trip information`)
@@ -70,9 +71,10 @@ export async function importGtfs(directory: string) {
 
     logger.printLoading(`Upload trips to surrealdb`)
 
-    for (const [index, [id, line]] of Array.from(lines.entries()).entries()) {
-        await surreal.insert<Line, Line>('line', line)
-        if (index % 100 == 0) logger.printProgress(index, lines.size, 'Uploading gtfs trips')
+    const lineChunks = splitArray(Array.from(lines.values()), 500)
+    for (const [index, lineArray] of lineChunks.entries()) {
+        await surreal.insert(lineArray)
+        logger.printProgress(index * 500, lines.size, 'Uploading gtfs trips')
     }
 
     logger.printLoading(`Collecting timetable information`)
@@ -107,11 +109,11 @@ export async function importGtfs(directory: string) {
                 }
             }
             relations.push(relation)
-
-            //surreal.insertRelation('connects', relation).catch(error => printWarning(`${error}: ${JSON.stringify(relation)} ${JSON.stringify(connects)}`))
+            index++
+            surreal.insertRelation('connects', relation).catch(error => printWarning(`${error}: ${JSON.stringify(relation)} ${JSON.stringify(connects)}`))
         }
-        await surreal.insertRelation('connects', relations).catch(error => printWarning(`${error}`))
-        logger.printProgress(index * 100, 50564128 / 100, 'reading', 'stop_times')
+        //await surreal.insertRelation(relations).catch(error => printWarning(`${error}`)) //TODO timebased id
+        logger.printProgress(index, 50564128, 'reading', 'stop_times')
         index++
     })
 
@@ -123,12 +125,10 @@ async function downloadFromSurreal<T extends Entity>(surreal: Surreal, type: str
         .catch(error => printError(error)) as unknown as Promise<Map<string, T>>
 }
 
-async function uploadToSurreal<T>(surreal: Surreal, type: string, entities: T): Promise<T> {
-    const entity = JSON.stringify(entities).replaceAll(type + ':', '')
-    const query = `INSERT INTO ${type} ${entity} ON DUPLICATE KEY UPDATE id = id;`
-    return await surreal.query<T[][]>(query)
+async function uploadToSurreal<T>(surreal: Surreal, table: Table, entities: T): Promise<T> {
+    return await surreal.query<T[][]>(surql`INSERT INTO ${table} ${entities} ON DUPLICATE KEY UPDATE id = id;`)
         .then(result => result[0])
-        .catch(error => printError(error + ' ' + entity)) as unknown as Promise<T>
+        .catch(error => printError(error)) as unknown as Promise<T>
 }
 
 function splitArray<T>(array: T[], size: number): T[][] {
