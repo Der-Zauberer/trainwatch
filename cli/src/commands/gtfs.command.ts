@@ -2,7 +2,7 @@ import Surreal, { ConnectOptions, Gap, jsonify, RecordId, surql, Table } from "s
 import { Logger, printError, printWarning } from "../core/cli"
 import { Connects, Entity, Line, Operator, Route, Stop, Timetable, Type } from "../core/types"
 import { GtfsService, GtfsStop } from "../services/gtfs.service"
-import { normalize } from "../core/search"
+import { guid, normalize } from "../core/search"
 import { getConfig } from "../core/config"
 
 export async function importGtfs(directory: string) {
@@ -83,7 +83,6 @@ export async function importGtfs(directory: string) {
 
     let index = 0
     await gtfsService.streamStopTimes(async connections => {
-        let relations: Connects[] = [];
         for (const connects of connections) {
             const gtfsStop: GtfsStop | undefined = stop_ids.get(connects.stop_id)
             const stop: Stop | undefined = stops.get(connects.stop_id)
@@ -97,6 +96,7 @@ export async function importGtfs(directory: string) {
                 return
             }
             const relation: Connects = {
+                id: new RecordId('connects', guid(true)),
                 in: line.id,
                 out: stop.id,
                 arrival: {
@@ -108,11 +108,10 @@ export async function importGtfs(directory: string) {
                     time: new Date(`0000-01-01T${connects.departure_time.split(':').map(time => time.padStart(2, '0')).slice(0, 2).join(':')}:00Z`)
                 }
             }
-            relations.push(relation)
             index++
             surreal.insertRelation('connects', relation).catch(error => printWarning(`${error}: ${JSON.stringify(relation)} ${JSON.stringify(connects)}`))
         }
-        //await surreal.insertRelation(relations).catch(error => printWarning(`${error}`)) //TODO timebased id
+        //await surreal.insertRelation('connects', relations).catch(error => printWarning(`${error}`)) //TODO Grouping
         logger.printProgress(index, 50564128, 'reading', 'stop_times')
         index++
     })

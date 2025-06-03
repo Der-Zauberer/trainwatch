@@ -118,6 +118,7 @@ export type Line = {
 }
 
 export type Connects = {
+    id: RecordId<'connects'>
     in: RecordId<'line'>
     out: RecordId<'stop'>
     arrival: {

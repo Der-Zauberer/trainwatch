@@ -28,7 +28,6 @@ export async function readFileAsStream(name: string, callback: (lines: string[])
         leftover = linesOfChunks.pop()
         lines.push(...linesOfChunks)
         while (lines.length > lineAmount) await callback(lines.splice(0, lineAmount))
-        lines = lines.splice(lineAmount)
     }
 
     if (lines.length > 0) await callback(lines)

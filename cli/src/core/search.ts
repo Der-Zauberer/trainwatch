@@ -74,9 +74,9 @@ export function sortBeginnScoreMatching(search: string, entities: Entity[]): Ent
     return entities.sort((a, b) => beginnScoreMatching(search, a, b))
 }
 
-export function guid() {
+export function guid(timebased?: boolean) {
     const chars = '0123456789abcdefghijklmnopqrstuvwxyz'
-    let guid = ''
-    for (let i = 0; i < 20; i++) guid += chars[Math.floor(Math.random() * chars.length)]
+    let guid = timebased ? Math.floor(Date.now() / 1000).toString(36) : ''
+    for (let i = guid.length; i < 20; i++) guid += chars[Math.floor(Math.random() * chars.length)]
     return guid
 }
