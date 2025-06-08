@@ -20,6 +20,7 @@ import StudioRouteView from './views/studio/StudioRouteView.vue'
 import StudioLineView from './views/studio/StudioLineView.vue'
 import StudioJouneyView from './views/studio/StudioJouneyView.vue'
 import StudioTimetableView from './views/studio/StudioTimetableView.vue'
+import JourneyDetailsVue from './views/public/JourneyDetailsVue.vue'
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -28,6 +29,7 @@ const router = createRouter({
         { path: '/login', name: 'login', component: LoginView },
         { path: '/stop/:id', name: 'stop', component: StopDetailsView },
         { path: '/line/:id', name: 'line', component: LineDetailsView },
+        { path: '/journey/:id', name: 'journey', component: JourneyDetailsVue },
         { path: '/studio', name: 'studio', component: StudioHome, beforeEnter: auth },
         { path: '/studio/stop', name: 'studio_stop', component: StudioStopView, beforeEnter: auth },
         { path: '/studio/stop/:id', name: 'studio_stop_edit', component: StudioStopView, beforeEnter: auth },

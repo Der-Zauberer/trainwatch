@@ -102,7 +102,9 @@ async function remove() {
     try {
         await surrealdb.delete(new RecordId(props.type, route.params.id))
         emits('close')
-    } catch {}
+    } catch (exception: unknown) {
+        error.value = (exception as SurrealDbError).message
+    }
     loading.delete = false
 }
 

@@ -134,11 +134,11 @@ export type LineStops = Line & {
         id: RecordId<'stop'>
         name: string,
         arrival: { 
-            platform: string,
+            platform: string
             time: Date
-        },
+        }
         departure: {
-            platform: string,
+            platform: string
             time: Date
         }
     }[]
@@ -147,6 +147,37 @@ export type LineStops = Line & {
 export type Journey = {
     id: RecordId<'journey'>
     line: Line
+    canceled: boolean
+}
+
+export type JourneyStops = Journey & {
+    stops: {
+        id: RecordId<'stop'>
+        name: string,
+        canceled: boolean
+        sceduled: {
+            arrival: { 
+                platform: string
+                time: Date
+            }
+            departure: {
+                platform: string
+                time: Date
+            }
+        }
+        realtime: {
+            id: RecordId<'stop'>
+            name: string,
+            arrival: { 
+                platform: string
+                time: Date
+            }
+            departure: {
+                platform: string
+                time: Date
+            }
+        }
+    }[]
 }
 
 export type Role = Entity<'role'> & {

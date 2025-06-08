@@ -45,8 +45,15 @@ DEFINE FUNCTION OVERWRITE fn::line::board($stop: record<stop>) {
 DEFINE FUNCTION OVERWRITE fn::line::stops($line: record<line>) {
     RETURN 
         SELECT id, route.{id, name, designations.{number, type.*}},
-        (SELECT id, arrival, departure.platform, departure.time, out.id AS id, out.name AS name FROM ->connects ORDER BY departure.time) AS stops
+        (SELECT id, arrival, departure, departure.time, out.id AS id, out.name AS name FROM ->connects ORDER BY departure.time) AS stops
         FROM ONLY $line;
+};
+
+DEFINE FUNCTION OVERWRITE fn::journey::stops($journey: record<journey>) {
+    RETURN 
+        SELECT id, canceled, line.id, line.route.{id, name, designations.{number, type.*}},
+        (SELECT id, canceled, realtime, sceduled.arrival, sceduled.departure, sceduled.departure.time, out.id AS id, out.name AS name FROM ->visits ORDER BY sceduled.departure.time) AS stops
+        FROM ONLY $journey;
 };
 
 ----------
@@ -620,6 +627,7 @@ DEFINE TABLE OVERWRITE journey SCHEMAFULL
         FOR create, update, delete WHERE fn::user::has_permission($auth, "studio.journey");
 DEFINE FIELD OVERWRITE id ON TABLE journey;
 DEFINE FIELD OVERWRITE line ON TABLE journey TYPE record<line>;
+DEFINE FIELD OVERWRITE canceled ON TABLE journey TYPE bool DEFAULT false;
 
 DEFINE EVENT OVERWRITE journey_delete ON TABLE journey WHEN $event = "DELETE" THEN {
     DELETE FROM $before.id WHERE ->visits;
@@ -632,6 +640,7 @@ DEFINE TABLE OVERWRITE visits SCHEMAFULL TYPE RELATION
 DEFINE FIELD OVERWRITE id ON TABLE visits;
 DEFINE FIELD OVERWRITE in ON TABLE visits TYPE record<journey>;
 DEFINE FIELD OVERWRITE out ON TABLE visits TYPE record<stop>;
+DEFINE FIELD OVERWRITE canceled ON TABLE visits TYPE bool DEFAULT false;
 DEFINE FIELD OVERWRITE sceduled ON TABLE visits TYPE record<connects>;
 DEFINE FIELD OVERWRITE realtime ON TABLE visits TYPE object;
 DEFINE FIELD OVERWRITE realtime.arrival ON TABLE visits TYPE object;

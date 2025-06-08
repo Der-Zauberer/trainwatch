@@ -30,6 +30,7 @@
 <script lang="ts" setup>
 import { resource } from '@/core/resource';
 import type { SurrealDbService } from '@/services/surrealdb.service';
+import { surql } from 'surrealdb';
 import { inject } from 'vue';
 
 type Amounts = {
@@ -47,7 +48,7 @@ const surrealdb = inject('surrealDbService') as SurrealDbService
 
 const user = surrealdb.getUserAsRef()
 
-const QUARRY = `
+const QUARRY = surql`
 RETURN {
     stops: (SELECT count() FROM stop GROUP ALL)[0].count || 0,
     operator: (SELECT count() FROM operator GROUP ALL)[0].count || 0,
