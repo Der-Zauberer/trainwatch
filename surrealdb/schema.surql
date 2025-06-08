@@ -174,7 +174,7 @@ DEFINE FIELD OVERWRITE color.background ON TABLE type TYPE string;
 DEFINE FIELD OVERWRITE vehicle ON TABLE type TYPE "TRAIN" | "BUS" | "SHIP" | "PLANE";
 DEFINE FIELD OVERWRITE classification ON TABLE type TYPE "REGIONAL" | "LONG_DISTANCE";
 
-INSERT INTO type [
+INSERT IGNORE INTO type [
     {
         id: "ast",
         name: "AST",
@@ -641,6 +641,29 @@ DEFINE FIELD OVERWRITE realtime.departure ON TABLE visits TYPE object;
 DEFINE FIELD OVERWRITE realtime.departure.time ON TABLE visits TYPE datetime;
 DEFINE FIELD OVERWRITE realtime.departure.platform ON TABLE visits TYPE string;
 
+-----------------
+-- information --
+-----------------
+
+DEFINE TABLE OVERWRITE information SCHEMAFULL
+    PERMISSIONS
+        FOR select FULL,
+        FOR create, update, delete WHERE fn::user::has_permission($auth, "studio.information");
+
+DEFINE FIELD OVERWRITE id ON TABLE information;
+DEFINE FIELD OVERWRITE name ON TABLE information TYPE string;
+DEFINE FIELD OVERWRITE description ON TABLE information TYPE string;
+DEFINE FIELD OVERWRITE type ON TABLE information TYPE "INFORMATION" | "WARNING" | "DISRUPTION" | "CLEARANCE";
+DEFINE FIELD OVERWRITE content ON TABLE information TYPE option<string>;
+
+DEFINE TABLE OVERWRITE informs SCHEMAFULL TYPE RELATION
+    PERMISSIONS
+        FOR select FULL,
+        FOR create, update, delete WHERE fn::user::has_permission($auth, "studio.information");
+DEFINE FIELD OVERWRITE id ON TABLE informs;
+DEFINE FIELD OVERWRITE in ON TABLE informs TYPE record<information>;
+DEFINE FIELD OVERWRITE out ON TABLE informs TYPE record;
+
 ----------
 -- role --
 ----------
@@ -663,6 +686,7 @@ UPSERT role:admin CONTENT {
         "studio.route",
         "studio.line",
         "studio.journey",
+        "studio.information",
         "auth.role",
         "auth.user",
     ]
@@ -705,7 +729,7 @@ DEFINE ACCESS OVERWRITE user ON DATABASE TYPE RECORD
 		}
 	);
 
-INSERT INTO user [
+INSERT IGNORE INTO user [
     {
         name: "guest",
         email: "guest@trainwatch.derzauberer.eu",
