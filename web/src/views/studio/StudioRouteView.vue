@@ -21,12 +21,10 @@
             <InputRecordComponent :label="$t('entity.operator.operator')" v-model="edit.value.operator" type="operator" :required="true" />
         </div>
         <h6>{{ $t('entity.route.designations.designations', 0) }}</h6>
-        <div class="array">
-            <div v-for="(designation, index) in edit.value.designations" :key="designation.number + designation.type">
-                <InputRecordComponent :label="$t('entity.type.type')" v-model="designation.type" type="type" :required="true"/>
-                <InputComponent :label="$t('entity.route.designations.number')" v-model="designation.number" :required="true"/>
-                <button class="grey-color" @click.prevent="edit.value.designations.splice(index, 1);"><swd-icon class="delete-icon"></swd-icon></button>
-            </div>
+        <div class="input-array" v-for="(designation, index) in edit.value.designations" :key="designation.number + designation.type">
+            <InputRecordComponent :label="$t('entity.type.type')" v-model="designation.type" type="type" :required="true"/>
+            <InputComponent :label="$t('entity.route.designations.number')" v-model="designation.number" :required="true"/>
+            <button class="grey-color" @click.prevent="edit.value.designations.splice(index, 1);"><swd-icon class="delete-icon"></swd-icon></button>
         </div>
         <button class="grey-color" @click.prevent="edit.value.designations.push({ type: undefined, number: '' })"><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>
     </EditFormComponent>
@@ -38,16 +36,12 @@
     --theme-element-spacing: calc(var(--theme-inner-element-spacing) / 2)
 }
 
-.array {
+.input-array {
     display: grid;
-    grid-template-columns: 1fr 1fr fit-content(0);
+    grid-template-columns: repeat(2, 1fr) fit-content(0);
     gap: var(--theme-inner-element-spacing);
     margin-bottom: var(--theme-element-spacing);
     align-items: center;
-}
-
-.array div {
-    display: contents;
 }
 </style>
 

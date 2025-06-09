@@ -1,7 +1,7 @@
 <template>
     <swd-input>
         <label :for="toId(id)" v-if="label">{{ label }}</label>
-        <input :id="toId(id)" v-model="model" :type="type" :disabled="disabled" :required="required" :readonly="readonly">
+        <input :id="toId(id)" v-model="model" :type="type" :step="step" :disabled="disabled" :required="required" :readonly="readonly">
     </swd-input>
 </template>
 
@@ -10,6 +10,7 @@ const props = defineProps<{
     id?: string,
     label?: string,
     type?: string,
+    step?: string
     disabled?: boolean,
     required?: boolean,
     readonly?: boolean

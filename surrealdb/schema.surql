@@ -740,6 +740,7 @@ DEFINE ACCESS OVERWRITE user ON DATABASE TYPE RECORD
 
 INSERT IGNORE INTO user [
     {
+        id: "admin",
         name: "guest",
         email: "guest@trainwatch.derzauberer.eu",
         password: "guest",
@@ -747,6 +748,7 @@ INSERT IGNORE INTO user [
         permissions: []
     },
     {
+        id: "guest",
         name: "admin",
         email: "admin@trainwatch.derzauberer.eu",
         password: "admin",

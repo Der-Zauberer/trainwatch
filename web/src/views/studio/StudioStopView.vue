@@ -17,8 +17,8 @@
         </div>
         <h6>{{ $t('entity.location.location') }}</h6>
         <div class="grid-cols-sm-2 grid-cols-1">
-            <InputComponent :label="$t('entity.location.latitude')" type="number" v-model="edit.value.location.latitude"/>
-            <InputComponent :label="$t('entity.location.longitude')" type="number" v-model="edit.value.location.longitude"/>
+            <InputComponent :label="$t('entity.location.latitude')" type="number" step="any" v-model="edit.value.location.latitude"/>
+            <InputComponent :label="$t('entity.location.longitude')" type="number" step="any" v-model="edit.value.location.longitude"/>
         </div>
         <h6>{{ $t('entity.address.address') }}</h6>
         <div class="grid-cols-sm-2 grid-cols-1">
@@ -40,9 +40,30 @@
             <InputComponent :label="$t('entity.stop.open.saturday')" v-model="edit.value.open.saturday"/>
             <InputComponent :label="$t('entity.stop.open.sunday')" v-model="edit.value.open.sunday"/>
         </div>
+        <h6>{{ $t('entity.stop.platforms.platforms') }}</h6>
+        <div class="input-array" v-for="(platform, index) in edit.value.platforms" :key="index">
+            <InputComponent :label="$t('entity.general.name')" v-model="edit.value.platforms[index].name"/>
+            <InputComponent :label="$t('entity.stop.platforms.length') + ' (m)'" type="number" step="any" v-model="edit.value.platforms[index].height"/>
+            <InputComponent :label="$t('entity.stop.platforms.height') + ' (mm)'" type="number" v-model="edit.value.platforms[index].length"/>
+            <InputComponent :label="$t('entity.stop.platforms.linkedPlatforms')" v-model="edit.value.platforms[index].linkedPlatforms"/>
+            <button class="grey-color" @click.prevent="edit.value.platforms.splice(index, 1);"><swd-icon class="delete-icon"></swd-icon></button>
+        </div>
+        <button class="grey-color" @click.prevent="edit.value.platforms.push({ name: '', height: 0, length: 0, linkedPlatforms: [] })"><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>
     </EditFormComponent>
 
 </template>
+
+<style scoped>
+
+.input-array {
+    display: grid;
+    grid-template-columns: auto repeat(3, fit-content(200px)) fit-content(0);
+    gap: var(--theme-inner-element-spacing);
+    margin-bottom: var(--theme-element-spacing);
+    align-items: center;
+}
+
+</style>
 
 <script setup lang="ts">
 import EditFormComponent from '@/components/EditFormComponent.vue';

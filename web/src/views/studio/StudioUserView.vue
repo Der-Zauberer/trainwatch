@@ -16,19 +16,31 @@
             <InputComponent :label="$t('entity.user.email')" type="email" v-model="edit.value.email"/>
         </div>
         <h6>{{ $t('entity.role.role', 0) }}</h6>
-        <div class="flex margin-bottom-0" v-for="(role, index) in edit.value.roles" :key="index">
+        <div class="input-array" v-for="(role, index) in edit.value.roles" :key="index">
             <InputRecordComponent :label="$t('entity.role.role')" v-model="edit.value.roles[index]" type="role" :required="true" />
             <button class="grey-color" @click.prevent="edit.value.roles.splice(index, 1);"><swd-icon class="delete-icon"></swd-icon></button>
         </div>
         <button class="grey-color" @click.prevent="{}"><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>
         <h6>{{ $t('entity.user.permissions') }}</h6>
-        <div class="flex margin-bottom-0" v-for="(permission, index) in edit.value.permissions" :key="index">
-            <InputComponent v-model="edit.value.permissions[index]"/>
+        <div class="input-array" v-for="(permission, index) in edit.value.permissions" :key="index">
+            <InputComponent :label="$t('entity.user.permissions')" v-model="edit.value.permissions[index]"/>
             <button class="grey-color" @click.prevent="edit.value.permissions.splice(index, 1);"><swd-icon class="delete-icon"></swd-icon></button>
         </div>
         <button class="grey-color" @click.prevent="edit.value.permissions.push('')"><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>
     </EditFormComponent>
 </template>
+
+<style scoped>
+
+.input-array {
+    display: grid;
+    grid-template-columns: 1fr fit-content(0);
+    gap: var(--theme-inner-element-spacing);
+    margin-bottom: var(--theme-element-spacing);
+    align-items: center;
+}
+
+</style>
 
 <script setup lang="ts">
 import EditFormComponent from '@/components/EditFormComponent.vue';
