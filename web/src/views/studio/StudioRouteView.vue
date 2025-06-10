@@ -12,7 +12,7 @@
         </TableComponent>
     </div>
 
-    <EditFormComponent v-if="edit.value" :type="'route'" :value="edit.value" @close="(router.back(), routes.reload())">
+    <EditFormComponent v-if="edit.value" :type="'route'" :value="edit.value" :actions="actions">
         <h6>{{ $t('entity.general.general') }}</h6>
         <div class="grid-cols-sm-2 grid-cols-1">
             <InputComponent :label="$t('entity.general.id')" :disabled="$route.params.id !== 'new'" v-model="edit.value.id.id" :required="true"/>
@@ -47,7 +47,7 @@
 
 <script setup lang="ts">
 import DesignationChipComponent from '@/components/DesignationChipComponent.vue';
-import EditFormComponent from '@/components/EditFormComponent.vue';
+import EditFormComponent, { type EditActions } from '@/components/EditFormComponent.vue';
 import InputComponent from '@/components/InputComponent.vue';
 import InputRecordComponent from '@/components/InputRecordComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
@@ -77,5 +77,11 @@ const edit = resource({
     parameter: { route },
 	loader: async (parameter) => new RouteEditDto(parameter.route.params.id === 'new' ? {} : await surrealdb.select(new RecordId('route', parameter.route.params.id)))
 })
+
+const actions: EditActions = {
+    save: async (id?: RecordId) => id === undefined ? await surrealdb.insert(edit.value?.filterBeforeSubmit()) : await surrealdb.update(id, edit.value?.filterBeforeSubmit()),
+    delete: async (id: RecordId) => await surrealdb.delete(id),
+    close: () => (router.back(), routes.reload())
+}
 
 </script>

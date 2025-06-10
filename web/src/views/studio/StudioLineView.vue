@@ -12,7 +12,7 @@
         </TableComponent>
     </div>
 
-    <EditFormComponent v-if="edit.value" :type="'line'" :value="edit.value" @close="(router.back(), lines.reload())">
+    <EditFormComponent v-if="edit.value" :type="'line'" :value="edit.value" :actions="actions">
         <h6>{{ $t('entity.general.general') }}</h6>
         <div class="grid-cols-sm-2 grid-cols-1">
             <InputComponent :label="$t('entity.general.id')" :disabled="$route.params.id !== 'new'" v-model="edit.value.id.id" :required="true"/>
@@ -89,7 +89,7 @@ import { RecordId } from 'surrealdb';
 import { inject, reactive } from 'vue';
 import DesignationChipComponent from '@/components/DesignationChipComponent.vue';
 import { useRoute, useRouter } from 'vue-router';
-import EditFormComponent from '@/components/EditFormComponent.vue';
+import EditFormComponent, { type EditActions } from '@/components/EditFormComponent.vue';
 import { LineEditDto } from '@/core/dtos';
 import InputRecordComponent from '@/components/InputRecordComponent.vue';
 import type { SurrealDbService } from '@/services/surrealdb.service';
@@ -118,6 +118,12 @@ const edit_stops = resource({
     parameter: { edit },
     loader: async () => await surrealdb.query<Connects[][][]>('SELECT VALUE ->connects.* FROM line;').then(result => result[0][0])
 })
+
+const actions: EditActions = {
+    save: async (id?: RecordId) => id === undefined ? await surrealdb.insert(edit.value?.filterBeforeSubmit()) : await surrealdb.update(id, edit.value?.filterBeforeSubmit()),
+    delete: async (id: RecordId) => await surrealdb.delete(id),
+    close: () => (router.back(), lines.reload())
+}
 
 type Connects = {
     id: RecordId<'connects'>

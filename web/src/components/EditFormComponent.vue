@@ -1,7 +1,7 @@
 <template>
 
      <div class="container-xl header">
-        <button class="grey-color" @click="emits('close')"><swd-icon class="arrow-left-icon"></swd-icon></button>
+        <button class="grey-color" @click="actions.close()"><swd-icon class="arrow-left-icon"></swd-icon></button>
         <div class="header__title">{{ props.value.name }}</div>
         <swd-loading-spinner :loading="loading.delete">
             <button v-if="props.value.id?.id" class="red-color" @click="deleteDialog = true">{{ $t('action.delete') }}</button>
@@ -79,17 +79,13 @@ swd-loading-spinner::after {
 </style>
 
 <script setup lang="ts">
-import type { Filterable } from '@/core/dtos';
-import type { SurrealDbService } from '@/services/surrealdb.service';
 import  { RecordId, SurrealDbError } from 'surrealdb';
-import { inject, reactive, ref, useTemplateRef } from 'vue';
+import { reactive, ref, useTemplateRef } from 'vue';
 import { useRoute } from 'vue-router';
 
 const route = useRoute()
-const surrealdb = inject('surrealDbService') as SurrealDbService
 
-const props = defineProps<{ type: string, value: Filterable<unknown> & { id?: RecordId<string>, name?: string } }>()
-const emits = defineEmits<{ (e: 'close'): void }>()
+const props = defineProps<{ type: string, value: { id?: RecordId<string>, name?: string }, actions: EditActions }>()
 
 const formRef = useTemplateRef('form')
 
@@ -100,8 +96,8 @@ const deleteDialog = ref(false)
 async function remove() {
     loading.delete = true
     try {
-        await surrealdb.delete(new RecordId(props.type, route.params.id))
-        emits('close')
+        await props.actions.delete(new RecordId(props.type, route.params.id))
+        await props.actions.close()
     } catch (exception: unknown) {
         error.value = (exception as SurrealDbError).message
     }
@@ -117,16 +113,18 @@ async function save() {
     }
     loading.save = true
     try {
-        if (route.params.id === 'new') {
-            await surrealdb.insert(props.value.filterBeforeSubmit())
-        } else {
-            await surrealdb.upsert(new RecordId(props.type, route.params.id), props.value.filterBeforeSubmit())
-        }
-        emits('close')
+        await props.actions.save(route.params.id === 'new' ? undefined : new RecordId(props.type, route.params.id))
+        await props.actions.close()
     } catch (exception: unknown) {
         error.value = (exception as SurrealDbError).message
     }
     loading.save = false
+}
+
+export type EditActions = {
+    save: (id: RecordId | undefined) => Promise<unknown>
+    delete: (id: RecordId) => Promise<unknown>
+    close: () => Promise<unknown>
 }
 
 </script>
