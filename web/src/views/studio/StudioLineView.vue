@@ -21,37 +21,34 @@
 
         <h6>{{ $t('entity.stop.stop', 0) }}</h6>
         <div class="stops" v-for="stop of edit_stops.value" :key="stop.id.id.toString()">
-            <div class="stops_vertical">
-                <swd-input>
-                    <label>Arrival Time</label>
-                    <input :value="dateToTime(stop.arrival.time)" type="time">
-                </swd-input>
-                <swd-input>
-                    <label>Departure Time</label>
-                    <input :value="dateToTime(stop.departure.time)" type="time">
-                </swd-input>
-            </div>
+            <swd-input>
+                <label>{{ $t('entity.traffic.arrivaltime') }}</label>
+                <input :value="dateToTime(stop.arrival.time)" type="time">
+                <div style="height: round(.5em, 1px)"></div>
+                <label>{{ $t('entity.traffic.departuretime') }}</label>
+                <input :value="dateToTime(stop.departure.time)" type="time">
+            </swd-input>
             
+            <swd-input>
+                <label>{{ $t('entity.traffic.arrivalplatform') }}</label>
+                <input :value="stop.arrival.platform">
+                <div style="height: round(.5em, 1px)"></div>
+                <label>{{ $t('entity.traffic.departureplatform') }}</label>
+                <input :value="stop.departure.platform">
+            </swd-input>
+
             <div class="stops_vertical">
-                <swd-input>
-                    <label>Arrival Time</label>
-                    <input :value="stop.arrival.platform">
-                </swd-input>
-                <swd-input>
-                    <label>Departure Time</label>
-                    <input :value="stop.departure.platform">
-                </swd-input>
-            </div>
-            <div class="stops_vertical">
+                <InputRecordComponent :label="$t('entity.stop.stop')" v-model="stop.out" type="stop" :required="true" />
+
                 <swd-input>
                     <label>Stop</label>
                     <input :value="stop.out.id">
                 </swd-input>
-                <button class="grey-color">Test</button>
+                {{ stop.out }} {{ stop.out.toJSON() }} {{ typeof stop.out.id }}
+                <button class="grey-color"><swd-icon class="delete-icon"></swd-icon></button>
             </div>
-
-            
         </div>
+        <button class="grey-color" @click.prevent="{}"><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>
     </EditFormComponent>
 </template>
 
@@ -64,7 +61,7 @@
 .stops {
     display: grid;
     gap: var(--theme-inner-element-spacing);
-    grid-template-columns: fit-content(0) fit-content(0) auto;
+    grid-template-columns: fit-content(200px) fit-content(200px) auto;
     vertical-align: middle;
     margin-bottom: var(--theme-element-spacing);
 }
@@ -75,8 +72,12 @@
     gap: var(--theme-inner-element-spacing);
 }
 
-.stops .stops_vertical input {
-    width: 100px;
+.stop-table {
+    display: grid;
+    grid-template-columns: fit-content(200px) fit-content(200px) auto;
+    gap: var(--theme-inner-element-spacing);
+    vertical-align: middle;
+    margin-bottom: var(--theme-element-spacing);
 }
 </style>
 
@@ -85,7 +86,7 @@ import TableComponent from '@/components/TableComponent.vue';
 import InputComponent from '@/components/InputComponent.vue';
 import { resource } from '@/core/resource';
 import type { Line, Parameter } from '@/core/types';
-import { RecordId } from 'surrealdb';
+import { RecordId, surql } from 'surrealdb';
 import { inject, reactive } from 'vue';
 import DesignationChipComponent from '@/components/DesignationChipComponent.vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -116,7 +117,10 @@ const edit = resource({
 
 const edit_stops = resource({
     parameter: { edit },
-    loader: async () => await surrealdb.query<Connects[][][]>('SELECT VALUE ->connects.* FROM line;').then(result => result[0][0])
+    loader: async () => {
+        if (!edit.value?.id) return []
+        return await surrealdb.query<Connects[][][]>(surql`SELECT VALUE ->connects.* FROM ${edit.value.id};`).then(result => result[0][0].sort((a, b) => a.departure.time.getTime() - b.departure.time.getTime()))
+    }
 })
 
 const actions: EditActions = {

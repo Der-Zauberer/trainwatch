@@ -35,7 +35,11 @@
             "arrival": "Ankunft",
             "departure": "Abfahrt",
             "platform": "Gleis",
-            "time": "Zeit"
+            "time": "Zeit",
+            "arrivaltime": "Arrival Time",
+            "departuretime": "Departure Time",
+            "arrivalplatform": "Arrival Platform",
+            "departureplatform": "Departure Platform"
         },
         "vehicle": {
             "vehicle": "Vehicle | Vehicles",
@@ -130,7 +134,7 @@
             }
         },
         "line": {
-            "line": "Line"
+            "line": "Line"  
         },
         "journey": {
             "journey": "Journey"
