@@ -36,21 +36,21 @@ export type ResourceOptions<T, P> = {
 }
 
 export function resource<T, P>(options: ResourceOptions<T, P>): Resource<T, P> {
+    const calls = { index: 0 } 
+
     const resource: Resource<T, P> = reactive({
         error: undefined,
         loading: false,
         empty: true,
         status: 'EMPTY',
         value: undefined,
-        reload: async (value) => await resolve(value || options.loader, resource, options, abort)
+        reload: async (value) => await resolve(value || options.loader, resource, options, calls, ++calls.index)
     })
-    
-    const abort: { value: AbortController | undefined } = { value: undefined }
 
     if (options.initializer) {
-        resolve(options.initializer, resource, options, abort)
+        resolve(options.initializer, resource, options, calls, ++calls.index)
     } else if (options.loader) {
-        resolve(options.loader, resource, options, abort)
+        resolve(options.loader, resource, options, calls, ++calls.index)
     }
 
     if (options.parameter) {
@@ -71,26 +71,29 @@ export function unwrapParameters<P>(parameters?: ResourceParameter<P>): P | unde
     return Object.fromEntries(Object.entries(parameters).map(([key, value]) => [key, isRef(value) || isReactive(parameters) ? toRaw(value) : value])) as P;
 }
 
-async function resolve<T, P>(value: ResourceValue<T, P>, resource: MutableResource<T, P>, options: ResourceOptions<T, P>, abort: { value?: AbortController }): Promise<T> {
+async function resolve<T, P>(value: ResourceValue<T, P>, resource: MutableResource<T, P>, options: ResourceOptions<T, P>, calls: { index: number }, index: number): Promise<T> {
     const parameter = unwrapParameters(options.parameter)
-    const newAbort = new AbortController()
     resource.loading = true
     resource.status = 'LOADING'
     let resolved
     try {
-        abort.value?.abort()
-        resolved = await Promise.resolve(typeof value === 'function' ? (value as (parameter: P, abortSignal: AbortSignal) => Promise<T> | T | undefined)(parameter as unknown as P, newAbort.signal) : value as Promise<T> | T | undefined)
-        resource.loading = false
-        resource.value = resolved
-        resource.error = undefined
-        resource.status = resolved === undefined || resolved === null ? 'EMPTY' : 'RESOLVED'
+        resolved = await Promise.resolve(typeof value === 'function' ? (value as (parameter: P) => Promise<T> | T | undefined)(parameter as unknown as P) : value as Promise<T> | T | undefined)
+        if (index >= calls.index) {
+            resource.loading = false
+            resource.value = resolved
+            resource.error = undefined
+            resource.status = resolved === undefined || resolved === null ? 'EMPTY' : 'RESOLVED'
+        }
     } catch (error: unknown) {
-        resource.loading = false
-        resource.value = undefined
-        resource.error = error as Error
-        resource.status = 'ERROR'
+        if (index >= calls.index) {
+            resource.loading = false
+            resource.value = undefined
+            resource.error = error as Error
+            resource.status = 'ERROR'
+        }
     }
-    resource.empty = resource.value === undefined || resolved === null || resolved === '' || (Array.isArray(resolved) && resolved.length === 0)
-    abort.value = newAbort
+    if (index >= calls.index) {
+        resource.empty = resource.value === undefined || resolved === null || resolved === '' || (Array.isArray(resolved) && resolved.length === 0)
+    }
     return resolved as T
 }

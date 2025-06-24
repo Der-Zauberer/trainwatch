@@ -16,7 +16,7 @@
         <h6>{{ $t('entity.general.general') }}</h6>
         <div class="grid-cols-sm-2 grid-cols-1">
             <InputComponent :label="$t('entity.general.id')" :disabled="$route.params.id !== 'new'" v-model="edit.value.id.id" :required="true"/>
-            <InputRecordComponent :label="$t('entity.route.route')" v-model="edit.value.route" type="route" :required="true" />
+            <InputRecordComponent :label="$t('entity.route.route')" v-model="edit.value.route" type="route" :required="true" :to="{ name: 'studio_route_edit', params: { id: edit.value.route?.id.toString() } }" />
         </div>
 
         <h6>{{ $t('entity.stop.stop', 0) }}</h6>
@@ -38,7 +38,7 @@
             </swd-input>
 
             <div v-if="edit_stops.value" class="stops_vertical">
-                <InputRecordComponent :label="$t('entity.stop.stop')" v-model="stop.out" type="stop" :required="true" />
+                <InputRecordComponent :label="$t('entity.stop.stop')" v-model="stop.out" type="stop" :required="true"  :to="{ name: 'studio_stop_edit', params: { id: stop.out.id.toString() } }" />
                 <button class="grey-color" @click="stopsToRemove.push(edit_stops.value.splice(edit_stops.value.indexOf(stop), 1)[0])"><swd-icon class="delete-icon"></swd-icon></button>
             </div>
         </div>
