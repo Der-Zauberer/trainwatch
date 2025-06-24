@@ -37,18 +37,12 @@
                 <input :value="stop.departure.platform">
             </swd-input>
 
-            <div class="stops_vertical">
+            <div v-if="edit_stops.value" class="stops_vertical">
                 <InputRecordComponent :label="$t('entity.stop.stop')" v-model="stop.out" type="stop" :required="true" />
-
-                <swd-input>
-                    <label>Stop</label>
-                    <input :value="stop.out.id">
-                </swd-input>
-                {{ stop.out }} {{ stop.out.toJSON() }} {{ typeof stop.out.id }}
-                <button class="grey-color"><swd-icon class="delete-icon"></swd-icon></button>
+                <button class="grey-color" @click="stopsToRemove.push(edit_stops.value.splice(edit_stops.value.indexOf(stop), 1)[0])"><swd-icon class="delete-icon"></swd-icon></button>
             </div>
         </div>
-        <button class="grey-color" @click.prevent="{}"><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>
+        <button class="grey-color" @click.prevent="edit_stops.value?.push(createEmptyConnects(edit.value.id))"><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>
     </EditFormComponent>
 </template>
 
@@ -94,7 +88,7 @@ import EditFormComponent, { type EditActions } from '@/components/EditFormCompon
 import { LineEditDto } from '@/core/dtos';
 import InputRecordComponent from '@/components/InputRecordComponent.vue';
 import type { SurrealDbService } from '@/services/surrealdb.service';
-import { dateToTime } from '@/core/functions';
+import { dateToTime, guid } from '@/core/functions';
 
 const route = useRoute()
 const router = useRouter()
@@ -123,6 +117,9 @@ const edit_stops = resource({
     }
 })
 
+const stopsToAdd: Connects[] = []
+const stopsToRemove: Connects[] = []
+
 const actions: EditActions = {
     save: async (id?: RecordId) => id === undefined ? await surrealdb.insert(edit.value?.filterBeforeSubmit()) : await surrealdb.update(id, edit.value?.filterBeforeSubmit()),
     delete: async (id: RecordId) => await surrealdb.delete(id),
@@ -141,6 +138,24 @@ type Connects = {
         platform: string,
         time: Date
     }
+}
+
+function createEmptyConnects(line: RecordId<'line'>): Connects {
+    const connects: Connects = {
+        id: new RecordId('connects', guid()),
+        in: line,
+        out: new RecordId('stop', ''),
+        arrival: {
+            platform: '1',
+            time: new Date('0000-01-01T00:00'),
+        },
+        departure: {
+            platform: '1',
+            time: new Date('0000-01-01T00:00'),
+        }
+    }
+    stopsToAdd.push(connects)
+    return connects
 }
 
 </script>

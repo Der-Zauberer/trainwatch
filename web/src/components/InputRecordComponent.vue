@@ -5,13 +5,12 @@
             <input :id="toId(id)" readonly :value="(model || '').toString()" @keydown.delete="model = undefined" :required="required ? 'true' : undefined">
             <swd-icon class="down-icon" swd-input-icon></swd-icon>
         </swd-input>
-        <input hidden @input="model = new StringRecordId(($event.target as HTMLInputElement).value)">
         <swd-dropdown-content class="dropdown-content">
             <swd-input class="dropdown-content__search top-item">
                 <input :placeholder="$t('action.search')" v-model="parameter.search" ref="search">
             </swd-input>
-            <swd-selection class="bottom-item">
-                <a v-for="record of records.value" :key="record.id.toString()" :value="record.id.toString()">
+            <swd-selection class="bottom-item" @select.prevent>
+                <a v-for="record of records.value" :key="record.id.toString()" :value="record.id.toString()" @click="model = record.id">
                     {{ record.name }} 
                     <swd-subtitle>{{ record.id.toString() }}</swd-subtitle>
                 </a>
@@ -32,7 +31,7 @@
 <script setup lang="ts">
 import { resource } from '@/core/resource';
 import type { SurrealDbService } from '@/services/surrealdb.service';
-import { StringRecordId, type RecordId } from 'surrealdb';
+import { type RecordId } from 'surrealdb';
 import { inject, reactive, useTemplateRef } from 'vue';
 
 const surrealdb = inject('surrealDbService') as SurrealDbService
