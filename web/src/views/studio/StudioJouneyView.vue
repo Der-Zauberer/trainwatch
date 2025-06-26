@@ -16,7 +16,7 @@
         <h6>{{ $t('entity.general.general') }}</h6>
         <div class="grid-cols-sm-2 grid-cols-1">
             <InputComponent :label="$t('entity.general.id')" :disabled="$route.params.id !== 'new'" v-model="edit.value.id.id" :required="true"/>
-            <InputRecordComponent :label="$t('entity.line.line')" v-model="edit.value.line" type="line" :required="true"/>
+            <InputRecordComponent :label="$t('entity.line.line')" v-model="edit.value.line" type="line" :required="true" :to="{ name: 'studio_line_edit', params: { id: edit.value.line?.id.toString() } }"/>
         </div>        
     </EditFormComponent>
 </template>

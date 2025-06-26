@@ -17,7 +17,7 @@
         </div>
         <h6>{{ $t('entity.role.role', 0) }}</h6>
         <div class="input-array" v-for="(role, index) in edit.value.roles" :key="index">
-            <InputRecordComponent :label="$t('entity.role.role')" v-model="edit.value.roles[index]" type="role" :required="true" />
+            <InputRecordComponent :label="$t('entity.role.role')" v-model="edit.value.roles[index]" type="role" :required="true" :to="{ name: 'studio_role_edit', params: { id: edit.value.roles[index].id.toString() } }"/>
             <button class="grey-color" @click.prevent="edit.value.roles.splice(index, 1);"><swd-icon class="delete-icon"></swd-icon></button>
         </div>
         <button class="grey-color" @click.prevent="{}"><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>

@@ -1,9 +1,14 @@
 DELETE connects;
 DELETE visits;
 
+UPSERT timetable:test CONTENT {
+    name: "Test"
+};
+
 UPSERT route:seehas CONTENT {
     name: "seehas",
-    designations: [{ number: '6', type: type:s }]
+    designations: [{ number: '6', type: type:s }],
+    timetable: timetable:test
 };
 
 UPSERT line:4toxj3td6zswrxcd0bm0 CONTENT {
@@ -68,7 +73,8 @@ RELATE journey:4toxj3td6zswrxcd0bm0 -> visits -> stop:singen_hohentwiel  CONTENT
 
 UPSERT route:schwarzwaldbahn CONTENT {
     name: "Schwarzwaldbahn",
-    designations: [{ number: '2', type: type:re }]
+    designations: [{ number: '2', type: type:re }],
+    timetable: timetable:test
 };
 
 UPSERT line:4toxj3td6zswrxcd0bm1 CONTENT {

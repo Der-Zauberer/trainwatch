@@ -3,7 +3,7 @@
         <div class="input-bar">
             <swd-input @click="focusSearch()" class="dropdown-input" :class="to ? 'left-item' : ''">
                 <label :for="toId(id)"> {{ label }}</label>
-                <span>{{ (record.value || model || '').toString() }}</span>
+                <span class="dropdown-input__input">{{ (record.value || model || '').toString() }}</span>
                 <swd-icon :class="record.loading ? 'loading-spinner-icon' : 'down-icon'" swd-input-icon></swd-icon>
             </swd-input>
             <input hidden @input="console.log(toRaw(records.value?.find(record => record.id.toString() === ($event.target as HTMLInputElement).value)?.id)); model = records.value?.find(record => record.id.toString() === ($event.target as HTMLInputElement).value)?.id as unknown as RecordId; parameter.search = '';">
@@ -44,8 +44,15 @@
     transform: translateY(0);
 }
 
-.dropdown-input  {
+.dropdown-input {
     cursor: pointer;
+}
+
+.dropdown-input .dropdown-input__input {
+    height: round(1.2em, 1px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .dropdown-content {

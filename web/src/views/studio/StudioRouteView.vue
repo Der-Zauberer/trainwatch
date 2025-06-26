@@ -17,12 +17,12 @@
         <div class="grid-cols-sm-2 grid-cols-1">
             <InputComponent :label="$t('entity.general.id')" :disabled="$route.params.id !== 'new'" v-model="edit.value.id.id" :required="true"/>
             <InputComponent :label="$t('entity.general.name')" v-model="edit.value.name" :required="true"/>
-            <InputRecordComponent :label="$t('entity.timetable.timetable')" v-model="edit.value.timetable" type="timetable" :required="true" />
-            <InputRecordComponent :label="$t('entity.operator.operator')" v-model="edit.value.operator" type="operator" :required="true" />
+            <InputRecordComponent :label="$t('entity.timetable.timetable')" v-model="edit.value.timetable" type="timetable" :required="true" :to="{ name: 'studio_timetable_edit', params: { id: edit.value.timetable?.id.toString() } }"/>
+            <InputRecordComponent :label="$t('entity.operator.operator')" v-model="edit.value.operator" type="operator" :required="true" :to="{ name: 'studio_operator_edit', params: { id: edit.value.operator?.id.toString() } }"/>
         </div>
         <h6>{{ $t('entity.route.designations.designations', 0) }}</h6>
         <div class="input-array" v-for="(designation, index) in edit.value.designations" :key="designation.number + designation.type">
-            <InputRecordComponent :label="$t('entity.type.type')" v-model="designation.type" type="type" :required="true"/>
+            <InputRecordComponent :label="$t('entity.type.type')" v-model="designation.type" type="type" :required="true" :to="{ name: 'studio_type_edit', params: { id: designation.type?.id.toString() } }"/>
             <InputComponent :label="$t('entity.route.designations.number')" v-model="designation.number" :required="true"/>
             <button class="grey-color" @click.prevent="edit.value.designations.splice(index, 1);"><swd-icon class="delete-icon"></swd-icon></button>
         </div>
