@@ -23,23 +23,23 @@
         <div class="stops" v-for="stop of edit_stops.value" :key="stop.id.id.toString()">
             <swd-input>
                 <label>{{ $t('entity.traffic.arrivaltime') }}</label>
-                <input :value="dateToTime(stop.arrival.time)" type="time">
+                <input :value="dateToTime(stop.arrival.time)" @input="stop.arrival.time = timeToDate(($event.target as HTMLInputElement).value)" type="time">
                 <div style="height: round(.5em, 1px)"></div>
                 <label>{{ $t('entity.traffic.departuretime') }}</label>
-                <input :value="dateToTime(stop.departure.time)" type="time">
+                <input :value="dateToTime(stop.departure.time)" @input="stop.departure.time = timeToDate(($event.target as HTMLInputElement).value)"  type="time">
             </swd-input>
             
             <swd-input>
                 <label>{{ $t('entity.traffic.arrivalplatform') }}</label>
-                <input :value="stop.arrival.platform">
+                <input v-model="stop.arrival.platform">
                 <div style="height: round(.5em, 1px)"></div>
                 <label>{{ $t('entity.traffic.departureplatform') }}</label>
-                <input :value="stop.departure.platform">
+                <input v-model="stop.departure.platform">
             </swd-input>
 
             <div v-if="edit_stops.value" class="stops_vertical">
-                <InputRecordComponent :label="$t('entity.stop.stop')" v-model="stop.out" type="stop" :required="true"  :to="{ name: 'studio_stop_edit', params: { id: stop.out.id.toString() } }" />
-                <button class="grey-color" @click="stopsToRemove.push(edit_stops.value.splice(edit_stops.value.indexOf(stop), 1)[0])"><swd-icon class="delete-icon"></swd-icon></button>
+                <InputRecordComponent :label="$t('entity.stop.stop')" v-model="stop.out" type="stop" :required="true"  :to="stop.out.id ? { name: 'studio_stop_edit', params: { id: stop.out.id.toString() } } : undefined"/>
+                <button class="grey-color" @click="connectsToRemove.push(edit_stops.value.splice(edit_stops.value.indexOf(stop), 1)[0])"><swd-icon class="delete-icon"></swd-icon></button>
             </div>
         </div>
         <button class="grey-color" @click.prevent="edit_stops.value?.push(createEmptyConnects(edit.value.id))"><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>
@@ -55,7 +55,7 @@
 .stops {
     display: grid;
     gap: var(--theme-inner-element-spacing);
-    grid-template-columns: fit-content(200px) fit-content(200px) auto;
+    grid-template-columns: fit-content(150px) fit-content(150px) auto;
     vertical-align: middle;
     margin-bottom: var(--theme-element-spacing);
 }
@@ -88,7 +88,7 @@ import EditFormComponent, { type EditActions } from '@/components/EditFormCompon
 import { LineEditDto } from '@/core/dtos';
 import InputRecordComponent from '@/components/InputRecordComponent.vue';
 import type { SurrealDbService } from '@/services/surrealdb.service';
-import { dateToTime, guid } from '@/core/functions';
+import { dateToTime, guid, timeToDate } from '@/core/functions';
 
 const route = useRoute()
 const router = useRouter()
@@ -117,11 +117,28 @@ const edit_stops = resource({
     }
 })
 
-const stopsToAdd: Connects[] = []
-const stopsToRemove: Connects[] = []
+const connectsToAdd: Connects[] = []
+const connectsToRemove: Connects[] = []
 
 const actions: EditActions = {
-    save: async (id?: RecordId) => id === undefined ? await surrealdb.insert(edit.value?.filterBeforeSubmit()) : await surrealdb.update(id, edit.value?.filterBeforeSubmit()),
+    save: async (id?: RecordId) => {
+        if (id === undefined) {
+            await surrealdb.insert(edit.value?.filterBeforeSubmit())
+        } else {
+            await surrealdb.update(id, edit.value?.filterBeforeSubmit())
+        }
+        for (const connects of connectsToAdd) {
+            await surrealdb.insertRelation(connects)
+        }
+        for (const connects of connectsToRemove) {
+            await surrealdb.delete(connects.id)
+        }
+        if (edit_stops.value) {
+            for (const connects of edit_stops.value) {
+                await surrealdb.update(connects.id, connects)
+            }
+        }
+    },
     delete: async (id: RecordId) => await surrealdb.delete(id),
     close: () => (router.back(), lines.reload())
 }
@@ -154,7 +171,7 @@ function createEmptyConnects(line: RecordId<'line'>): Connects {
             time: new Date('0000-01-01T00:00'),
         }
     }
-    stopsToAdd.push(connects)
+    connectsToAdd.push(connects)
     return connects
 }
 

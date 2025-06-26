@@ -7,6 +7,10 @@ export function dateToTime(date: Date) {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
+export function timeToDate(time: string) {
+    return new Date(`0000-01-01T${time}`)
+}
+
 export function guid(timebased?: boolean) {
     const chars = '0123456789abcdefghijklmnopqrstuvwxyz'
     let guid = timebased ? Math.floor(Date.now() / 1000).toString(36) : ''

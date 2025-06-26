@@ -6,7 +6,7 @@
                 <span class="dropdown-input__input">{{ (record.value || model || '').toString() }}</span>
                 <swd-icon :class="record.loading ? 'loading-spinner-icon' : 'down-icon'" swd-input-icon></swd-icon>
             </swd-input>
-            <input hidden @input="console.log(toRaw(records.value?.find(record => record.id.toString() === ($event.target as HTMLInputElement).value)?.id)); model = records.value?.find(record => record.id.toString() === ($event.target as HTMLInputElement).value)?.id as unknown as RecordId; parameter.search = '';">
+            <input hidden @input="model = records.value?.find(record => record.id.toString() === ($event.target as HTMLInputElement).value)?.id as unknown as RecordId; parameter.search = '';">
             <RouterLink v-if="to" :to="to" class="button right-item grey-color input-bar__link"><swd-icon class="external-icon"></swd-icon></RouterLink>
         </div>
         <swd-dropdown-content class="dropdown-content">
@@ -76,7 +76,7 @@ swd-loading-spinner {
 import { resource } from '@/core/resource';
 import type { SurrealDbService } from '@/services/surrealdb.service';
 import { surql, type RecordId } from 'surrealdb';
-import { inject, reactive, toRaw, useTemplateRef } from 'vue';
+import { inject, reactive, useTemplateRef } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
 
 const surrealdb = inject('surrealDbService') as SurrealDbService
