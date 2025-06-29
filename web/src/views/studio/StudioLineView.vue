@@ -16,7 +16,7 @@
         <h6>{{ $t('entity.general.general') }}</h6>
         <div class="grid-cols-sm-2 grid-cols-1">
             <InputComponent :label="$t('entity.general.id')" :disabled="$route.params.id !== 'new'" v-model="edit.value.id.id" :required="true"/>
-            <InputRecordComponent :label="$t('entity.route.route')" v-model="edit.value.route" type="route" :required="true" :to="{ name: 'studio_route_edit', params: { id: edit.value.route?.id.toString() } }" />
+            <InputRecordComponent :label="$t('entity.route.route')" v-model="edit.value.route" type="route" :required="true" :to="edit.value.route?.id ? { name: 'studio_route_edit', params: { id: edit.value.route?.id.toString() } }: undefined" />
         </div>
 
         <h6>{{ $t('entity.stop.stop', 0) }}</h6>
@@ -122,22 +122,31 @@ const connectsToRemove: Connects[] = []
 
 const actions: EditActions = {
     save: async (id?: RecordId) => {
-        if (id === undefined) {
-            await surrealdb.insert(edit.value?.filterBeforeSubmit())
-        } else {
-            await surrealdb.update(id, edit.value?.filterBeforeSubmit())
-        }
-        for (const connects of connectsToAdd) {
-            await surrealdb.insertRelation(connects)
-        }
-        for (const connects of connectsToRemove) {
-            await surrealdb.delete(connects.id)
-        }
-        if (edit_stops.value) {
-            for (const connects of edit_stops.value) {
-                await surrealdb.update(connects.id, connects)
-            }
-        }
+        await surrealdb.query(surql`
+            BEGIN TRANSACTION;
+
+            IF ${id === undefined} {
+                INSERT INTO line ${edit.value?.filterBeforeSubmit()};
+            } ELSE {
+                UPDATE ${id} CONTENT ${edit.value?.filterBeforeSubmit()};
+            };
+
+            FOR $connects IN ${connectsToAdd} {
+                LET $line = $connects.in;
+                LET $stop = $connects.out;
+                RELATE $line->connects->$stop CONTENT $connects;
+            };
+
+            FOR $connects IN ${connectsToRemove} {
+                DELETE $connects.id;
+            };
+
+            FOR $connects IN ${edit_stops.value?.filter(connects => !connectsToAdd.includes(connects))} {
+                UPDATE $connects.id CONTENT $connects;
+            };
+
+            COMMIT TRANSACTION;
+        `);
     },
     delete: async (id: RecordId) => await surrealdb.delete(id),
     close: () => (router.back(), lines.reload())
