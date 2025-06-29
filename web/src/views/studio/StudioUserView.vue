@@ -14,6 +14,8 @@
             <InputComponent :label="$t('entity.general.id')" :disabled="$route.params.id !== 'new'" v-model="edit.value.id.id"/>
             <InputComponent :label="$t('entity.general.name')" v-model="edit.value.name"/>
             <InputComponent :label="$t('entity.user.email')" type="email" v-model="edit.value.email"/>
+            <button v-if="!changePassword" @click="changePassword = true" class="grey-color">Passwort ändern</button>
+            <InputComponent v-if="changePassword" label="Passwort ändern" v-model="edit.value.password"/>
         </div>
         <h6>{{ $t('entity.role.role', 0) }}</h6>
         <div class="input-array" v-for="(role, index) in edit.value.roles" :key="index">
@@ -51,13 +53,15 @@ import { UserEditDto } from '@/core/dtos';
 import { resource } from '@/core/resource';
 import type { Parameter, User } from '@/core/types';
 import type { SurrealDbService } from '@/services/surrealdb.service';
-import { RecordId } from 'surrealdb';
-import { inject, reactive } from 'vue';
+import { RecordId, surql } from 'surrealdb';
+import { inject, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 const route = useRoute()
 const router = useRouter()
 const surrealdb = inject('surrealDbService') as SurrealDbService
+
+const changePassword = ref<boolean>(false)
 
 const parameter = reactive<Parameter>({ search: '', page: 1, size: 100, count: 0 })
 const users = resource({
@@ -75,9 +79,9 @@ const edit = resource({
 })
 
 const actions: EditActions = {
-    save: async (id?: RecordId) => id === undefined ? await surrealdb.insert(edit.value?.filterBeforeSubmit()) : await surrealdb.update(id, edit.value?.filterBeforeSubmit()),
+    save: async (id?: RecordId) => id === undefined ? await surrealdb.insert(edit.value?.filterBeforeSubmit()) : await surrealdb.query(surql`UPDATE ${id} MERGE ${edit.value?.filterBeforeSubmit()}`),
     delete: async (id: RecordId) => await surrealdb.delete(id),
-    close: () => (router.back(), users.reload())
+    close: () => (changePassword.value = false, router.back(), users.reload())
 }
 
 </script>

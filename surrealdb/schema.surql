@@ -740,19 +740,19 @@ DEFINE ACCESS OVERWRITE user ON DATABASE TYPE RECORD
 
 INSERT IGNORE INTO user [
     {
-        id: "admin",
-        name: "guest",
-        email: "guest@trainwatch.derzauberer.eu",
-        password: "guest",
-        roles: [],
-        permissions: []
-    },
-    {
-        id: "guest",
+        id: user:admin,
         name: "admin",
         email: "admin@trainwatch.derzauberer.eu",
         password: "admin",
         roles: [role:admin],
+        permissions: []
+    },
+    {
+        id: user:guest,
+        name: "guest",
+        email: "guest@trainwatch.derzauberer.eu",
+        password: "guest",
+        roles: [],
         permissions: []
     }
 ];
