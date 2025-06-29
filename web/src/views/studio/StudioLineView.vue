@@ -20,7 +20,7 @@
         </div>
 
         <h6>{{ $t('entity.stop.stop', 0) }}</h6>
-        <div class="stops" v-for="stop of edit_stops.value" :key="stop.id.id.toString()">
+        <div class="stops" v-for="stop of editConnects.value" :key="stop.id.id.toString()">
             <swd-input>
                 <label>{{ $t('entity.traffic.arrivaltime') }}</label>
                 <input :value="dateToTime(stop.arrival.time)" @input="stop.arrival.time = timeToDate(($event.target as HTMLInputElement).value)" type="time">
@@ -37,12 +37,12 @@
                 <input v-model="stop.departure.platform">
             </swd-input>
 
-            <div v-if="edit_stops.value" class="stops_vertical">
+            <div v-if="editConnects.value" class="stops_vertical">
                 <InputRecordComponent :label="$t('entity.stop.stop')" v-model="stop.out" type="stop" :required="true"  :to="stop.out.id ? { name: 'studio_stop_edit', params: { id: stop.out.id.toString() } } : undefined"/>
-                <button class="grey-color" @click="connectsToRemove.push(edit_stops.value.splice(edit_stops.value.indexOf(stop), 1)[0])"><swd-icon class="delete-icon"></swd-icon></button>
+                <button class="grey-color" @click="connectsToRemove.push(editConnects.value.splice(editConnects.value.indexOf(stop), 1)[0])"><swd-icon class="delete-icon"></swd-icon></button>
             </div>
         </div>
-        <button class="grey-color" @click.prevent="edit_stops.value?.push(createEmptyConnects(edit.value.id))"><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>
+        <button class="grey-color" @click.prevent="editConnects.value?.push(createEmptyConnects(edit.value.id))"><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>
     </EditFormComponent>
 </template>
 
@@ -64,14 +64,6 @@
     display: flex;
     flex-direction: column;
     gap: var(--theme-inner-element-spacing);
-}
-
-.stop-table {
-    display: grid;
-    grid-template-columns: fit-content(200px) fit-content(200px) auto;
-    gap: var(--theme-inner-element-spacing);
-    vertical-align: middle;
-    margin-bottom: var(--theme-element-spacing);
 }
 </style>
 
@@ -109,7 +101,7 @@ const edit = resource({
 	loader: async (parameter) => new LineEditDto(parameter.route.params.id === 'new' ? {} : await surrealdb.select<Line>(new RecordId('line', parameter.route.params.id)))
 })
 
-const edit_stops = resource({
+const editConnects = resource({
     parameter: { edit },
     loader: async () => {
         if (!edit.value?.id) return []
@@ -141,7 +133,7 @@ const actions: EditActions = {
                 DELETE $connects.id;
             };
 
-            FOR $connects IN ${edit_stops.value?.filter(connects => !connectsToAdd.includes(connects))} {
+            FOR $connects IN ${editConnects.value?.filter(connects => !connectsToAdd.includes(connects))} {
                 UPDATE $connects.id CONTENT $connects;
             };
 

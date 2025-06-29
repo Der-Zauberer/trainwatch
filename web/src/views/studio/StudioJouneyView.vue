@@ -17,7 +17,29 @@
         <div class="grid-cols-sm-2 grid-cols-1">
             <InputComponent :label="$t('entity.general.id')" :disabled="$route.params.id !== 'new'" v-model="edit.value.id.id" :required="true"/>
             <InputRecordComponent :label="$t('entity.line.line')" v-model="edit.value.line" type="line" :required="true" :to="edit.value.line?.id ? { name: 'studio_line_edit', params: { id: edit.value.line?.id.toString() } } : undefined"/>
-        </div>        
+        </div>
+        <div class="stops" v-for="stop of editVisits.value" :key="stop.id.id.toString()">
+            <swd-input>
+                <label>{{ $t('entity.traffic.arrivaltime') }}</label>
+                <input :value="dateToTime(stop.realtime.arrival.time)" @input="stop.realtime.arrival.time = timeToDate(($event.target as HTMLInputElement).value)" type="time">
+                <div style="height: round(.5em, 1px)"></div>
+                <label>{{ $t('entity.traffic.departuretime') }}</label>
+                <input :value="dateToTime(stop.realtime.departure.time)" @input="stop.realtime.departure.time = timeToDate(($event.target as HTMLInputElement).value)"  type="time">
+            </swd-input>
+
+            <swd-input>
+                <label>{{ $t('entity.traffic.arrivalplatform') }}</label>
+                <input v-model="stop.realtime.arrival.platform">
+                <div style="height: round(.5em, 1px)"></div>
+                <label>{{ $t('entity.traffic.departureplatform') }}</label>
+                <input v-model="stop.realtime.departure.platform">
+            </swd-input>
+
+            <swd-input>
+                <label>{{ $t('entity.traffic.canceled') }}</label>
+                <input v-model="stop.cancelled" type="checkbox">
+            </swd-input>
+        </div>
     </EditFormComponent>
 </template>
 
@@ -25,6 +47,14 @@
 .flex {
     margin: 0;
     --theme-element-spacing: calc(var(--theme-inner-element-spacing) / 2)
+}
+
+.stops {
+    display: grid;
+    gap: var(--theme-inner-element-spacing);
+    grid-template-columns: fit-content(150px) fit-content(150px) auto;
+    vertical-align: middle;
+    margin-bottom: var(--theme-element-spacing);
 }
 </style>
 
@@ -35,10 +65,11 @@ import InputComponent from '@/components/InputComponent.vue';
 import InputRecordComponent from '@/components/InputRecordComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
 import { JourneyEditDto } from '@/core/dtos';
+import { dateToTime, timeToDate } from '@/core/functions';
 import { resource } from '@/core/resource';
 import type { Journey, Parameter } from '@/core/types';
 import type { SurrealDbService } from '@/services/surrealdb.service';
-import { RecordId } from 'surrealdb';
+import { RecordId, surql } from 'surrealdb';
 import { inject, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -61,10 +92,60 @@ const edit = resource({
 	loader: async (parameter) => new JourneyEditDto(parameter.route.params.id === 'new' ? {} : await surrealdb.select<Journey>(new RecordId('journey', parameter.route.params.id)))
 })
 
+const editVisits = resource({
+    parameter: { edit },
+    loader: async () => {
+        if (!edit.value?.id) return []
+        return await surrealdb.query<Visits[][][]>(surql`SELECT VALUE (SELECT *, sceduled.* FROM ->visits) FROM ${edit.value.id};`).then(result => result[0][0].sort((a, b) => a.sceduled.departure.time.getTime() - b.sceduled.departure.time.getTime()))
+    }
+})
+
 const actions: EditActions = {
     save: async (id?: RecordId) => id === undefined ? await surrealdb.insert(edit.value?.filterBeforeSubmit()) : await surrealdb.update(id, edit.value?.filterBeforeSubmit()),
     delete: async (id: RecordId) => await surrealdb.delete(id),
     close: () => (router.back(), journeys.reload())
 }
+
+type Visits = {
+    id: RecordId<'visits'>
+    in: RecordId<'journey'>
+    out: RecordId<'stop'>
+    cancelled: boolean
+    sceduled: RecordId<'line'>
+    realtime: {
+        arrival: { 
+            platform: string,
+            time: Date
+        },
+        departure: {
+            platform: string,
+            time: Date
+        }
+    }
+}
+
+/*
+function createEmptyVisits(journey: RecordId<'journey'>): Visits {
+    const visits: Visits = {
+        id: new RecordId('visits', guid()),
+        in: journey,
+        out: new RecordId('stop', ''),
+        cancelled: false,
+        sceduled: undefined as unknown as RecordId<'line'>,
+        realtime: {
+            arrival: {
+                platform: '1',
+                time: new Date('0000-01-01T00:00'),
+            },
+            departure: {
+                platform: '1',
+                time: new Date('0000-01-01T00:00'),
+            }
+        }
+    }
+    //connectsToAdd.push(connects)
+    return visits
+}
+*/
 
 </script>

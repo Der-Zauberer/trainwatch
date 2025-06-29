@@ -32,6 +32,7 @@
         "traffic": {
             "from": "from",
             "to": "to",
+            "canceled": "Fällt aus",
             "arrival": "Ankunft",
             "departure": "Abfahrt",
             "platform": "Gleis",
