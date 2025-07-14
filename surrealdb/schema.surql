@@ -673,6 +673,38 @@ DEFINE FIELD OVERWRITE id ON TABLE informs;
 DEFINE FIELD OVERWRITE in ON TABLE informs TYPE record<information>;
 DEFINE FIELD OVERWRITE out ON TABLE informs TYPE record;
 
+-----------------------------
+-- password_change_request --
+-----------------------------
+
+DEFINE TABLE OVERWRITE password_change_request SCHEMAFULL
+	PERMISSIONS
+		FOR create WHERE $auth.id != NONE;
+DEFINE FIELD OVERWRITE id ON TABLE password_change_request;
+DEFINE FIELD OVERWRITE user ON TABLE password_change_request TYPE record<user> DEFAULT $auth.id VALUE $auth.id;
+DEFINE FIELD OVERWRITE old ON TABLE password_change_request TYPE string ASSERT crypto::argon2::compare($auth.password, $value);
+DEFINE FIELD OVERWRITE new ON TABLE password_change_request TYPE string ASSERT !crypto::argon2::compare($auth.password, $value);
+DEFINE FIELD OVERWRITE created ON TABLE password_change_request TYPE datetime VALUE time::now() READONLY;
+
+DEFINE EVENT OVERWRITE password_change_request ON TABLE password_change_request WHEN $event = "CREATE" THEN {
+    UPDATE $after.user.id SET password = $after.new;
+    DELETE $after.id;
+};
+
+DEFINE FUNCTION OVERWRITE fn::user::change_password($old: string, $new: string, $new2: string) {
+    IF (!$auth.id) {
+        THROW 'error.user.password.change.auth: You must be signed in to change your password!';
+    } ELSE IF ($new != $new2) {
+        THROW 'error.user.password.change.typo: Your new passwords have to be the same!';
+    } ELSE IF ($old == $new) {
+        THROW 'error.user.password.change.different: Your new password must be different from thge old one!';
+    } ELSE IF (!crypto::argon2::compare($auth.password, $old)) {
+        THROW 'error.user.password.change.wrong: Your old password is wrong!';
+    } ELSE {
+        INSERT INTO password_change_request { old: $old, new: $new };
+    }
+};
+
 ----------
 -- role --
 ----------
@@ -711,8 +743,11 @@ DEFINE TABLE OVERWRITE user SCHEMAFULL
 DEFINE FIELD OVERWRITE id ON TABLE user;
 DEFINE FIELD OVERWRITE name ON TABLE user TYPE string;
 DEFINE FIELD OVERWRITE email ON TABLE user TYPE string ASSERT string::is::email($value);
-DEFINE FIELD OVERWRITE password ON TABLE user TYPE string VALUE crypto::argon2::generate($value);
-DEFINE FIELD OVERWRITE roles ON TABLE user TYPE set<record<role>> 
+DEFINE FIELD OVERWRITE password ON TABLE user TYPE string VALUE crypto::argon2::generate($value)
+    PERMISSIONS
+        FOR select, create WHERE id = $auth.id || fn::user::has_permission($auth, "auth.user"),
+        FOR update WHERE fn::user::has_permission($auth, "auth.user");
+DEFINE FIELD OVERWRITE roles ON TABLE user TYPE set<record<role>>
     PERMISSIONS 
         FOR select WHERE id = $auth.id || fn::user::has_permission($auth, "auth.user"), 
         FOR create, update, delete WHERE fn::user::has_permission($auth, "auth.user");

@@ -1,6 +1,7 @@
 {
     "page": {
         "home": "Home",
+        "profile": "Profil",
         "studio": "Studio",
         "dashboard": "Dashboard",
         "login": "Login",
@@ -12,6 +13,8 @@
         "create": "Erstellen",
         "search": "Suchen",
         "resetSearch": "Suche Zurücksetzen",
+        "changePassword": "Passwort ändern",
+        "resetPassword": "Passwort zurücksetzen",
         "delete": "Löschen",
         "save": "Speichern",
         "cancel": "Abbrechen"

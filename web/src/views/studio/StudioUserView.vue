@@ -14,7 +14,7 @@
             <InputComponent :label="$t('entity.general.id')" :disabled="$route.params.id !== 'new'" v-model="edit.value.id.id"/>
             <InputComponent :label="$t('entity.general.name')" v-model="edit.value.name"/>
             <InputComponent :label="$t('entity.user.email')" type="email" v-model="edit.value.email"/>
-            <button v-if="!changePassword" @click="changePassword = true" class="grey-color">Passwort ändern</button>
+            <button v-if="!changePassword" @click="changePassword = true" class="grey-color">{{ $t('action.changePassword') }}</button>
             <InputComponent v-if="changePassword" label="Passwort ändern" v-model="edit.value.password"/>
         </div>
         <h6>{{ $t('entity.role.role', 0) }}</h6>

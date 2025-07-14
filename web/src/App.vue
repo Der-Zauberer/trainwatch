@@ -16,7 +16,7 @@
             <span>{{ user.name }}</span>
             <swd-subtitle>{{ user.email }}</swd-subtitle>
           </div>
-          <a>Account</a>
+          <RouterLink to="/profile">{{ $t('page.profile') }}</RouterLink>
           <RouterLink to="/studio">{{ $t('page.studio') }}</RouterLink>
           <a @click="surrealdb.invalidateAndRedirect()">{{ $t('page.logout') }}</a>
         </swd-selection>

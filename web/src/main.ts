@@ -21,12 +21,14 @@ import StudioLineView from './views/studio/StudioLineView.vue'
 import StudioJouneyView from './views/studio/StudioJouneyView.vue'
 import StudioTimetableView from './views/studio/StudioTimetableView.vue'
 import JourneyDetailsVue from './views/public/JourneyDetailsVue.vue'
+import ProfileView from './views/public/ProfileView.vue'
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
     routes: [
         { path: '/', name: 'home', component: HomeView },
         { path: '/login', name: 'login', component: LoginView },
+        { path: '/profile', name: 'profile', component: ProfileView, beforeEnter: auth },
         { path: '/stop/:id', name: 'stop', component: StopDetailsView },
         { path: '/line/:id', name: 'line', component: LineDetailsView },
         { path: '/journey/:id', name: 'journey', component: JourneyDetailsVue },

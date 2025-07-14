@@ -1,6 +1,7 @@
 {
     "page": {
         "home": "Home",
+        "profile": "Profile",
         "studio": "Studio",
         "dashboard": "Dashboard",
         "login": "Login",
@@ -12,6 +13,8 @@
         "create": "Create",
         "search": "Search",
         "resetSearch": "Reset Search",
+        "changePassword": "Change Password",
+        "resetPassword": "Reset Password",
         "delete": "Delete",
         "save": "Save",
         "cancel": "Cancel"
