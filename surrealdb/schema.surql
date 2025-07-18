@@ -711,7 +711,7 @@ DEFINE TABLE OVERWRITE user SCHEMAFULL
 DEFINE FIELD OVERWRITE id ON TABLE user;
 DEFINE FIELD OVERWRITE name ON TABLE user TYPE string;
 DEFINE FIELD OVERWRITE email ON TABLE user TYPE string ASSERT string::is::email($value);
-DEFINE FIELD OVERWRITE password ON TABLE user TYPE string VALUE crypto::argon2::generate($value)
+DEFINE FIELD OVERWRITE password ON TABLE user TYPE string VALUE (IF !$value.starts_with('$argon2id$') { crypto::argon2::generate($value) })
     PERMISSIONS
         FOR select WHERE id = $auth.id || fn::user::has_permission($auth, 'auth.user'),
         FOR create, update, delete WHERE fn::user::has_permission($auth, 'auth.user');
@@ -742,11 +742,11 @@ DEFINE INDEX OVERWRITE email ON user FIELDS email UNIQUE;
 DEFINE ACCESS OVERWRITE user ON DATABASE TYPE RECORD
 	SIGNIN {
 		LET $user = SELECT * FROM ONLY user WHERE name = $username AND crypto::argon2::compare(password, $password);
-        IF (!$user) {
+        IF !$user {
             THROW 'error.user.password.invalid: Your credentials are invalid!';
-        } ELSE IF ($user.account.enabled == false || (type::is::datetime($user.account.expires) && $user.account.expires < time::now())) {
+        } ELSE IF $user.account.enabled == false || (type::is::datetime($user.account.expires) && $user.account.expires < time::now()) {
             THROW 'error.user.deactivated: Your account is deactivated!';
-        } ELSE IF ($user.credentials.change == true || (type::is::datetime($user.credentials.expires) && $user.credentials.expires < time::now())) {
+        } ELSE IF $user.credentials.change == true || (type::is::datetime($user.credentials.expires) && $user.credentials.expires < time::now()) {
             THROW 'error.user.password.change.required: Your password have to be changed!';
         };
         RETURN $user;
@@ -765,7 +765,7 @@ DEFINE TABLE OVERWRITE password_change_request SCHEMAFULL
 	PERMISSIONS
 		FOR create FULL;
 DEFINE FIELD OVERWRITE id ON TABLE password_change_request;
-DEFINE FIELD OVERWRITE username ON TABLE password_change_request TYPE string DEFAULT (IF (!$input.username && $auth) { $auth.name });
+DEFINE FIELD OVERWRITE username ON TABLE password_change_request TYPE string DEFAULT (IF !$input.username && $auth { $auth.name });
 DEFINE FIELD OVERWRITE old ON TABLE password_change_request TYPE string;
 DEFINE FIELD OVERWRITE new ON TABLE password_change_request TYPE string;
 DEFINE FIELD OVERWRITE new2 ON TABLE password_change_request TYPE string;
@@ -773,11 +773,11 @@ DEFINE FIELD OVERWRITE created ON TABLE password_change_request TYPE datetime VA
 
 DEFINE EVENT OVERWRITE password_change_request ON TABLE password_change_request WHEN $event = 'CREATE' THEN {
     LET $user = (SELECT * FROM ONLY user WHERE name = $after.username AND crypto::argon2::compare(password, $after.old));
-    IF (!$user) {
+    IF !$user {
         THROW 'error.user.password.invalid: Your credentials are invalid!';
-    } ELSE IF ($after.new != $after.new2) {
+    } ELSE IF $after.new != $after.new2 {
         THROW 'error.user.password.change.typo: Your new passwords have to be the same!';
-    } ELSE IF ($after.old == $after.new) {
+    } ELSE IF $after.old == $after.new {
         THROW 'error.user.password.change.different: Your new password must be different from the old one!';
     } ELSE {
         UPDATE $user.id SET password = $after.new, credentials.change = false, credentials.expires = NONE;
