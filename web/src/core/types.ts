@@ -189,6 +189,14 @@ export type User = Entity<'user'> & {
     password?: string
     roles: Role[]
     permissions: string[]
+    account: {
+        enabled: boolean
+        expires?: Date
+    }
+    credentials: {
+        change: boolean
+        expires?: Date
+    }
 }
 
 export type BoardLine = {

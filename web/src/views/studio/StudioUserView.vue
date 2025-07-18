@@ -17,6 +17,15 @@
             <button v-if="!changePassword" @click="changePassword = true" class="grey-color">{{ $t('action.changePassword') }}</button>
             <InputComponent v-if="changePassword" label="Passwort ändern" v-model="edit.value.password"/>
         </div>
+
+        <h6>{{ $t('entity.user.security') }}</h6>
+        <div class="grid-cols-sm-2 grid-cols-1">
+            <InputComponent :label="$t('entity.user.account.enabled')" type="checkbox" v-model="edit.value.account.enabled"/>
+            <InputComponent :label="$t('entity.user.account.expires')" type="date" v-model="edit.value.account.expires"/>
+            <InputComponent :label="$t('entity.user.credentials.change')" type="checkbox" v-model="edit.value.credentials.change"/>
+            <InputComponent :label="$t('entity.user.credentials.expires')" type="date" v-model="edit.value.credentials.expires"/>
+        </div>
+
         <h6>{{ $t('entity.role.role', 0) }}</h6>
         <div class="input-array" v-for="(role, index) in edit.value.roles" :key="index">
             <InputRecordComponent :label="$t('entity.role.role')" v-model="edit.value.roles[index]" type="role" :required="true" :to="{ name: 'studio_role_edit', params: { id: edit.value.roles[index].id.toString() } }"/>

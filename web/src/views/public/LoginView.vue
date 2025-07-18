@@ -5,10 +5,10 @@
 
         <swd-loading-spinner loading="true" v-if="loading"></swd-loading-spinner>
 
-        <form @submit="$event.preventDefault(); login()" v-if="!loading">
+        <form @submit.prevent="login()" v-if="!loading && !change">
 
             <swd-input>
-                <label for="login-username" >Username</label>
+                <label for="login-username">Username</label>
                 <input id="login-username" type="text" v-model.lazy="credentials.username" :invalid="error">
             </swd-input>
 
@@ -21,6 +21,31 @@
 
             <div class="flex flex-end margin-0">
                 <input class="width-100" type="submit" value="Login">
+            </div>
+
+        </form>
+
+        <form @submit.prevent="changePassword()" v-if="!loading && change">
+
+            <swd-input>
+                <label for="old-password">Old Password</label>
+                <input id="old-password" type="password" v-model.lazy="change.old" :invalid="error">
+            </swd-input>
+
+            <swd-input>
+                <label for="new-password">New Password</label>
+                <input id="new-password" type="password" v-model.lazy="change.new" :invalid="error">
+            </swd-input>
+
+            <swd-input>
+                <label for="repeat-password">Repeat Password</label>
+                <input id="repeat-password" type="password" v-model.lazy="change.new2" :invalid="error">
+            </swd-input>
+                
+            <p class="red-text">{{ error }}</p>
+
+            <div class="flex flex-end margin-0">
+                <input class="width-100" type="submit" value="Change Password">
             </div>
 
         </form>
@@ -52,13 +77,16 @@ form * { margin: 0 }
 </style>
 
 <script setup lang="ts">
+import { parseCustomSurrealDbError } from '@/core/functions';
 import type { SurrealDbService } from '@/services/surrealdb.service';
-import { SurrealDbError } from 'surrealdb';
 import { inject, ref, reactive, toRaw } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 const surrealdb = inject('surrealDbService') as SurrealDbService
+const { t } = useI18n();
 
 const credentials = reactive({ username: '', password: '' })
+const change = ref<{ username: string, old: string, new: string, new2: string } | undefined>()
 const loading = ref<boolean>()
 const error = ref<string>()
 
@@ -66,12 +94,30 @@ async function login() {
     loading.value = true
     try {
         await surrealdb.signinAndRedirect(toRaw(credentials), '/studio')
-        loading.value = false
         error.value = undefined
-
     } catch (exception) {
+        const dbError = parseCustomSurrealDbError(exception)
+        if (dbError.success && dbError.key === 'error.user.password.change.required') {
+            change.value = { username: credentials.username, old: '', new: '', new2: '' }
+        }
+        error.value = dbError.success ? t(dbError.key) : dbError.key
+    } finally {
         loading.value = false
-        error.value = (exception as SurrealDbError).message
+    }
+}
+
+async function changePassword() {
+    loading.value = true
+    try {
+        await surrealdb.insert('password_change_request', change.value)
+        if (change.value?.new) credentials.password = change.value?.new
+        change.value = undefined
+        await surrealdb.signinAndRedirect(toRaw(credentials), '/studio')
+    } catch (exception) {
+        const dbError = parseCustomSurrealDbError(exception)
+        error.value = dbError.success ? t(dbError.key) : dbError.key
+    } finally {
+        loading.value = false
     }
 }
 

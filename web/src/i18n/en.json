@@ -25,6 +25,19 @@
             "description": "Looks like there’s nothing here. Create a new entry when you’re ready."
         }
     },
+    "error": {
+        "user": {
+            "password": {
+                "invalid": "Your credentials are invalid!",
+                "change": {
+                    "required": "Your password have to be changed!",
+                    "typo": "Your new passwords have to be the same!",
+                    "different": "Your new password must be different from the old one!"
+                }
+            },
+            "deactivated": "Your account is deactivated!"
+        }
+    },
     "entity": {
         "general": {
             "general": "General",
@@ -152,7 +165,18 @@
             "email": "Email",
             "username": "Username",
             "password": "Password",
-            "permissions": "Permissions"
+            "permissions": "Permissions",
+            "account": {
+                "account": "Account | Accounts",
+                "enabled": "Account enabled",
+                "expires": "Account expiry"
+            },
+            "credentials": {
+                "credentials": "Credentials",
+                "change": "Force Password change",
+                "expires": "Password expiry"
+            },
+            "security": "Security"
         }
     }
 }

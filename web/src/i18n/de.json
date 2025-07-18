@@ -25,6 +25,19 @@
             "description": "Sieht ziemlich leer aus. Erstelle einen neuen Eintrag, wenn du soweit bist."
         }
     },
+    "error": {
+        "user": {
+            "password": {
+                "invalid": "Deine Zugangsdaten sind falsch!",
+                "change": {
+                    "required": "Dein Passwort muss geändert werden!",
+                    "typo": "Deine neuen Passwörter müssen übereinstimmen!",
+                    "different": "Dein neues Passwort muss anders sein als das alte!"
+                }
+            },
+            "deactivated": "Your account is deactivated!"
+        }
+    },
     "entity": {
         "general": {
             "general": "Allgemein",
@@ -152,7 +165,18 @@
             "email": "Email",
             "username": "Benutzername",
             "password": "Passwort",
-            "permissions": "Rechte"
+            "permissions": "Rechte",
+            "account": {
+                "account": "Benutzerprofil | Benutzerprofile",
+                "enabled": "Benutzerprofil aktiviert",
+                "expires": "Benutzerprofil Ablauf"
+            },
+            "credentials": {
+                "credentials": "Zugangsdaten",
+                "change": "Passwortänderung erzwingen",
+                "expires": "Password Ablauf"
+            },
+            "security": "Sicherheit"
         }
     }
 }

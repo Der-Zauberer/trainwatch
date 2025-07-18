@@ -1,3 +1,5 @@
+import type { SurrealDbError } from "surrealdb"
+
 export function enumToArray(enumeration: object): string[] {
     return Object.keys(enumeration).filter(value => isNaN(Number(value)))
 }
@@ -16,4 +18,18 @@ export function guid(timebased?: boolean) {
     let guid = timebased ? Math.floor(Date.now() / 1000).toString(36) : ''
     for (let i = guid.length; i < 20; i++) guid += chars[Math.floor(Math.random() * chars.length)]
     return guid
+}
+
+export function parseCustomSurrealDbError(exception: unknown): { key: string, success: boolean } {
+    const error = exception as SurrealDbError
+    if (error?.name === 'ResponseError' && error.message) {
+        const [prefix, message] = error.message.split('There was a problem with the database: An error occurred: ')
+        const key = message ? message.split(':')[0] : undefined
+        if (key) {
+            return { key, success: true }
+        } else {
+            return { key: prefix, success: false }
+        }
+    }
+    return { key: error.toString(), success: false }
 }
