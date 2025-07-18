@@ -6,9 +6,9 @@ DEFINE ANALYZER OVERWRITE blank TOKENIZERS blank;
 DEFINE ANALYZER OVERWRITE edgengram FILTERS edgengram(1,100);
 
 DEFINE FUNCTION OVERWRITE fn::search::normalize($name: string, $seperator: option<string>) {
-    LET $result = $name.lowercase().replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").slug();
-    IF ($seperator != NONE && $seperator != "-") {
-        RETURN string::replace($result, "-", $seperator);
+    LET $result = $name.lowercase().replace('ä', 'ae').replace('ö', 'oe').replace('ü', 'ue').slug();
+    IF ($seperator != NONE && $seperator != '-') {
+        RETURN string::replace($result, '-', $seperator);
     };
     RETURN $result;
 };
@@ -19,15 +19,15 @@ DEFINE FUNCTION OVERWRITE fn::search::extract_ids($object: option<object>) {
 };
 
 DEFINE FUNCTION OVERWRITE fn::search::n_word_edge_ngram($name: string) {
-    LET $tokens = search::analyze("blank", $name);
+    LET $tokens = search::analyze('blank', $name);
     LET $parts = array::fold((<array> 0..$tokens.len()), { all: $tokens, entries: [] }, |$meta, $index| {
-        RETURN { all: $meta.all, entries: $meta.entries.push(array::slice($meta.all, $index).join("")) };
+        RETURN { all: $meta.all, entries: $meta.entries.push(array::slice($meta.all, $index).join('')) };
     }).entries;
-    RETURN $parts.map(|$part| search::analyze("edgengram", $part)).flatten().distinct();
+    RETURN $parts.map(|$part| search::analyze('edgengram', $part)).flatten().distinct();
 };
 
 DEFINE FUNCTION OVERWRITE fn::search::search($name: string) {
-    RETURN SELECT VALUE entries.{id, name} AS result FROM ONLY type::thing("search", fn::search::normalize($name, ""));
+    RETURN SELECT VALUE entries.{id, name} AS result FROM ONLY type::thing('search', fn::search::normalize($name, ''));
 };
 
 DEFINE FUNCTION OVERWRITE fn::user::has_permission($user: record<user>, $permissions: string) {
@@ -63,7 +63,7 @@ DEFINE FUNCTION OVERWRITE fn::journey::stops($journey: record<journey>) {
 DEFINE TABLE OVERWRITE stop SCHEMAFULL
 	PERMISSIONS
 		FOR select FULL,
-        FOR create, update, delete WHERE fn::user::has_permission($auth, "studio.stop");
+        FOR create, update, delete WHERE fn::user::has_permission($auth, 'studio.stop');
 DEFINE FIELD OVERWRITE id ON TABLE stop;
 DEFINE FIELD OVERWRITE name ON TABLE stop TYPE string;
 DEFINE FIELD OVERWRITE score ON TABLE stop TYPE int DEFAULT 9;
@@ -126,24 +126,24 @@ DEFINE FIELD OVERWRITE entries[*].score ON TABLE search TYPE number;
 DEFINE EVENT OVERWRITE stop_update ON TABLE stop WHEN $before.name != $after.name || $before.ids != $after.ids THEN {
     IF $before THEN {
         FOR $entry IN fn::search::extract_ids($before.ids) {
-            UPDATE type::thing("search", $entry) SET entries = entries.filter(|$v| $v.id = $before.id);
-            DELETE type::thing("search", $entry) WHERE array::is_empty(entries);
+            UPDATE type::thing('search', $entry) SET entries = entries.filter(|$v| $v.id = $before.id);
+            DELETE type::thing('search', $entry) WHERE array::is_empty(entries);
         };
-        FOR $entry IN fn::search::n_word_edge_ngram(fn::search::normalize($before.name, " ")) {
-            UPDATE type::thing("search", $entry) SET entries = entries.filter(|$v| $v.id = $before.id);
-            DELETE type::thing("search", $entry) WHERE array::is_empty(entries);
+        FOR $entry IN fn::search::n_word_edge_ngram(fn::search::normalize($before.name, ' ')) {
+            UPDATE type::thing('search', $entry) SET entries = entries.filter(|$v| $v.id = $before.id);
+            DELETE type::thing('search', $entry) WHERE array::is_empty(entries);
         };
     } END;
     IF $after THEN {
         FOR $entry IN fn::search::extract_ids($after.ids) {
-            UPSERT ONLY type::thing("search", $entry) SET id = $entry, entries += { id: $after.id, name: $after.name, score: $after.score };
-            UPDATE ONLY type::thing("search", $entry) SET entries = (SELECT * FROM $parent.entries ORDER BY score);
+            UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $after.id, name: $after.name, score: $after.score };
+            UPDATE ONLY type::thing('search', $entry) SET entries = (SELECT * FROM $parent.entries ORDER BY score);
         };
-        LET $search = fn::search::normalize($after.name, "");
-        FOR $entry IN fn::search::n_word_edge_ngram(fn::search::normalize($after.name, " ")) {
+        LET $search = fn::search::normalize($after.name, '');
+        FOR $entry IN fn::search::n_word_edge_ngram(fn::search::normalize($after.name, ' ')) {
             LET $score = IF string::starts_with($search, $entry) { 10 } ELSE { 20 };
-            UPSERT ONLY type::thing("search", $entry) SET id = $entry, entries += { id: $after.id, name: $after.name, score: $after.score + $score };
-            UPDATE ONLY type::thing("search", $entry) SET entries = (SELECT * FROM $parent.entries ORDER BY score);
+            UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $after.id, name: $after.name, score: $after.score + $score };
+            UPDATE ONLY type::thing('search', $entry) SET entries = (SELECT * FROM $parent.entries ORDER BY score);
         };
     } END;
 };
@@ -152,12 +152,12 @@ DEFINE FUNCTION OVERWRITE fn::stop::index() {
     DELETE search;
     FOR $stop IN (SELECT id, name, score, ids FROM stop) {
         FOR $entry IN fn::search::extract_ids($stop.ids) {
-            UPSERT ONLY type::thing("search", $entry) SET id = $entry, entries += { id: $stop.id, name: $stop.name, score: $stop.score };
+            UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $stop.id, name: $stop.name, score: $stop.score };
         };
-        LET $search = fn::search::normalize($stop.name, "");
-        FOR $entry IN fn::search::n_word_edge_ngram(fn::search::normalize($stop.name, " ")) {
+        LET $search = fn::search::normalize($stop.name, '');
+        FOR $entry IN fn::search::n_word_edge_ngram(fn::search::normalize($stop.name, ' ')) {
             LET $score = IF string::starts_with($search, $entry) { 10 } ELSE { 20 };
-            UPSERT ONLY type::thing("search", $entry) SET id = $entry, entries += { id: $stop.id, name: $stop.name, score: $stop.score + $score };
+            UPSERT ONLY type::thing('search', $entry) SET id = $entry, entries += { id: $stop.id, name: $stop.name, score: $stop.score + $score };
         };
     };
     UPDATE search SET entries = (SELECT * FROM $parent.entries ORDER BY score);
@@ -170,7 +170,7 @@ DEFINE FUNCTION OVERWRITE fn::stop::index() {
 DEFINE TABLE OVERWRITE type SCHEMAFULL
 	PERMISSIONS
 		FOR select FULL,
-        FOR create, update, delete WHERE fn::user::has_permission($auth, "studio.type");
+        FOR create, update, delete WHERE fn::user::has_permission($auth, 'studio.type');
 DEFINE FIELD OVERWRITE id ON TABLE type;
 DEFINE FIELD OVERWRITE name ON TABLE type TYPE string;
 DEFINE FIELD OVERWRITE description ON TABLE type TYPE string;
@@ -178,356 +178,356 @@ DEFINE FIELD OVERWRITE priority ON TABLE type TYPE int;
 DEFINE FIELD OVERWRITE color ON TABLE type TYPE object;
 DEFINE FIELD OVERWRITE color.text ON TABLE type TYPE string;
 DEFINE FIELD OVERWRITE color.background ON TABLE type TYPE string;
-DEFINE FIELD OVERWRITE vehicle ON TABLE type TYPE "TRAIN" | "BUS" | "SHIP" | "PLANE";
-DEFINE FIELD OVERWRITE classification ON TABLE type TYPE "REGIONAL" | "LONG_DISTANCE";
+DEFINE FIELD OVERWRITE vehicle ON TABLE type TYPE 'TRAIN' | 'BUS' | 'SHIP' | 'PLANE';
+DEFINE FIELD OVERWRITE classification ON TABLE type TYPE 'REGIONAL' | 'LONG_DISTANCE';
 
 INSERT IGNORE INTO type [
     {
-        id: "ast",
-        name: "AST",
-        description: "Anruf-Sammel-Taxi",
+        id: 'ast',
+        name: 'AST',
+        description: 'Anruf-Sammel-Taxi',
         priority: 29,
-        vehicle: "BUS",
-        classification: "REGIONAL",
+        vehicle: 'BUS',
+        classification: 'REGIONAL',
         color: {
-            text: "#ffffff",
-            background: "#808000"
+            text: '#ffffff',
+            background: '#808000'
         }
     },
     {
-        id: "b",
-        name: "BUS",
-        description: "Bus",
+        id: 'b',
+        name: 'BUS',
+        description: 'Bus',
         priority: 26,
-        vehicle: "BUS",
-        classification: "REGIONAL",
+        vehicle: 'BUS',
+        classification: 'REGIONAL',
         color: {
-            text: "#ffffff",
-            background: "#7f7f7f"
+            text: '#ffffff',
+            background: '#7f7f7f'
         }
     },
     {
-        id: "cb",
-        name: "CB",
-        description: "City Bus",
+        id: 'cb',
+        name: 'CB',
+        description: 'City Bus',
         priority: 27,
-        vehicle: "BUS",
-        classification: "REGIONAL",
+        vehicle: 'BUS',
+        classification: 'REGIONAL',
         color: {
-            text: "#ffffff",
-            background: "#808000"
+            text: '#ffffff',
+            background: '#808000'
         }
     },
     {
-        id: "cjx",
-        name: "CJX",
-        description: "Cityjet Xpress",
+        id: 'cjx',
+        name: 'CJX',
+        description: 'Cityjet Xpress',
         priority: 16,
-        vehicle: "TRAIN",
-        classification: "REGIONAL",
+        vehicle: 'TRAIN',
+        classification: 'REGIONAL',
         color: {
-            text: "#ffffff",
-            background: "#ff0000"
+            text: '#ffffff',
+            background: '#ff0000'
         }
     },
     { 
-        id: "ec",
-        name: "EC",
-        description: "Eurocity",
+        id: 'ec',
+        name: 'EC',
+        description: 'Eurocity',
         priority: 1,
-        vehicle: "TRAIN",
-        classification: "LONG_DISTANCE",
+        vehicle: 'TRAIN',
+        classification: 'LONG_DISTANCE',
         color: {
-            text: "#ffff00",
-            background: "#0000ff"
+            text: '#ffff00',
+            background: '#0000ff'
         }
     },
     {
-        id: "ece",
-        name: "ECE",
-        description: "Eurocity Express",
+        id: 'ece',
+        name: 'ECE',
+        description: 'Eurocity Express',
         priority: 0,
-        vehicle: "TRAIN",
-        classification: "LONG_DISTANCE",
+        vehicle: 'TRAIN',
+        classification: 'LONG_DISTANCE',
         color: {
-            text: "#ffff00",
-            background: "#0000ff"
+            text: '#ffff00',
+            background: '#0000ff'
         }
     },
     {
-        id: "en",
-        name: "EN",
-        description: "EuroNight",
+        id: 'en',
+        name: 'EN',
+        description: 'EuroNight',
         priority: 10,
-        vehicle: "TRAIN",
-        classification: "LONG_DISTANCE",
+        vehicle: 'TRAIN',
+        classification: 'LONG_DISTANCE',
         color: {
-            text: "#ffffff",
-            background: "#0000ff"
+            text: '#ffffff',
+            background: '#0000ff'
         }
     },
     { 
-        id: "fex",
-        name: "FEX",
-        description: "Airport Express",
-        vehicle: "TRAIN",
+        id: 'fex',
+        name: 'FEX',
+        description: 'Airport Express',
+        vehicle: 'TRAIN',
         priority: 21,
-        classification: "REGIONAL",
+        classification: 'REGIONAL',
         color: {
-            text: "#ffffff",
-            background: "#ff0000"
+            text: '#ffffff',
+            background: '#ff0000'
         }
     },
     {
-        id: "d",
-        name: "D",
-        description: "Express",
+        id: 'd',
+        name: 'D',
+        description: 'Express',
         priority: 8,
-        vehicle: "TRAIN",
-        classification: "LONG_DISTANCE",
+        vehicle: 'TRAIN',
+        classification: 'LONG_DISTANCE',
         color: {
-            text: "#ffffff",
-            background: "#7f7f7f"
+            text: '#ffffff',
+            background: '#7f7f7f'
         }
     },
     {
-        id: "dn",
-        name: "DN",
-        description: "Night Express",
+        id: 'dn',
+        name: 'DN',
+        description: 'Night Express',
         priority: 8,
-        vehicle: "TRAIN",
-        classification: "LONG_DISTANCE",
+        vehicle: 'TRAIN',
+        classification: 'LONG_DISTANCE',
         color: {
-            text: "#ffffff",
-            background: "#0000ff"
+            text: '#ffffff',
+            background: '#0000ff'
         }
     },
     {
-        id: "ic",
-        name: "IC",
-        description: "Intercity",
+        id: 'ic',
+        name: 'IC',
+        description: 'Intercity',
         priority: 7,
-        vehicle: "TRAIN",
-        classification: "LONG_DISTANCE",
+        vehicle: 'TRAIN',
+        classification: 'LONG_DISTANCE',
         color: {
-            text: "#ff0000",
-            background: "#ffffff"
+            text: '#ff0000',
+            background: '#ffffff'
         }
     },
     {
-        id: "ice",
-        name: "ICE",
-        description: "Intercity Express",
+        id: 'ice',
+        name: 'ICE',
+        description: 'Intercity Express',
         priority: 6,
-        vehicle: "TRAIN",
-        classification: "LONG_DISTANCE",
+        vehicle: 'TRAIN',
+        classification: 'LONG_DISTANCE',
         color: {
-            text: "#ff0000",
-            background: "#ffffff"
+            text: '#ff0000',
+            background: '#ffffff'
         }
     },
     {
-        id: "ices",
-        name: "ICEs",
-        description: "Intercity Express Sprinter",
+        id: 'ices',
+        name: 'ICEs',
+        description: 'Intercity Express Sprinter',
         priority: 5,
-        vehicle: "TRAIN",
-        classification: "LONG_DISTANCE",
+        vehicle: 'TRAIN',
+        classification: 'LONG_DISTANCE',
         color: {
-            text: "#ff0000",
-            background: "#ffffff"
+            text: '#ff0000',
+            background: '#ffffff'
         }
     },
     {
-        id: "ir",
-        name: "IR",
-        description: "Interregio",
+        id: 'ir',
+        name: 'IR',
+        description: 'Interregio',
         priority: 15,
-        vehicle: "TRAIN",
-        classification: "REGIONAL",
+        vehicle: 'TRAIN',
+        classification: 'REGIONAL',
         color: {
-            text: "#ffffff",
-            background: "#0080ff"
+            text: '#ffffff',
+            background: '#0080ff'
         }
     },
     {
-        id: "ire",
-        name: "IRE",
-        description: "Interregio Express",
+        id: 'ire',
+        name: 'IRE',
+        description: 'Interregio Express',
         priority: 16,
-        vehicle: "TRAIN",
-        classification: "REGIONAL",
+        vehicle: 'TRAIN',
+        classification: 'REGIONAL',
         color: {
-            text: "#ffffff",
-            background: "#ff0000"
+            text: '#ffffff',
+            background: '#ff0000'
         }
     },
     {
-        id: "nj",
-        name: "NJ",
-        description: "Nightjet",
+        id: 'nj',
+        name: 'NJ',
+        description: 'Nightjet',
         priority: 11,
-        vehicle: "TRAIN",
-        classification: "LONG_DISTANCE",
+        vehicle: 'TRAIN',
+        classification: 'LONG_DISTANCE',
         color: {
-            text: "#ffffff",
-            background: "#0000ff"
+            text: '#ffffff',
+            background: '#0000ff'
         }
     },
     {
-        id: "nl",
-        name: "NL",
-        description: "Nightliner",
+        id: 'nl',
+        name: 'NL',
+        description: 'Nightliner',
         priority: 25,
-        vehicle: "TRAIN",
-        classification: "REGIONAL",
+        vehicle: 'TRAIN',
+        classification: 'REGIONAL',
         color: {
-            text: "#ffffff",
-            background: "#0000ff"
+            text: '#ffffff',
+            background: '#0000ff'
         }
     },
     {
-        id: "mex",
-        name: "MEX",
-        description: "Metropolitan Express",
+        id: 'mex',
+        name: 'MEX',
+        description: 'Metropolitan Express',
         priority: 20,
-        vehicle: "TRAIN",
-        classification: "REGIONAL",
+        vehicle: 'TRAIN',
+        classification: 'REGIONAL',
         color: {
-            text: "#ffffff",
-            background: "#ff0000"
+            text: '#ffffff',
+            background: '#ff0000'
         }
     },
     {
-        id: "rgj",
-        name: "RJG",
-        description: "RegioJet",
+        id: 'rgj',
+        name: 'RJG',
+        description: 'RegioJet',
         priority: 7,
-        vehicle: "TRAIN",
-        classification: "LONG_DISTANCE",
+        vehicle: 'TRAIN',
+        classification: 'LONG_DISTANCE',
         color: {
-            text: "#ff0000",
-            background: "#ffff00"
+            text: '#ff0000',
+            background: '#ffff00'
         }
     },
     {
-        id: "rj",
-        name: "RJ",
-        description: "Railjet",
+        id: 'rj',
+        name: 'RJ',
+        description: 'Railjet',
         priority: 6,
-        vehicle: "TRAIN",
-        classification: "LONG_DISTANCE",
+        vehicle: 'TRAIN',
+        classification: 'LONG_DISTANCE',
         color: {
-            text: "#ffffff",
-            background: "#cd3030"
+            text: '#ffffff',
+            background: '#cd3030'
         }
     },
     {
-        id: "rjx",
-        name: "RJX",
-        description: "Railjet Xpress",
+        id: 'rjx',
+        name: 'RJX',
+        description: 'Railjet Xpress',
         priority: 5,
-        vehicle: "TRAIN",
-        classification: "LONG_DISTANCE",
+        vehicle: 'TRAIN',
+        classification: 'LONG_DISTANCE',
         color: {
-            text: "#ffffff",
-            background: "#cd3030"
+            text: '#ffffff',
+            background: '#cd3030'
         }
     },
     {
-        id: "re",
-        name: "RE",
-        description: "Regionalexpress",
+        id: 're',
+        name: 'RE',
+        description: 'Regionalexpress',
         priority: 17,
-        vehicle: "TRAIN",
-        classification: "REGIONAL",
+        vehicle: 'TRAIN',
+        classification: 'REGIONAL',
         color: {
-            text: "#ffffff",
-            background: "#ff0000"
+            text: '#ffffff',
+            background: '#ff0000'
         }
     },
     {
-        id: "rex",
-        name: "RE",
-        description: "RegionalExpress",
+        id: 'rex',
+        name: 'RE',
+        description: 'RegionalExpress',
         priority: 17,
-        vehicle: "TRAIN",
-        classification: "REGIONAL",
+        vehicle: 'TRAIN',
+        classification: 'REGIONAL',
         color: {
-            text: "#ffffff",
-            background: "#ff0000"
+            text: '#ffffff',
+            background: '#ff0000'
         }
     },
     {
-        id: "rb",
-        name: "RB",
-        description: "Regionalbahn",
+        id: 'rb',
+        name: 'RB',
+        description: 'Regionalbahn',
         priority: 22,
-        vehicle: "TRAIN",
-        classification: "REGIONAL",
+        vehicle: 'TRAIN',
+        classification: 'REGIONAL',
         color: {
-            text: "#ffffff",
-            background: "#ff0000"
+            text: '#ffffff',
+            background: '#ff0000'
         }
     },
     {
-        id: "ruf",
-        name: "RUF",
-        description: "Rufbus",
+        id: 'ruf',
+        name: 'RUF',
+        description: 'Rufbus',
         priority: 28,
-        vehicle: "BUS",
-        classification: "REGIONAL",
+        vehicle: 'BUS',
+        classification: 'REGIONAL',
         color: {
-            text: "#ffffff",
-            background: "#808000"
+            text: '#ffffff',
+            background: '#808000'
         }
     },
     {
-        id: "s",
-        name: "S",
-        description: "City Train",
+        id: 's',
+        name: 'S',
+        description: 'City Train',
         priority: 23,
-        vehicle: "TRAIN",
-        classification: "REGIONAL",
+        vehicle: 'TRAIN',
+        classification: 'REGIONAL',
         color: {
-            text: "#ffffff",
-            background: "#008000"
+            text: '#ffffff',
+            background: '#008000'
         }
     },
     {
-        id: "t",
-        name: "T",
-        description: "Tram",
+        id: 't',
+        name: 'T',
+        description: 'Tram',
         priority: 25,
-        vehicle: "TRAIN",
-        classification: "REGIONAL",
+        vehicle: 'TRAIN',
+        classification: 'REGIONAL',
         color: {
-            text: "#ffffff",
-            background: "#808000"
+            text: '#ffffff',
+            background: '#808000'
         }
     },
     {
-        id: "tgv",
-        name: "TGV",
-        description: "Train à grande vitesse",
+        id: 'tgv',
+        name: 'TGV',
+        description: 'Train à grande vitesse',
         priority: 6,
-        vehicle: "TRAIN",
-        classification: "LONG_DISTANCE",
+        vehicle: 'TRAIN',
+        classification: 'LONG_DISTANCE',
         color: {
-            text: "#ffffff",
-            background: "#811863"
+            text: '#ffffff',
+            background: '#811863'
         }
     },
     {
-        id: "u",
-        name: "U",
-        description: "Underground Train",
+        id: 'u',
+        name: 'U',
+        description: 'Underground Train',
         priority: 23,
-        vehicle: "TRAIN",
-        classification: "REGIONAL",
+        vehicle: 'TRAIN',
+        classification: 'REGIONAL',
         color: {
-            text: "#ffffff",
-            background: "#0000a0"
+            text: '#ffffff',
+            background: '#0000a0'
         }
     }
 ];
@@ -539,7 +539,7 @@ INSERT IGNORE INTO type [
 DEFINE TABLE OVERWRITE operator SCHEMAFULL
     PERMISSIONS
         FOR select FULL,
-        FOR create, update, delete WHERE fn::user::has_permission($auth, "studio.operator");
+        FOR create, update, delete WHERE fn::user::has_permission($auth, 'studio.operator');
 DEFINE FIELD OVERWRITE id ON TABLE operator;
 DEFINE FIELD OVERWRITE name ON TABLE operator TYPE string;
 DEFINE FIELD OVERWRITE address ON TABLE operator TYPE option<object>;
@@ -559,11 +559,11 @@ DEFINE FIELD OVERWRITE website ON TABLE operator TYPE option<string> VALUE (IF $
 DEFINE TABLE OVERWRITE timetable TYPE NORMAL SCHEMAFULL
 	PERMISSIONS
 		FOR select FULL,
-        FOR create, update, delete WHERE fn::user::has_permission($auth, "studio.timetable");
+        FOR create, update, delete WHERE fn::user::has_permission($auth, 'studio.timetable');
 DEFINE FIELD OVERWRITE id ON TABLE timetable;
 DEFINE FIELD OVERWRITE name ON TABLE timetable TYPE string;
 
-DEFINE EVENT OVERWRITE timetable_delete ON TABLE timetable WHEN $event = "DELETE" THEN {
+DEFINE EVENT OVERWRITE timetable_delete ON TABLE timetable WHEN $event = 'DELETE' THEN {
     DELETE route:[$before.id, NONE]..=[$before.id, ..];
 };
 
@@ -574,7 +574,7 @@ DEFINE EVENT OVERWRITE timetable_delete ON TABLE timetable WHEN $event = "DELETE
 DEFINE TABLE OVERWRITE route TYPE NORMAL SCHEMAFULL
 	PERMISSIONS
 		FOR select FULL,
-        FOR create, update, delete WHERE fn::user::has_permission($auth, "studio.route");
+        FOR create, update, delete WHERE fn::user::has_permission($auth, 'studio.route');
 DEFINE FIELD OVERWRITE id ON TABLE route;
 DEFINE FIELD OVERWRITE name ON TABLE route TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
 DEFINE FIELD OVERWRITE timetable ON TABLE route TYPE record<timetable>;
@@ -583,7 +583,7 @@ DEFINE FIELD OVERWRITE designations[*].type ON TABLE route TYPE record<type>;
 DEFINE FIELD OVERWRITE designations[*].number ON TABLE route TYPE string;
 DEFINE FIELD OVERWRITE operator ON TABLE route TYPE option<record<operator>>;
 
-DEFINE EVENT OVERWRITE route_delete ON TABLE route WHEN $event = "DELETE" THEN {
+DEFINE EVENT OVERWRITE route_delete ON TABLE route WHEN $event = 'DELETE' THEN {
     DELETE line:[$before.id, NONE]..=[$before.id, ..];
 };
 
@@ -594,11 +594,11 @@ DEFINE EVENT OVERWRITE route_delete ON TABLE route WHEN $event = "DELETE" THEN {
 DEFINE TABLE OVERWRITE line SCHEMAFULL
 	PERMISSIONS
 		FOR select FULL,
-        FOR create, update, delete WHERE fn::user::has_permission($auth, "studio.line");
+        FOR create, update, delete WHERE fn::user::has_permission($auth, 'studio.line');
 DEFINE FIELD OVERWRITE id ON TABLE line;
 DEFINE FIELD OVERWRITE route ON TABLE line TYPE record<route>;
 
-DEFINE EVENT OVERWRITE line_delete ON TABLE line WHEN $event = "DELETE" THEN {
+DEFINE EVENT OVERWRITE line_delete ON TABLE line WHEN $event = 'DELETE' THEN {
     DELETE FROM $before.id WHERE ->connects;
     DELETE journey:[$before.id, NONE]..=[$before.id, ..];
 };
@@ -606,7 +606,7 @@ DEFINE EVENT OVERWRITE line_delete ON TABLE line WHEN $event = "DELETE" THEN {
 DEFINE TABLE OVERWRITE connects SCHEMAFULL TYPE RELATION
     PERMISSIONS
         FOR select FULL,
-        FOR create, update, delete WHERE fn::user::has_permission($auth, "studio.line");
+        FOR create, update, delete WHERE fn::user::has_permission($auth, 'studio.line');
 DEFINE FIELD OVERWRITE id ON TABLE connects;
 DEFINE FIELD OVERWRITE in ON TABLE connects TYPE record<line>;
 DEFINE FIELD OVERWRITE out ON TABLE connects TYPE record<stop>;
@@ -624,19 +624,19 @@ DEFINE FIELD OVERWRITE departure.platform ON TABLE connects TYPE string;
 DEFINE TABLE OVERWRITE journey SCHEMAFULL
 	PERMISSIONS
 		FOR select FULL,
-        FOR create, update, delete WHERE fn::user::has_permission($auth, "studio.journey");
+        FOR create, update, delete WHERE fn::user::has_permission($auth, 'studio.journey');
 DEFINE FIELD OVERWRITE id ON TABLE journey;
 DEFINE FIELD OVERWRITE line ON TABLE journey TYPE record<line>;
 DEFINE FIELD OVERWRITE canceled ON TABLE journey TYPE bool DEFAULT false;
 
-DEFINE EVENT OVERWRITE journey_delete ON TABLE journey WHEN $event = "DELETE" THEN {
+DEFINE EVENT OVERWRITE journey_delete ON TABLE journey WHEN $event = 'DELETE' THEN {
     DELETE FROM $before.id WHERE ->visits;
 };
 
 DEFINE TABLE OVERWRITE visits SCHEMAFULL TYPE RELATION
     PERMISSIONS
         FOR select FULL,
-        FOR create, update, delete WHERE fn::user::has_permission($auth, "studio.journey");
+        FOR create, update, delete WHERE fn::user::has_permission($auth, 'studio.journey');
 DEFINE FIELD OVERWRITE id ON TABLE visits;
 DEFINE FIELD OVERWRITE in ON TABLE visits TYPE record<journey>;
 DEFINE FIELD OVERWRITE out ON TABLE visits TYPE record<stop>;
@@ -657,18 +657,18 @@ DEFINE FIELD OVERWRITE realtime.departure.platform ON TABLE visits TYPE string;
 DEFINE TABLE OVERWRITE information SCHEMAFULL
     PERMISSIONS
         FOR select FULL,
-        FOR create, update, delete WHERE fn::user::has_permission($auth, "studio.information");
+        FOR create, update, delete WHERE fn::user::has_permission($auth, 'studio.information');
 
 DEFINE FIELD OVERWRITE id ON TABLE information;
 DEFINE FIELD OVERWRITE name ON TABLE information TYPE string;
 DEFINE FIELD OVERWRITE description ON TABLE information TYPE string;
-DEFINE FIELD OVERWRITE type ON TABLE information TYPE "INFORMATION" | "WARNING" | "DISRUPTION" | "CLEARANCE";
+DEFINE FIELD OVERWRITE type ON TABLE information TYPE 'INFORMATION' | 'WARNING' | 'DISRUPTION' | 'CLEARANCE';
 DEFINE FIELD OVERWRITE content ON TABLE information TYPE option<string>;
 
 DEFINE TABLE OVERWRITE informs SCHEMAFULL TYPE RELATION
     PERMISSIONS
         FOR select FULL,
-        FOR create, update, delete WHERE fn::user::has_permission($auth, "studio.information");
+        FOR create, update, delete WHERE fn::user::has_permission($auth, 'studio.information');
 DEFINE FIELD OVERWRITE id ON TABLE informs;
 DEFINE FIELD OVERWRITE in ON TABLE informs TYPE record<information>;
 DEFINE FIELD OVERWRITE out ON TABLE informs TYPE record;
@@ -680,24 +680,24 @@ DEFINE FIELD OVERWRITE out ON TABLE informs TYPE record;
 DEFINE TABLE OVERWRITE role SCHEMAFULL
 	PERMISSIONS
 		FOR select FULL,
-        FOR create, update, delete WHERE fn::user::has_permission($auth, "auth.role");
+        FOR create, update, delete WHERE fn::user::has_permission($auth, 'auth.role');
 DEFINE FIELD OVERWRITE id ON TABLE role;
 DEFINE FIELD OVERWRITE name ON role TYPE string;
 DEFINE FIELD OVERWRITE permissions ON TABLE role TYPE array<string> DEFAULT [];
 
 UPSERT role:admin CONTENT {
-    name: "admin",
+    name: 'admin',
     permissions: [
-        "studio.stop",
-        "studio.type",
-        "studio.operator",
-        "stop.timetable",
-        "studio.route",
-        "studio.line",
-        "studio.journey",
-        "studio.information",
-        "auth.role",
-        "auth.user",
+        'studio.stop',
+        'studio.type',
+        'studio.operator',
+        'stop.timetable',
+        'studio.route',
+        'studio.line',
+        'studio.journey',
+        'studio.information',
+        'auth.role',
+        'auth.user',
     ]
 };
 
@@ -707,32 +707,32 @@ UPSERT role:admin CONTENT {
 
 DEFINE TABLE OVERWRITE user SCHEMAFULL
 	PERMISSIONS
-		FOR select, create, update, delete WHERE id = $auth.id || fn::user::has_permission($auth, "auth.user");
+		FOR select, create, update, delete WHERE id = $auth.id || fn::user::has_permission($auth, 'auth.user');
 DEFINE FIELD OVERWRITE id ON TABLE user;
 DEFINE FIELD OVERWRITE name ON TABLE user TYPE string;
 DEFINE FIELD OVERWRITE email ON TABLE user TYPE string ASSERT string::is::email($value);
 DEFINE FIELD OVERWRITE password ON TABLE user TYPE string VALUE crypto::argon2::generate($value)
     PERMISSIONS
-        FOR select WHERE id = $auth.id || fn::user::has_permission($auth, "auth.user"),
-        FOR create, update, delete WHERE fn::user::has_permission($auth, "auth.user");
+        FOR select WHERE id = $auth.id || fn::user::has_permission($auth, 'auth.user'),
+        FOR create, update, delete WHERE fn::user::has_permission($auth, 'auth.user');
 DEFINE FIELD OVERWRITE roles ON TABLE user TYPE set<record<role>>
     PERMISSIONS
-        FOR select WHERE id = $auth.id || fn::user::has_permission($auth, "auth.user"),
-        FOR create, update, delete WHERE fn::user::has_permission($auth, "auth.user");
+        FOR select WHERE id = $auth.id || fn::user::has_permission($auth, 'auth.user'),
+        FOR create, update, delete WHERE fn::user::has_permission($auth, 'auth.user');
 DEFINE FIELD OVERWRITE permissions ON TABLE user TYPE set<string>
     PERMISSIONS
-        FOR select WHERE id = $auth.id || fn::user::has_permission($auth, "auth.user"),
-        FOR create, update, delete WHERE fn::user::has_permission($auth, "auth.user");
+        FOR select WHERE id = $auth.id || fn::user::has_permission($auth, 'auth.user'),
+        FOR create, update, delete WHERE fn::user::has_permission($auth, 'auth.user');
 DEFINE FIELD OVERWRITE account ON TABLE user TYPE object DEFAULT {}
     PERMISSIONS
-        FOR select WHERE id = $auth.id || fn::user::has_permission($auth, "auth.user"),
-        FOR create, update, delete WHERE fn::user::has_permission($auth, "auth.user");
+        FOR select WHERE id = $auth.id || fn::user::has_permission($auth, 'auth.user'),
+        FOR create, update, delete WHERE fn::user::has_permission($auth, 'auth.user');
 DEFINE FIELD OVERWRITE account.enabled ON TABLE user TYPE bool DEFAULT true;
 DEFINE FIELD OVERWRITE account.expires ON TABLE user TYPE option<datetime>;
 DEFINE FIELD OVERWRITE credentials ON TABLE user TYPE object DEFAULT {}
     PERMISSIONS 
-        FOR select WHERE id = $auth.id || fn::user::has_permission($auth, "auth.user"),
-        FOR create, update, delete WHERE fn::user::has_permission($auth, "auth.user");
+        FOR select WHERE id = $auth.id || fn::user::has_permission($auth, 'auth.user'),
+        FOR create, update, delete WHERE fn::user::has_permission($auth, 'auth.user');
 DEFINE FIELD OVERWRITE credentials.change ON TABLE user TYPE bool DEFAULT false;
 DEFINE FIELD OVERWRITE credentials.expires ON TABLE user TYPE option<datetime>;
 
@@ -771,7 +771,7 @@ DEFINE FIELD OVERWRITE new ON TABLE password_change_request TYPE string;
 DEFINE FIELD OVERWRITE new2 ON TABLE password_change_request TYPE string;
 DEFINE FIELD OVERWRITE created ON TABLE password_change_request TYPE datetime VALUE time::now() READONLY;
 
-DEFINE EVENT OVERWRITE password_change_request ON TABLE password_change_request WHEN $event = "CREATE" THEN {
+DEFINE EVENT OVERWRITE password_change_request ON TABLE password_change_request WHEN $event = 'CREATE' THEN {
     LET $user = (SELECT * FROM ONLY user WHERE name = $after.username AND crypto::argon2::compare(password, $after.old));
     IF (!$user) {
         THROW 'error.user.password.invalid: Your credentials are invalid!';
@@ -788,9 +788,9 @@ DEFINE EVENT OVERWRITE password_change_request ON TABLE password_change_request 
 INSERT IGNORE INTO user [
     {
         id: user:admin,
-        name: "admin",
-        email: "admin@trainwatch.derzauberer.eu",
-        password: "admin",
+        name: 'admin',
+        email: 'admin@trainwatch.derzauberer.eu',
+        password: 'admin',
         roles: [role:admin],
         permissions: [],
         account: {
@@ -804,9 +804,9 @@ INSERT IGNORE INTO user [
     },
     {
         id: user:guest,
-        name: "guest",
-        email: "guest@trainwatch.derzauberer.eu",
-        password: "guest",
+        name: 'guest',
+        email: 'guest@trainwatch.derzauberer.eu',
+        password: 'guest',
         roles: [],
         permissions: [],
         account: {
