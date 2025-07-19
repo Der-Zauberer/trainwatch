@@ -167,8 +167,8 @@ export class UserEditDto extends Filterable<UserEditDto> {
     password?: string
     roles: RecordId<'role'>[] = []
     permissions: string[] = []
-    account: { enabled: boolean, expires?: Date } = { enabled: true }
-    credentials: { change: boolean, expires?: Date } = { change: true }
+    account: { enabled: boolean, expiry?: Date } = { enabled: true }
+    credentials: { change: boolean, expiry?: Date } = { change: true }
 
     constructor(initial?: object) {
         super()

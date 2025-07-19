@@ -15,9 +15,9 @@
 
             <form v-if="profile.value" class="grid-cols-1" @submit.prevent="changePassword()">
                 <h6>{{ $t('action.changePassword') }}</h6>
-                <InputComponent label="Old Password" type="password" v-model="password.old"/>
-                <InputComponent label="New Password" type="password" v-model="password.new"/>
-                <InputComponent label="New Password" type="password" v-model="password.new2"/>
+                <InputComponent :label="t('entity.user.security.oldPassword')" type="password" v-model="password.old"/>
+                <InputComponent :label="t('entity.user.security.newPassword')" type="password" v-model="password.new"/>
+                <InputComponent :label="t('entity.user.security.repeatPassword')" type="password" v-model="password.repeat"/>
                 <p class="red-text" v-if="password.error">{{ password.error }}</p>
                 <input type="submit" :value="$t('action.changePassword')">
             </form>
@@ -32,7 +32,7 @@
 import InputComponent from '@/components/InputComponent.vue';
 import { parseCustomSurrealDbError } from '@/core/functions';
 import { resource } from '@/core/resource';
-import type { User } from '@/core/types';
+import { type PasswordChangeRequest, type User } from '@/core/types';
 import type { SurrealDbService } from '@/services/surrealdb.service';
 import { inject, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -44,14 +44,14 @@ const profile = resource({
     loader: () => surrealdb.info<User>()
 })
 
-const password = reactive<{ old?: string, new?: string, new2?: string, error?: string }>({})
+const password = reactive<PasswordChangeRequest & { error?: string }>({ old: '', new: '', repeat: '' })
 
 async function changePassword() {
     try {
        await surrealdb.insert('password_change_request', password)
-        delete password.old
-        delete password.new
-        delete password.new2
+        password.old = ''
+        password.new = ''
+        password.repeat = ''
         delete password.error
     } catch (exception) {
         const dbError = parseCustomSurrealDbError(exception)

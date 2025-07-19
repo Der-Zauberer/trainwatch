@@ -31,8 +31,11 @@ export class SurrealDbService extends Surreal {
         return jwt.raw
     }
 
-    async signinAndRedirect(credentials: RootAuth, defaultRoute: string | RouteLocationNormalized = '/') {
+    async signinAndRedirect(credentials: RootAuth) {
         await this.signin(credentials)
+    }
+
+    async redirectPostLogin(defaultRoute: string | RouteLocationNormalized = '/') {
         this.router.push(loginRedirect || defaultRoute)
         loginRedirect = undefined
     }

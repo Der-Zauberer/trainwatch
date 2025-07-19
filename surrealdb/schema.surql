@@ -711,7 +711,7 @@ DEFINE TABLE OVERWRITE user SCHEMAFULL
 DEFINE FIELD OVERWRITE id ON TABLE user;
 DEFINE FIELD OVERWRITE name ON TABLE user TYPE string;
 DEFINE FIELD OVERWRITE email ON TABLE user TYPE string ASSERT string::is::email($value);
-DEFINE FIELD OVERWRITE password ON TABLE user TYPE string VALUE (IF !$value.starts_with('$argon2id$') { crypto::argon2::generate($value) })
+DEFINE FIELD OVERWRITE password ON TABLE user TYPE string VALUE (IF !$value.starts_with('$argon2id$') { crypto::argon2::generate($value) } ELSE { $value })
     PERMISSIONS
         FOR select WHERE id = $auth.id || fn::user::has_permission($auth, 'auth.user'),
         FOR create, update, delete WHERE fn::user::has_permission($auth, 'auth.user');
@@ -728,13 +728,13 @@ DEFINE FIELD OVERWRITE account ON TABLE user TYPE object DEFAULT {}
         FOR select WHERE id = $auth.id || fn::user::has_permission($auth, 'auth.user'),
         FOR create, update, delete WHERE fn::user::has_permission($auth, 'auth.user');
 DEFINE FIELD OVERWRITE account.enabled ON TABLE user TYPE bool DEFAULT true;
-DEFINE FIELD OVERWRITE account.expires ON TABLE user TYPE option<datetime>;
+DEFINE FIELD OVERWRITE account.expiry ON TABLE user TYPE option<datetime>;
 DEFINE FIELD OVERWRITE credentials ON TABLE user TYPE object DEFAULT {}
     PERMISSIONS 
         FOR select WHERE id = $auth.id || fn::user::has_permission($auth, 'auth.user'),
         FOR create, update, delete WHERE fn::user::has_permission($auth, 'auth.user');
 DEFINE FIELD OVERWRITE credentials.change ON TABLE user TYPE bool DEFAULT false;
-DEFINE FIELD OVERWRITE credentials.expires ON TABLE user TYPE option<datetime>;
+DEFINE FIELD OVERWRITE credentials.expiry ON TABLE user TYPE option<datetime>;
 
 DEFINE INDEX OVERWRITE name ON user FIELDS name UNIQUE;
 DEFINE INDEX OVERWRITE email ON user FIELDS email UNIQUE;
@@ -744,9 +744,9 @@ DEFINE ACCESS OVERWRITE user ON DATABASE TYPE RECORD
 		LET $user = SELECT * FROM ONLY user WHERE name = $username AND crypto::argon2::compare(password, $password);
         IF !$user {
             THROW 'error.user.password.invalid: Your credentials are invalid!';
-        } ELSE IF $user.account.enabled == false || (type::is::datetime($user.account.expires) && $user.account.expires < time::now()) {
+        } ELSE IF $user.account.enabled == false || (type::is::datetime($user.account.expiry) && $user.account.expiry < time::now()) {
             THROW 'error.user.deactivated: Your account is deactivated!';
-        } ELSE IF $user.credentials.change == true || (type::is::datetime($user.credentials.expires) && $user.credentials.expires < time::now()) {
+        } ELSE IF $user.credentials.change == true || (type::is::datetime($user.credentials.expiry) && $user.credentials.expiry < time::now()) {
             THROW 'error.user.password.change.required: Your password have to be changed!';
         };
         RETURN $user;
@@ -768,19 +768,19 @@ DEFINE FIELD OVERWRITE id ON TABLE password_change_request;
 DEFINE FIELD OVERWRITE username ON TABLE password_change_request TYPE string DEFAULT (IF !$input.username && $auth { $auth.name });
 DEFINE FIELD OVERWRITE old ON TABLE password_change_request TYPE string;
 DEFINE FIELD OVERWRITE new ON TABLE password_change_request TYPE string;
-DEFINE FIELD OVERWRITE new2 ON TABLE password_change_request TYPE string;
+DEFINE FIELD OVERWRITE repeat ON TABLE password_change_request TYPE string;
 DEFINE FIELD OVERWRITE created ON TABLE password_change_request TYPE datetime VALUE time::now() READONLY;
 
 DEFINE EVENT OVERWRITE password_change_request ON TABLE password_change_request WHEN $event = 'CREATE' THEN {
     LET $user = (SELECT * FROM ONLY user WHERE name = $after.username AND crypto::argon2::compare(password, $after.old));
     IF !$user {
         THROW 'error.user.password.invalid: Your credentials are invalid!';
-    } ELSE IF $after.new != $after.new2 {
-        THROW 'error.user.password.change.typo: Your new passwords have to be the same!';
+    } ELSE IF $after.new != $after.repeat {
+        THROW 'error.user.password.change.repeat: Your new passwords have to be the same!';
     } ELSE IF $after.old == $after.new {
         THROW 'error.user.password.change.different: Your new password must be different from the old one!';
     } ELSE {
-        UPDATE $user.id SET password = $after.new, credentials.change = false, credentials.expires = NONE;
+        UPDATE $user.id SET password = $after.new, credentials.change = false, credentials.expiry = NONE;
     };
     DELETE $after.id;
 };
@@ -795,11 +795,11 @@ INSERT IGNORE INTO user [
         permissions: [],
         account: {
 			enabled: true,
-            expires: NONE
+            expiry: NONE
 		},
         credentials: {
 			chnage: false,
-            expires: NONE
+            expiry: NONE
 		}
     },
     {
@@ -811,11 +811,11 @@ INSERT IGNORE INTO user [
         permissions: [],
         account: {
 			enabled: false,
-            expires: NONE
+            expiry: NONE
 		},
         credentials: {
 			chnage: false,
-            expires: NONE
+            expiry: NONE
 		}
     }
 ];

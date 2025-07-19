@@ -15,6 +15,7 @@
         "resetSearch": "Suche Zurücksetzen",
         "changePassword": "Passwort ändern",
         "resetPassword": "Passwort zurücksetzen",
+        "login": "Einloggen",
         "delete": "Löschen",
         "save": "Speichern",
         "cancel": "Abbrechen"
@@ -31,7 +32,7 @@
                 "invalid": "Deine Zugangsdaten sind falsch!",
                 "change": {
                     "required": "Dein Passwort muss geändert werden!",
-                    "typo": "Deine neuen Passwörter müssen übereinstimmen!",
+                    "repeat": "Deine neuen Passwörter müssen übereinstimmen!",
                     "different": "Dein neues Passwort muss anders sein als das alte!"
                 }
             },
@@ -169,14 +170,19 @@
             "account": {
                 "account": "Benutzerprofil | Benutzerprofile",
                 "enabled": "Benutzerprofil aktiviert",
-                "expires": "Benutzerprofil Ablauf"
+                "expiry": "Benutzerprofil Ablauf"
             },
             "credentials": {
                 "credentials": "Zugangsdaten",
                 "change": "Passwortänderung erzwingen",
-                "expires": "Password Ablauf"
+                "expiry": "Password Ablauf"
             },
-            "security": "Sicherheit"
+            "security": {
+                "security": "Sicherheit",
+                "oldPassword": "Altes Passwort",
+                "newPassword": "Neues Passwort",
+                "repeatPassword": "Neues Passwort wiederholen"
+            }
         }
     }
 }

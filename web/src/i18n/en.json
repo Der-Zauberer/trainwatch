@@ -15,6 +15,7 @@
         "resetSearch": "Reset Search",
         "changePassword": "Change Password",
         "resetPassword": "Reset Password",
+        "login": "Login",
         "delete": "Delete",
         "save": "Save",
         "cancel": "Cancel"
@@ -31,7 +32,7 @@
                 "invalid": "Your credentials are invalid!",
                 "change": {
                     "required": "Your password have to be changed!",
-                    "typo": "Your new passwords have to be the same!",
+                    "repeat": "Your new passwords have to be the same!",
                     "different": "Your new password must be different from the old one!"
                 }
             },
@@ -169,14 +170,19 @@
             "account": {
                 "account": "Account | Accounts",
                 "enabled": "Account enabled",
-                "expires": "Account expiry"
+                "expiry": "Account expiry"
             },
             "credentials": {
                 "credentials": "Credentials",
                 "change": "Force Password change",
-                "expires": "Password expiry"
+                "expiry": "Password expiry"
             },
-            "security": "Security"
+            "security": {
+                "security": "Security",
+                "oldPassword": "Old Password",
+                "newPassword": "New Password",
+                "repeatPassword": "Repeat Password"
+            }
         }
     }
 }

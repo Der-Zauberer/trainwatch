@@ -191,12 +191,19 @@ export type User = Entity<'user'> & {
     permissions: string[]
     account: {
         enabled: boolean
-        expires?: Date
+        expiry?: Date
     }
     credentials: {
         change: boolean
-        expires?: Date
+        expiry?: Date
     }
+}
+
+export type PasswordChangeRequest = {
+    username?: string
+    old: string
+    new: string
+    repeat: string
 }
 
 export type BoardLine = {
