@@ -1,9 +1,15 @@
 <template>
     <div class="container-xl" v-if="!route.params.id">
-        <TableComponent v-model="parameter" :resource="users" :header="[ $t('entity.general.id'), $t('entity.general.name') ]" @add="router.push({ name: 'studio_user_edit', params: { id: 'new' } })">
+        <TableComponent v-model="parameter" :resource="users" :header="[ $t('entity.general.id'), $t('entity.general.name'), $t('entity.user.status.status') ]" @add="router.push({ name: 'studio_user_edit', params: { id: 'new' } })">
             <a v-for="user of users.value" :key="user.id.id.toString()" @click="router.push({ name: 'studio_user_edit', params: { id: user.id.id.toString() } })">
                 <div><samp class="id">{{ user.id.id.toString() }}</samp></div>
                 <div>{{ user.name }}<swd-subtitle>{{ user.email }}</swd-subtitle></div>
+                <div>
+                    <swd-chip class="green-color" v-if="user.account.enabled && !(user.account.expiry && user.account.expiry < new Date())">{{ $t('entity.user.status.enabled') }}</swd-chip>
+                    <swd-chip class="red-color" v-if="!user.account.enabled">{{ $t('entity.user.status.disabled') }}</swd-chip>
+                    <swd-chip class="red-color" v-if="user.account.enabled && user.account.expiry && user.account.expiry < new Date()">{{ $t('entity.user.status.expired') }}</swd-chip>
+                    <swd-subtitle v-if="user.account.expiry">{{ user.account.expiry?.toLocaleDateString([], { day: '2-digit', month: '2-digit', year: 'numeric' }) }}</swd-subtitle>
+                </div>
             </a>
         </TableComponent>
     </div>
@@ -18,12 +24,12 @@
             <InputComponent v-if="changePassword" label="Passwort ändern" v-model="edit.value.password"/>
         </div>
 
-        <h6>{{ $t('entity.user.security') }}</h6>
+        <h6>{{ $t('entity.user.security.security') }}</h6>
         <div class="grid-cols-sm-2 grid-cols-1">
             <InputComponent :label="$t('entity.user.account.enabled')" type="checkbox" v-model="edit.value.account.enabled"/>
-            <InputComponent :label="$t('entity.user.account.expires')" type="date" v-model="edit.value.account.expires"/>
+            <InputComponent :label="$t('entity.user.account.expiry')" type="date" :value="dateToISODate(edit.value.account.expiry)" @input="edit.value.account.expiry = isoDateToDate(($event.target as HTMLInputElement).value)"/>
             <InputComponent :label="$t('entity.user.credentials.change')" type="checkbox" v-model="edit.value.credentials.change"/>
-            <InputComponent :label="$t('entity.user.credentials.expires')" type="date" v-model="edit.value.credentials.expires"/>
+            <InputComponent :label="$t('entity.user.credentials.expiry')" type="date" :value="dateToISODate(edit.value.credentials.expiry)" @input="edit.value.credentials.expiry = isoDateToDate(($event.target as HTMLInputElement).value)"/>
         </div>
 
         <h6>{{ $t('entity.role.role', 0) }}</h6>
@@ -59,6 +65,7 @@ import InputComponent from '@/components/InputComponent.vue';
 import InputRecordComponent from '@/components/InputRecordComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
 import { UserEditDto } from '@/core/dtos';
+import { dateToISODate, isoDateToDate } from '@/core/functions';
 import { resource } from '@/core/resource';
 import type { Parameter, User } from '@/core/types';
 import type { SurrealDbService } from '@/services/surrealdb.service';

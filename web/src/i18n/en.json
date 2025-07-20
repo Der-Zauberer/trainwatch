@@ -26,6 +26,14 @@
             "description": "Looks like there’s nothing here. Create a new entry when you’re ready."
         }
     },
+    "event": {
+        "connection": "Can't connect to server!",
+        "user": {
+            "password": {
+                "change": "Your password has been changes successfully!"
+            }
+        }
+    },
     "error": {
         "user": {
             "password": {
@@ -182,6 +190,12 @@
                 "oldPassword": "Old Password",
                 "newPassword": "New Password",
                 "repeatPassword": "Repeat Password"
+            },
+            "status": {
+                "status": "Status",
+                "enabled": "Enabled",
+                "disabled": "Disabled",
+                "expired": "Expired"
             }
         }
     }

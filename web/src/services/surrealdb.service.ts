@@ -1,7 +1,7 @@
 import { Cookies } from '@/core/cookies';
 import { JwtToken } from '@/core/jwt';
 import type { User } from '@/core/types';
-import { ConnectionStatus, Surreal, type RootAuth, type Token } from 'surrealdb';
+import { ConnectionStatus, Surreal, SurrealDbError, type RootAuth, type Token } from 'surrealdb';
 import { ref, type App, type Ref } from 'vue';
 import type { NavigationGuardNext, RouteLocationNormalized, Router } from 'vue-router';
 
@@ -70,6 +70,30 @@ export class SurrealDbService extends Surreal {
     
     getUserAsRef(): Ref<User | undefined> {
         return this.user
+    }
+
+    parseCustomSurrealDbError(exception: unknown): { key: string, success: boolean } {
+        console.log(JSON.stringify(exception))
+        const error = exception as SurrealDbError
+        if (error?.name === 'ResponseError' && error.message) {
+            const [prefix, message] = error.message.split('There was a problem with the database: An error occurred: ')
+            const key = message ? message.split(':')[0] : undefined
+            if (key) {
+                return { key, success: true }
+            } else {
+                return { key: prefix, success: false }
+            }
+        } else if (error?.name === 'VersionRetrievalFailure') {
+            return { key: 'error.connection', success: true }
+        }
+        return { key: error.toString(), success: false }
+    }
+
+    generateGUID(timebased?: boolean) {
+        const chars = '0123456789abcdefghijklmnopqrstuvwxyz'
+        let guid = timebased ? Math.floor(Date.now() / 1000).toString(36) : ''
+        for (let i = guid.length; i < 20; i++) guid += chars[Math.floor(Math.random() * chars.length)]
+        return guid
     }
 
 }

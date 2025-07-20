@@ -1,5 +1,3 @@
-import type { SurrealDbError } from "surrealdb"
-
 export function enumToArray(enumeration: object): string[] {
     return Object.keys(enumeration).filter(value => isNaN(Number(value)))
 }
@@ -13,23 +11,14 @@ export function timeToDate(time: string) {
     return new Date(`0000-01-01T${time}`)
 }
 
-export function guid(timebased?: boolean) {
-    const chars = '0123456789abcdefghijklmnopqrstuvwxyz'
-    let guid = timebased ? Math.floor(Date.now() / 1000).toString(36) : ''
-    for (let i = guid.length; i < 20; i++) guid += chars[Math.floor(Math.random() * chars.length)]
-    return guid
+export function dateToLocalDate(date?: Date): string | undefined {
+    return date ? date.toLocaleDateString([], { day: '2-digit', month: '2-digit', year: 'numeric' }) : undefined
 }
 
-export function parseCustomSurrealDbError(exception: unknown): { key: string, success: boolean } {
-    const error = exception as SurrealDbError
-    if (error?.name === 'ResponseError' && error.message) {
-        const [prefix, message] = error.message.split('There was a problem with the database: An error occurred: ')
-        const key = message ? message.split(':')[0] : undefined
-        if (key) {
-            return { key, success: true }
-        } else {
-            return { key: prefix, success: false }
-        }
-    }
-    return { key: error.toString(), success: false }
+export function dateToISODate(date?: Date): string | undefined {
+    return date ? date.toISOString().split('T')[0] : undefined
+}
+
+export function isoDateToDate(string?: string): Date | undefined {
+    return string && string.match(/\d{4}-\d{2}-\d{2}/g) ? new Date(string) : undefined
 }

@@ -19,6 +19,7 @@
                 <InputComponent :label="t('entity.user.security.newPassword')" type="password" v-model="password.new"/>
                 <InputComponent :label="t('entity.user.security.repeatPassword')" type="password" v-model="password.repeat"/>
                 <p class="red-text" v-if="password.error">{{ password.error }}</p>
+                <p class="green-text" v-if="password.success">{{ t('event.user.password.change') }}</p>
                 <input type="submit" :value="$t('action.changePassword')">
             </form>
 
@@ -30,7 +31,6 @@
 
 <script setup lang="ts">
 import InputComponent from '@/components/InputComponent.vue';
-import { parseCustomSurrealDbError } from '@/core/functions';
 import { resource } from '@/core/resource';
 import { type PasswordChangeRequest, type User } from '@/core/types';
 import type { SurrealDbService } from '@/services/surrealdb.service';
@@ -44,7 +44,7 @@ const profile = resource({
     loader: () => surrealdb.info<User>()
 })
 
-const password = reactive<PasswordChangeRequest & { error?: string }>({ old: '', new: '', repeat: '' })
+const password = reactive<PasswordChangeRequest & { error?: string } & { success?: boolean }>({ old: '', new: '', repeat: '' })
 
 async function changePassword() {
     try {
@@ -53,9 +53,11 @@ async function changePassword() {
         password.new = ''
         password.repeat = ''
         delete password.error
+        password.success = true
     } catch (exception) {
-        const dbError = parseCustomSurrealDbError(exception)
+        const dbError = surrealdb.parseCustomSurrealDbError(exception)
         password.error = dbError.success ? t(dbError.key) : dbError.key
+        password.success = false
     }
 }
 </script>

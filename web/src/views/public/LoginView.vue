@@ -7,15 +7,8 @@
 
         <form @submit.prevent="login()" v-if="!loading && !change">
 
-            <swd-input>
-                <label for="login-username">{{ t('entity.user.username') }}</label>
-                <input id="login-username" type="text" v-model.lazy="credentials.username" :invalid="error">
-            </swd-input>
-
-            <swd-input>
-                <label for="login-password">{{ t('entity.user.password') }}</label>
-                <input id="login-password" type="password" v-model.lazy="credentials.password" :invalid="error">
-            </swd-input>
+            <InputComponent :label="t('entity.user.username')" v-model.lazy="credentials.username" :invalid="!!error"/>
+            <InputComponent :label="t('entity.user.password')" v-model.lazy="credentials.password" type="password" :invalid="error !== undefined"/>
 
             <p class="red-text">{{ error }}</p>
 
@@ -27,29 +20,18 @@
 
         <form @submit.prevent="changePassword()" v-if="!loading && change">
 
-            <swd-input>
-                <label for="old-password">{{ t('entity.user.security.oldPassword') }}</label>
-                <input id="old-password" type="password" v-model.lazy="change.old" :invalid="error">
-            </swd-input>
-
-            <swd-input>
-                <label for="new-password">{{ t('entity.user.security.newPassword') }}</label>
-                <input id="new-password" type="password" v-model.lazy="change.new" :invalid="error">
-            </swd-input>
-
-            <swd-input>
-                <label for="repeat-password">{{ t('entity.user.security.repeatPassword') }}</label>
-                <input id="repeat-password" type="password" v-model.lazy="change.repeat" :invalid="error">
-            </swd-input>
+            <InputComponent :label="t('entity.user.security.oldPassword')" type="password" v-model.lazy="change.old" :invalid="error !== undefined"/>
+            <InputComponent :label="t('entity.user.security.newPassword')" type="password" v-model.lazy="change.new" :invalid="error !== undefined"/>
+            <InputComponent :label="t('entity.user.security.repeatPassword')" type="password" v-model.lazy="change.repeat" :invalid="error !== undefined"/>
                 
-            <p class="red-text">{{ error }}</p>
+            <p class="red-text">{{ t('error.user.password.change.required') || error }}</p>
 
             <div class="flex flex-end margin-0">
                 <input class="width-100" type="submit" :value="t('action.changePassword')">
             </div>
 
         </form>
-
+        
     </swd-card-outline>
 </template>
 
@@ -77,7 +59,7 @@ form * { margin: 0 }
 </style>
 
 <script setup lang="ts">
-import { parseCustomSurrealDbError } from '@/core/functions';
+import InputComponent from '@/components/InputComponent.vue';
 import type { PasswordChangeRequest } from '@/core/types';
 import type { SurrealDbService } from '@/services/surrealdb.service';
 import { inject, ref, reactive, toRaw } from 'vue';
@@ -98,11 +80,13 @@ async function login() {
         await surrealdb.redirectPostLogin('/studio')
         error.value = undefined
     } catch (exception) {
-        const dbError = parseCustomSurrealDbError(exception)
+        const dbError = surrealdb.parseCustomSurrealDbError(exception)
         if (dbError.success && dbError.key === 'error.user.password.change.required') {
             change.value = { username: credentials.username, old: '', new: '', repeat: '' }
+            error.value = undefined
+        } else {
+            error.value = dbError.success ? t(dbError.key) : dbError.key
         }
-        error.value = dbError.success ? t(dbError.key) : dbError.key
     } finally {
         loading.value = false
     }
@@ -117,7 +101,7 @@ async function changePassword() {
         await surrealdb.signinAndRedirect(toRaw(credentials))
         await surrealdb.redirectPostLogin('/studio')
     } catch (exception) {
-        const dbError = parseCustomSurrealDbError(exception)
+        const dbError = surrealdb.parseCustomSurrealDbError(exception)
         error.value = dbError.success ? t(dbError.key) : dbError.key
     } finally {
         loading.value = false

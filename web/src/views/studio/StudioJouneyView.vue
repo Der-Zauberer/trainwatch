@@ -127,7 +127,7 @@ type Visits = {
 /*
 function createEmptyVisits(journey: RecordId<'journey'>): Visits {
     const visits: Visits = {
-        id: new RecordId('visits', guid()),
+        id: new RecordId('visits', surealdb.generateGUID()),
         in: journey,
         out: new RecordId('stop', ''),
         cancelled: false,

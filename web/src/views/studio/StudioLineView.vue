@@ -80,7 +80,7 @@ import EditFormComponent, { type EditActions } from '@/components/EditFormCompon
 import { LineEditDto } from '@/core/dtos';
 import InputRecordComponent from '@/components/InputRecordComponent.vue';
 import type { SurrealDbService } from '@/services/surrealdb.service';
-import { dateToTime, guid, timeToDate } from '@/core/functions';
+import { dateToTime, timeToDate } from '@/core/functions';
 
 const route = useRoute()
 const router = useRouter()
@@ -160,7 +160,7 @@ type Connects = {
 
 function createEmptyConnects(line: RecordId<'line'>): Connects {
     const connects: Connects = {
-        id: new RecordId('connects', guid()),
+        id: new RecordId('connects', surrealdb.generateGUID()),
         in: line,
         out: new RecordId('stop', ''),
         arrival: {

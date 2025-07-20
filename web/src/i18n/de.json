@@ -26,7 +26,15 @@
             "description": "Sieht ziemlich leer aus. Erstelle einen neuen Eintrag, wenn du soweit bist."
         }
     },
+    "event": {
+        "user": {
+            "password": {
+                "change": "Dein Passwort wurde erfolgreich geupdated!"
+            }
+        }
+    },
     "error": {
+        "connection": "Verbindung zum Server nicht möglich!",
         "user": {
             "password": {
                 "invalid": "Deine Zugangsdaten sind falsch!",
@@ -182,6 +190,12 @@
                 "oldPassword": "Altes Passwort",
                 "newPassword": "Neues Passwort",
                 "repeatPassword": "Neues Passwort wiederholen"
+            },
+            "status": {
+                "status": "Status",
+                "enabled": "Aktiviert",
+                "disabled": "Deaktiviert",
+                "expired": "Abgelaufen"
             }
         }
     }
