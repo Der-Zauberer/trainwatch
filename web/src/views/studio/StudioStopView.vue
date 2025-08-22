@@ -1,6 +1,6 @@
 <template>
     <div class="container-xl" v-if="!route.params.id">
-        <TableComponent v-model="parameter" :header="[ $t('entity.general.id'), $t('entity.general.name') ]" :resource="stops" @add="router.push({ name: 'studio_stop_edit', params: { id: 'new' } })">
+        <TableComponent :modelValue="parameter" @update:modelValue="Object.assign(parameter, $event)" :header="[ $t('entity.general.id'), $t('entity.general.name') ]" :resource="stops" @add="router.push({ name: 'studio_stop_edit', params: { id: 'new' } })">
             <a v-for="stop of stops.value" :key="stop.id.id.toString()" @click="router.push({ name: 'studio_stop_edit', params: { id: stop.id.id.toString() } })">
                 <div><samp class="id">{{ stop.id.id.toString() }}</samp></div>
                 <div>{{ stop.name }}<swd-subtitle v-if="stop.address?.federalState || stop.address?.country">{{ [stop.address.federalState, stop.address.country].join(', ') }}</swd-subtitle></div>

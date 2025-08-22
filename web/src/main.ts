@@ -54,13 +54,17 @@ const router = createRouter({
     ],
 })
 
-await initializeI18n({
-    languages: ['en', 'de'],
-    fallback: 'en'
-})
+;(async () => {
 
-const app = createApp(App)
-app.use(router)
-app.use(i18n)
-app.use(surrealdbService)
-app.mount('#app')
+    await initializeI18n({
+        languages: ['en', 'de'],
+        fallback: 'en'
+    })
+
+    const app = createApp(App)
+    app.use(router)
+    app.use(i18n)
+    app.use(surrealdbService)
+    app.mount('#app')
+
+})()

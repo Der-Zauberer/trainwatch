@@ -1,6 +1,6 @@
 <template>
     <div class="container-xl" v-if="!route.params.id">
-        <TableComponent v-model="parameter" :resource="roles" :header="[ $t('entity.general.id'), $t('entity.general.name') ]" @add="router.push({ name: 'studio_role_edit', params: { id: 'new' } })">
+        <TableComponent :modelValue="parameter" @update:modelValue="Object.assign(parameter, $event)" :resource="roles" :header="[ $t('entity.general.id'), $t('entity.general.name') ]" @add="router.push({ name: 'studio_role_edit', params: { id: 'new' } })">
             <a v-for="role of roles.value" :key="role.id.id.toString()" @click="router.push({ name: 'studio_role_edit', params: { id: role.id.id.toString() } })">
                 <div><samp class="id">{{ role.id.id.toString() }}</samp></div>
                 <div>{{ role.name }}</div>

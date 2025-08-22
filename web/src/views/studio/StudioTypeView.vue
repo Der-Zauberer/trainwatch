@@ -1,6 +1,6 @@
 <template>
     <div class="container-xl" v-if="!route.params.id">
-        <TableComponent v-model="parameter" :resource="types" :header="[ $t('entity.general.id'), $t('entity.general.name'), $t('entity.general.description') ]" @add="router.push({ name: 'studio_type_edit', params: { id: 'new' } })">
+        <TableComponent :modelValue="parameter" @update:modelValue="Object.assign(parameter, $event)" :resource="types" :header="[ $t('entity.general.id'), $t('entity.general.name'), $t('entity.general.description') ]" @add="router.push({ name: 'studio_type_edit', params: { id: 'new' } })">
             <a v-for="type of types.value" :key="type.id.id.toString()" @click="router.push({ name: 'studio_type_edit', params: { id: type.id.id.toString() } })">
                 <div><samp class="id">{{ type.id.id }}</samp></div>
                 <div><DesignationChipComponent :type="type"/></div>
