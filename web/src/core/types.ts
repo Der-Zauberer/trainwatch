@@ -199,13 +199,6 @@ export type User = Entity<'user'> & {
     }
 }
 
-export type PasswordChangeRequest = {
-    username?: string
-    old: string
-    new: string
-    repeat: string
-}
-
 export type BoardLine = {
     id: RecordId<'connects'>
     arrival: { 

@@ -18,7 +18,7 @@
           </div>
           <RouterLink to="/profile">{{ $t('page.profile') }}</RouterLink>
           <RouterLink to="/studio">{{ $t('page.studio') }}</RouterLink>
-          <a @click="surrealdb.invalidateAndRedirect()">{{ $t('page.logout') }}</a>
+          <a @click="surrealdb.invalidate(); surrealdb.redirectPostInvalidate()">{{ $t('page.logout') }}</a>
         </swd-selection>
       </swd-dropdown-content>
     </swd-dropdown>

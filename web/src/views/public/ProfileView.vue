@@ -32,8 +32,8 @@
 <script setup lang="ts">
 import InputComponent from '@/components/InputComponent.vue';
 import { resource } from '@/core/resource';
-import { type PasswordChangeRequest, type User } from '@/core/types';
-import type { SurrealDbService } from '@/services/surrealdb.service';
+import { type User } from '@/core/types';
+import type { PasswordChangeRequest, SurrealDbService } from '@/services/surrealdb.service';
 import { inject, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -44,11 +44,11 @@ const profile = resource({
     loader: () => surrealdb.info<User>()
 })
 
-const password = reactive<PasswordChangeRequest & { error?: string } & { success?: boolean }>({ old: '', new: '', repeat: '' })
+const password = reactive<PasswordChangeRequest & { error?: string } & { success?: boolean }>({ username: '' , old: '', new: '', repeat: '' })
 
 async function changePassword() {
     try {
-       await surrealdb.insert('password_change_request', password)
+        await surrealdb.changePassword({ ...password, username: profile.value?.name || ''})
         password.old = ''
         password.new = ''
         password.repeat = ''

@@ -5,7 +5,7 @@
 
         <swd-loading-spinner loading="true" v-if="loading"></swd-loading-spinner>
 
-        <form @submit.prevent="login()" v-if="!loading && !change">
+        <form v-if="!loading && !change" @submit.prevent="login()">
 
             <InputComponent :label="t('entity.user.username')" v-model.lazy="credentials.username" :invalid="!!error"/>
             <InputComponent :label="t('entity.user.password')" v-model.lazy="credentials.password" type="password" :invalid="error !== undefined"/>
@@ -18,7 +18,7 @@
 
         </form>
 
-        <form @submit.prevent="changePassword()" v-if="!loading && change">
+        <form v-if="!loading && change" @submit.prevent="changePassword(change)">
 
             <InputComponent :label="t('entity.user.security.oldPassword')" type="password" v-model.lazy="change.old" :invalid="error !== undefined"/>
             <InputComponent :label="t('entity.user.security.newPassword')" type="password" v-model.lazy="change.new" :invalid="error !== undefined"/>
@@ -60,8 +60,7 @@ form * { margin: 0 }
 
 <script setup lang="ts">
 import InputComponent from '@/components/InputComponent.vue';
-import type { PasswordChangeRequest } from '@/core/types';
-import type { SurrealDbService } from '@/services/surrealdb.service';
+import type { PasswordChangeRequest, SurrealDbService } from '@/services/surrealdb.service';
 import { inject, ref, reactive, toRaw } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -76,7 +75,7 @@ const error = ref<string>()
 async function login() {
     loading.value = true
     try {
-        await surrealdb.signinAndRedirect(toRaw(credentials))
+        await surrealdb.signin(toRaw(credentials))
         await surrealdb.redirectPostLogin('/studio')
         error.value = undefined
     } catch (exception) {
@@ -92,14 +91,12 @@ async function login() {
     }
 }
 
-async function changePassword() {
+async function changePassword(credentials: PasswordChangeRequest) {
     loading.value = true
     try {
-        await surrealdb.insert('password_change_request', change.value)
-        if (change.value?.new) credentials.password = change.value?.new
-        change.value = undefined
-        await surrealdb.signinAndRedirect(toRaw(credentials))
+        await surrealdb.changePassword(credentials)
         await surrealdb.redirectPostLogin('/studio')
+        change.value = undefined
     } catch (exception) {
         const dbError = surrealdb.parseCustomSurrealDbError(exception)
         error.value = dbError.success ? t(dbError.key) : dbError.key
