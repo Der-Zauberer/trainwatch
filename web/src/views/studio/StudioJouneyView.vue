@@ -37,7 +37,7 @@
 
             <swd-input>
                 <label>{{ $t('entity.traffic.canceled') }}</label>
-                <input v-model="stop.cancelled" type="checkbox">
+                <input v-model="stop.canceled" type="checkbox">
             </swd-input>
         </div>
     </EditFormComponent>
@@ -101,7 +101,35 @@ const editVisits = resource({
 })
 
 const actions: EditActions = {
-    save: async (id?: RecordId) => id === undefined ? await surrealdb.insert(edit.value?.filterBeforeSubmit()) : await surrealdb.update(id, edit.value?.filterBeforeSubmit()),
+    save: async (id?: RecordId) => {
+        console.log(editVisits.value)
+        await surrealdb.query(surql`
+            BEGIN TRANSACTION;
+
+            IF ${id === undefined} {
+                LET $journey = (INSERT INTO journey ${edit.value?.filterBeforeSubmit()})[0];
+                FOR $connects IN (SELECT VALUE line->connects.* FROM ONLY $journey.id) {
+                    INSERT RELATION INTO visits {
+                        in: $journey.id,
+                        out: $connects.out,
+                        canceled: false,
+                        sceduled: $connects.id,
+                        realtime: {
+                            arrival: $connects.arrival,
+                            departure: $connects.departure
+                        }
+                    };
+                }
+            } ELSE {
+                UPDATE ${id} CONTENT ${edit.value?.filterBeforeSubmit()};
+                FOR $visit IN ${editVisits.value?.map(visit => (visit.sceduled = visit.sceduled.id as unknown as RecordId<'connects'>, visit))} {
+                    UPDATE $visit.id CONTENT $visit;
+                };
+            };
+
+            COMMIT TRANSACTION;       
+        `)
+    },
     delete: async (id: RecordId) => await surrealdb.delete(id),
     close: () => (router.back(), journeys.reload())
 }
@@ -110,8 +138,8 @@ type Visits = {
     id: RecordId<'visits'>
     in: RecordId<'journey'>
     out: RecordId<'stop'>
-    cancelled: boolean
-    sceduled: RecordId<'line'>
+    canceled: boolean
+    sceduled: RecordId<'connects'>
     realtime: {
         arrival: { 
             platform: string,

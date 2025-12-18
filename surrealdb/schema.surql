@@ -707,14 +707,18 @@ UPSERT role:admin CONTENT {
 
 DEFINE TABLE OVERWRITE user SCHEMAFULL
 	PERMISSIONS
-		FOR select, create, update, delete WHERE id = $auth.id || fn::user::has_permission($auth, 'auth.user');
+		FOR select, update WHERE id = $auth.id || fn::user::has_permission($auth, 'auth.user'),
+        FOR create, delete WHERE fn::user::has_permission($auth, 'auth.user');
 DEFINE FIELD OVERWRITE id ON TABLE user;
 DEFINE FIELD OVERWRITE name ON TABLE user TYPE string;
 DEFINE FIELD OVERWRITE email ON TABLE user TYPE string ASSERT string::is::email($value);
-DEFINE FIELD OVERWRITE password ON TABLE user TYPE string VALUE (IF !$value.starts_with('$argon2id$') { crypto::argon2::generate($value) } ELSE { $value })
+DEFINE FIELD OVERWRITE password ON TABLE user TYPE string VALUE (IF !$value || $value.starts_with('$argon2id$') { $value } ELSE { crypto::argon2::generate($value) })
     PERMISSIONS
-        FOR select WHERE id = $auth.id || fn::user::has_permission($auth, 'auth.user'),
+        FOR select NONE,
         FOR create, update, delete WHERE fn::user::has_permission($auth, 'auth.user');
+DEFINE FIELD OVERWRITE token ON TABLE user TYPE option<string> VALUE (IF !$value || $value.starts_with('$argon2id$') { $value } ELSE { crypto::argon2::generate($value) })
+    PERMISSIONS
+        FOR select, create, update, delete NONE;
 DEFINE FIELD OVERWRITE roles ON TABLE user TYPE set<record<role>>
     PERMISSIONS
         FOR select WHERE id = $auth.id || fn::user::has_permission($auth, 'auth.user'),
@@ -759,19 +763,19 @@ DEFINE ACCESS OVERWRITE user ON DATABASE TYPE RECORD
             roles: [],
             permissions: []
 		}
-	);
+	) DURATION FOR TOKEN 1h, FOR SESSION 1h;
 
-DEFINE TABLE OVERWRITE password_change_request SCHEMAFULL
+DEFINE TABLE OVERWRITE _password_change_request SCHEMAFULL
 	PERMISSIONS
 		FOR create FULL;
-DEFINE FIELD OVERWRITE id ON TABLE password_change_request;
-DEFINE FIELD OVERWRITE username ON TABLE password_change_request TYPE string DEFAULT (IF !$input.username && $auth { $auth.name });
-DEFINE FIELD OVERWRITE old ON TABLE password_change_request TYPE string;
-DEFINE FIELD OVERWRITE new ON TABLE password_change_request TYPE string;
-DEFINE FIELD OVERWRITE repeat ON TABLE password_change_request TYPE string;
-DEFINE FIELD OVERWRITE created ON TABLE password_change_request TYPE datetime VALUE time::now() READONLY;
+DEFINE FIELD OVERWRITE id ON TABLE _password_change_request;
+DEFINE FIELD OVERWRITE username ON TABLE _password_change_request TYPE string DEFAULT (IF !$input.username && $auth { $auth.name });
+DEFINE FIELD OVERWRITE old ON TABLE _password_change_request TYPE string;
+DEFINE FIELD OVERWRITE new ON TABLE _password_change_request TYPE string;
+DEFINE FIELD OVERWRITE repeat ON TABLE _password_change_request TYPE string;
+DEFINE FIELD OVERWRITE created ON TABLE _password_change_request TYPE datetime VALUE time::now() READONLY;
 
-DEFINE EVENT OVERWRITE password_change_request ON TABLE password_change_request WHEN $event = 'CREATE' THEN {
+DEFINE EVENT OVERWRITE _refresh_token_request ON TABLE _password_change_request WHEN $event = 'CREATE' THEN {
     LET $user = (SELECT * FROM ONLY user WHERE name = $after.username AND crypto::argon2::compare(password, $after.old));
     IF !$user {
         THROW 'error.user.password.invalid: Your credentials are invalid!';
