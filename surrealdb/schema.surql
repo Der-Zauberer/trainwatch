@@ -775,7 +775,7 @@ DEFINE FIELD OVERWRITE new ON TABLE _password_change_request TYPE string;
 DEFINE FIELD OVERWRITE repeat ON TABLE _password_change_request TYPE string;
 DEFINE FIELD OVERWRITE created ON TABLE _password_change_request TYPE datetime VALUE time::now() READONLY;
 
-DEFINE EVENT OVERWRITE _refresh_token_request ON TABLE _password_change_request WHEN $event = 'CREATE' THEN {
+DEFINE EVENT OVERWRITE _password_change_request ON TABLE _password_change_request WHEN $event = 'CREATE' THEN {
     LET $user = (SELECT * FROM ONLY user WHERE name = $after.username AND crypto::argon2::compare(password, $after.old));
     IF !$user {
         THROW 'error.user.password.invalid: Your credentials are invalid!';

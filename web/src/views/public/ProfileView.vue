@@ -33,7 +33,7 @@
 import InputComponent from '@/components/InputComponent.vue';
 import { resource } from '@/core/resource';
 import { type User } from '@/core/types';
-import type { PasswordChangeRequest, SurrealDbService } from '@/services/surrealdb.service';
+import { parseCustomSurrealDbError, type PasswordChangeRequest, type SurrealDbService } from '@/services/surrealdb.service';
 import { inject, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -55,7 +55,7 @@ async function changePassword() {
         delete password.error
         password.success = true
     } catch (exception) {
-        const dbError = surrealdb.parseCustomSurrealDbError(exception)
+        const dbError = parseCustomSurrealDbError(exception as Error)
         password.error = dbError.success ? t(dbError.key) : dbError.key
         password.success = false
     }

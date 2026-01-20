@@ -71,7 +71,7 @@
 import TableComponent from '@/components/TableComponent.vue';
 import InputComponent from '@/components/InputComponent.vue';
 import { resource } from '@/core/resource';
-import type { Line, Parameter } from '@/core/types';
+import type { Connects, Line, Parameter } from '@/core/types';
 import { RecordId, surql } from 'surrealdb';
 import { inject, reactive } from 'vue';
 import DesignationChipComponent from '@/components/DesignationChipComponent.vue';
@@ -79,7 +79,7 @@ import { useRoute, useRouter } from 'vue-router';
 import EditFormComponent, { type EditActions } from '@/components/EditFormComponent.vue';
 import { LineEditDto } from '@/core/dtos';
 import InputRecordComponent from '@/components/InputRecordComponent.vue';
-import type { SurrealDbService } from '@/services/surrealdb.service';
+import { generateGUID, type SurrealDbService } from '@/services/surrealdb.service';
 import { dateToTime, timeToDate } from '@/core/functions';
 
 const route = useRoute()
@@ -144,23 +144,9 @@ const actions: EditActions = {
     close: () => (router.back(), lines.reload())
 }
 
-type Connects = {
-    id: RecordId<'connects'>
-    in: RecordId<'line'>
-    out: RecordId<'stop'>
-    arrival: { 
-        platform: string,
-        time: Date
-    },
-    departure: {
-        platform: string,
-        time: Date
-    }
-}
-
 function createEmptyConnects(line: RecordId<'line'>): Connects {
     const connects: Connects = {
-        id: new RecordId('connects', surrealdb.generateGUID()),
+        id: new RecordId('connects', generateGUID()),
         in: line,
         out: new RecordId('stop', ''),
         arrival: {

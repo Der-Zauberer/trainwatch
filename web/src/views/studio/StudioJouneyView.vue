@@ -67,7 +67,7 @@ import TableComponent from '@/components/TableComponent.vue';
 import { JourneyEditDto } from '@/core/dtos';
 import { dateToTime, timeToDate } from '@/core/functions';
 import { resource } from '@/core/resource';
-import type { Journey, Parameter } from '@/core/types';
+import type { Connects, Journey, Parameter, Visits } from '@/core/types';
 import type { SurrealDbService } from '@/services/surrealdb.service';
 import { RecordId, surql } from 'surrealdb';
 import { inject, reactive } from 'vue';
@@ -102,7 +102,6 @@ const editVisits = resource({
 
 const actions: EditActions = {
     save: async (id?: RecordId) => {
-        console.log(editVisits.value)
         await surrealdb.query(surql`
             BEGIN TRANSACTION;
 
@@ -122,7 +121,7 @@ const actions: EditActions = {
                 }
             } ELSE {
                 UPDATE ${id} CONTENT ${edit.value?.filterBeforeSubmit()};
-                FOR $visit IN ${editVisits.value?.map(visit => (visit.sceduled = visit.sceduled.id as unknown as RecordId<'connects'>, visit))} {
+                FOR $visit IN ${editVisits.value?.map(visit => (visit.sceduled = visit.sceduled.id as unknown as Connects, visit))} {
                     UPDATE $visit.id CONTENT $visit;
                 };
             };
@@ -132,24 +131,6 @@ const actions: EditActions = {
     },
     delete: async (id: RecordId) => await surrealdb.delete(id),
     close: () => (router.back(), journeys.reload())
-}
-
-type Visits = {
-    id: RecordId<'visits'>
-    in: RecordId<'journey'>
-    out: RecordId<'stop'>
-    canceled: boolean
-    sceduled: RecordId<'connects'>
-    realtime: {
-        arrival: { 
-            platform: string,
-            time: Date
-        },
-        departure: {
-            platform: string,
-            time: Date
-        }
-    }
 }
 
 /*

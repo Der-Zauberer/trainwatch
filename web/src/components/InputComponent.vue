@@ -1,21 +1,21 @@
 <template>
     <swd-input>
         <label v-if="label" :for="toId(id)">{{ label }}</label>
-        <input v-if="model || !value" :id="toId(id)" v-model="model" :type="type" :step="step" :readonly="readonly" :required="required" :disabled="disabled" :invalid="invalid ? invalid : undefined" @input="emit('input', $event as InputEvent)">
-        <input v-if="!model && value" :value="value" :type="type" :step="step" :readonly="readonly" :required="required" :disabled="disabled" :invalid="invalid ? invalid : undefined" @input="emit('input', $event as InputEvent)">
+        <input :id="toId(id)" :value="model ?? value" :checked="type === 'checkbox' && (model ?? value) ? 'true' : undefined" :type="type" :placeholder="placeholder" :step="step" :readonly="readonly" :required="required" :disabled="disabled" :invalid="invalid ? invalid : undefined" @input="onInput($event)" @change="onChange($event)">
     </swd-input>
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{ 
+const props = defineProps<{
     id?: string,
-    label?: string,
-    value?: string,
-    type?: string,
+    label?: string
+    value?: string
+    type?: string
+    placeholder?: string
     step?: string
     readonly?: boolean
-    required?: boolean,
-    disabled?: boolean,
+    required?: boolean
+    disabled?: boolean
     invalid?: boolean
 }>()
 
@@ -23,4 +23,18 @@ const emit = defineEmits<{ (e: 'input', event: InputEvent): void }>()
 
 const model = defineModel()
 const toId = (id?: string) => id ? id : 'input-' + props?.label?.toLocaleLowerCase()?.replace(/\s+/, '-')
+
+function onInput(event: Event) {
+  if (props.type !== 'checkbox') {
+    emit('input', event as InputEvent)
+    model.value = (event.target as HTMLInputElement).value
+  }
+}
+
+function onChange(event: Event) {
+  if (props.type === 'checkbox') {
+    emit('input', event as InputEvent)
+    model.value = (event.target as HTMLInputElement).checked
+  }
+}
 </script>

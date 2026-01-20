@@ -144,6 +144,20 @@ export type LineStops = Line & {
     }[]
 }
 
+export type Connects = {
+    id: RecordId<'connects'>
+    in: RecordId<'line'>
+    out: RecordId<'stop'>
+    arrival: { 
+        platform: string,
+        time: Date
+    },
+    departure: {
+        platform: string,
+        time: Date
+    }
+}
+
 export type Journey = {
     id: RecordId<'journey'>
     line: Line
@@ -178,6 +192,24 @@ export type JourneyStops = Journey & {
             }
         }
     }[]
+}
+
+export type Visits = {
+    id: RecordId<'visits'>
+    in: RecordId<'journey'>
+    out: RecordId<'stop'>
+    canceled: boolean
+    sceduled: Connects
+    realtime: {
+        arrival: { 
+            platform: string,
+            time: Date
+        },
+        departure: {
+            platform: string,
+            time: Date
+        }
+    }
 }
 
 export type Role = Entity<'role'> & {
