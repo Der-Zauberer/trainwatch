@@ -1,7 +1,7 @@
 <template>
 
 	<div class="container-sm" style="padding-bottom: 0;">
-		<SearchComponent :name="stop.value?.name" @search="router.replace({ params: { id: $event } })"/>
+		<SearchComponent :name="stop.value?.name" @search="router.push({ name: 'stop-details', params: { id: $event } })"/>
 	</div>
 
 	<div v-if="stop.error || lines.error" class="container-xl">
@@ -157,12 +157,12 @@ function updateWindowWidth() {
 
 const stop = resource({
 	parameter: { route },
-	loader: (parameter) => surrealdb.select<Stop>(new RecordId('stop', parameter.route.params.id))
+	loader: (parameter) => parameter.route.params.id ? surrealdb.select<Stop>(new RecordId('stop', parameter.route.params.id)) : undefined
 })
 
 const lines = resource({
 	parameter: { route },
-	loader: (parameter) => surrealdb.query<BoardLine[][]>(`fn::line::board(stop:${parameter.route.params.id});`).then(response => response.flat())
+	loader: (parameter) => parameter.route.params.id ?  surrealdb.query<BoardLine[][]>(`fn::line::board(stop:${parameter.route.params.id});`).then(response => response.flat()) : undefined
 })
 
 const board = resource<BoardLine[], unknown>({
