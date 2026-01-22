@@ -1,7 +1,7 @@
 <template>
     <swd-dropdown>
         <swd-input>
-            <input id="search-input" v-model="parameter.name">
+            <input id="search-input" v-model="parameter.name" :placeholder="placeholder">
             <input hidden @select="emits('search', (<any>$event.target).value)">
             <swd-icon class="search-icon" swd-input-icon/>
             <swd-icon class="close-icon" swd-input-reset-icon hidden/>
@@ -27,7 +27,7 @@ import type { Entity } from '@/core/types';
 import type { SurrealDbService } from '@/services/surrealdb.service';
 import { inject, reactive, watch } from 'vue';
 
-const props = defineProps<{ name?: string }>()
+const props = defineProps<{ name?: string, placeholder?: string }>()
 const emits = defineEmits<{ (e: 'search', value: string): void }>()
 
 const surrealdb = inject('surrealDbService') as SurrealDbService

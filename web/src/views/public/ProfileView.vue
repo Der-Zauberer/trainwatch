@@ -33,11 +33,11 @@
 import InputComponent from '@/components/InputComponent.vue';
 import { resource } from '@/core/resource';
 import { type User } from '@/core/types';
-import { parseCustomSurrealDbError, type PasswordChangeRequest, type SurrealDbService } from '@/services/surrealdb.service';
+import { parseCustomSurrealDbError, SURREAL_DB_SERVICE, type PasswordChangeRequest, type SurrealDbService } from '@/services/surrealdb.service';
 import { inject, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-const surrealdb = inject('surrealDbService') as SurrealDbService
+const surrealdb = inject(SURREAL_DB_SERVICE) as SurrealDbService
 const { t } = useI18n();
 
 const profile = resource({

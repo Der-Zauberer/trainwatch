@@ -68,14 +68,14 @@ import { UserEditDto } from '@/core/dtos';
 import { dateToISODate, isoDateToDate } from '@/core/functions';
 import { resource } from '@/core/resource';
 import type { Parameter, User } from '@/core/types';
-import type { SurrealDbService } from '@/services/surrealdb.service';
+import { SURREAL_DB_SERVICE, type SurrealDbService } from '@/services/surrealdb.service';
 import { RecordId, surql } from 'surrealdb';
 import { inject, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 const route = useRoute()
 const router = useRouter()
-const surrealdb = inject('surrealDbService') as SurrealDbService
+const surrealdb = inject(SURREAL_DB_SERVICE) as SurrealDbService
 
 const changePassword = ref<boolean>(false)
 

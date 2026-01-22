@@ -35,14 +35,14 @@ import TableComponent from '@/components/TableComponent.vue';
 import { OperatorEditDto } from '@/core/dtos';
 import { resource } from '@/core/resource';
 import type { Operator, Parameter } from '@/core/types';
-import type { SurrealDbService } from '@/services/surrealdb.service';
+import { SURREAL_DB_SERVICE, type SurrealDbService } from '@/services/surrealdb.service';
 import { RecordId } from 'surrealdb';
 import { inject, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 const route = useRoute()
 const router = useRouter()
-const surrealdb = inject('surrealDbService') as SurrealDbService
+const surrealdb = inject(SURREAL_DB_SERVICE) as SurrealDbService
 
 const parameter = reactive<Parameter>({ search: '', page: 1, size: 100, count: 0 })
 const operators = resource({

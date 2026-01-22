@@ -79,12 +79,12 @@ import { useRoute, useRouter } from 'vue-router';
 import EditFormComponent, { type EditActions } from '@/components/EditFormComponent.vue';
 import { LineEditDto } from '@/core/dtos';
 import InputRecordComponent from '@/components/InputRecordComponent.vue';
-import { generateGUID, type SurrealDbService } from '@/services/surrealdb.service';
+import { generateGUID, SURREAL_DB_SERVICE, type SurrealDbService } from '@/services/surrealdb.service';
 import { dateToTime, timeToDate } from '@/core/functions';
 
 const route = useRoute()
 const router = useRouter()
-const surrealdb = inject('surrealDbService') as SurrealDbService
+const surrealdb = inject(SURREAL_DB_SERVICE) as SurrealDbService
 
 const parameter = reactive<Parameter>({ search: '', page: 1, size: 100, count: 0 })
 const lines = resource({

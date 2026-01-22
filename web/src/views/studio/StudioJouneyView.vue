@@ -68,14 +68,14 @@ import { JourneyEditDto } from '@/core/dtos';
 import { dateToTime, timeToDate } from '@/core/functions';
 import { resource } from '@/core/resource';
 import type { Connects, Journey, Parameter, Visits } from '@/core/types';
-import type { SurrealDbService } from '@/services/surrealdb.service';
+import { SURREAL_DB_SERVICE, type SurrealDbService } from '@/services/surrealdb.service';
 import { RecordId, surql } from 'surrealdb';
 import { inject, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 const route = useRoute()
 const router = useRouter()
-const surrealdb = inject('surrealDbService') as SurrealDbService
+const surrealdb = inject(SURREAL_DB_SERVICE) as SurrealDbService
 
 const parameter =  reactive<Parameter>({ search: '', page: 1, size: 100, count: 0 })
 const journeys = resource({

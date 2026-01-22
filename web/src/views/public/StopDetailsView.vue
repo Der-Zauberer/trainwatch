@@ -1,7 +1,7 @@
 <template>
 
 	<div class="container-sm" style="padding-bottom: 0;">
-		<SearchComponent :name="stop.value?.name" @search="router.push({ name: 'stop-details', params: { id: $event } })"/>
+		<SearchComponent :name="stop.value?.name" :placeholder="$t('action.search')" @search="router.push({ name: 'stop-details', params: { id: $event } })"/>
 	</div>
 
 	<div v-if="stop.error || lines.error" class="container-xl">
@@ -18,6 +18,11 @@
 				<button class="grey-color" :selected="boardView === Board.DEPARTURE ? true : undefined" @click="boardView = Board.DEPARTURE">{{ $t('entity.traffic.departure') }}</button>
 				<button class="grey-color" :selected="boardView === Board.ARRIVAL ? true : undefined" @click="boardView = Board.ARRIVAL">{{ $t('entity.traffic.arrival') }}</button>
 				<button class="grey-color" :selected="boardView === Board.STOP ? true : undefined" @click="boardView = Board.STOP" v-if="isMobileView">{{ $t('entity.stop.stop') }}</button>
+			</div>
+
+			{{ dbBoard.error }}
+			<div v-if="dbBoard.value && (!isMobileView || boardView !== Board.STOP)">
+				<BoardLineComponent :line="dbBoard.value" :arrival="boardView === Board.ARRIVAL" :stop="stop.value"/>
 			</div>
 
 			<div v-if="board.value && (!isMobileView || boardView !== Board.STOP)">
@@ -55,7 +60,7 @@
 				<h5>{{ $t('entity.general.id', 2) }}</h5>
 				<div class="flex flex-wrap">
 					<div v-for="[key, value] of Object.entries(stop.value.ids)" :key="key">
-						<div>{{ key.toUpperCase() }}</div>
+						<swd-subtitle>{{ key.toUpperCase() }}</swd-subtitle>
 						<div class="flex margin-0">
 							<swd-chip v-for="name of [value].flat()" :key="name">{{ name }}</swd-chip>
 						</div>
@@ -120,7 +125,8 @@ import BoardLineComponent from '@/components/BoardLineComponent.vue';
 import SearchComponent from '@/components/SearchComponent.vue';
 import { resource } from '@/core/resource';
 import type { Stop, BoardLine } from '@/core/types';
-import type { SurrealDbService } from '@/services/surrealdb.service';
+import { DB_TIMETABLE_SERVICE, DbTimetableService } from '@/services/db-timetable.service';
+import { SURREAL_DB_SERVICE, type SurrealDbService } from '@/services/surrealdb.service';
 import { RecordId } from 'surrealdb';
 import { inject, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -129,7 +135,8 @@ enum Board { DEPARTURE, ARRIVAL, STOP }
 
 const route = useRoute()
 const router = useRouter()
-const surrealdb = inject('surrealDbService') as SurrealDbService
+const surrealdb = inject(SURREAL_DB_SERVICE) as SurrealDbService
+const dbTimetableService = inject(DB_TIMETABLE_SERVICE) as DbTimetableService
 
 const isMobileView = ref<boolean>(window.innerWidth < 768)
 const boardView = ref<Board>(Board.DEPARTURE)
@@ -168,6 +175,11 @@ const lines = resource({
 const board = resource<BoardLine[], unknown>({
 	parameter: { lines, boardView },
 	loader: () => lines.value?.filter(lines => stop.value?.id.id !== (boardView.value == Board.ARRIVAL ? lines.stops[0].id.id : lines.stops.slice(-1)[0].id.id)) || []
+})
+
+const dbBoard = resource<BoardLine[], unknown>({
+	parameter: { stop },
+	loader: () => stop.value?.ids?.uic ? dbTimetableService.getTimetableBoard(stop.value.ids.uic) : undefined
 })
 
 function getServices(stop: Stop) {

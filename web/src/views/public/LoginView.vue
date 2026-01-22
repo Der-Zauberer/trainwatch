@@ -70,11 +70,11 @@ form * { margin: 0 }
 <script setup lang="ts">
 import InputComponent from '@/components/InputComponent.vue';
 import InputDropdownComponent from '@/components/InputDropdownComponent.vue';
-import { config, parseCustomSurrealDbError, type PasswordChangeRequest, type SurrealDbService } from '@/services/surrealdb.service';
+import { config, parseCustomSurrealDbError, SURREAL_DB_SERVICE, type PasswordChangeRequest, type SurrealDbService } from '@/services/surrealdb.service';
 import { inject, ref, reactive, toRaw } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-const surrealdb = inject('surrealDbService') as SurrealDbService
+const surrealdb = inject(SURREAL_DB_SERVICE) as SurrealDbService
 const { t } = useI18n()
 const profiles = surrealdb.getProfile()
 
@@ -84,8 +84,6 @@ const settings = ref<boolean>(false)
 const change = ref<PasswordChangeRequest | undefined>()
 const loading = ref<boolean>()
 const error = ref<string>()
-
-    console.log(profile)
 
 async function login() {
     loading.value = true

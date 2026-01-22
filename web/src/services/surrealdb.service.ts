@@ -323,6 +323,34 @@ export function generateGUID(timebased?: boolean) {
     return guid
 }
 
+export function normalize(name: string, seperator?: string): string {
+    const replacements: Record<string, string> = { 'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'ß': 'ss' }
+    const isWhitespace = (char: string) => char === ' ' || char === '/' || char === '-' || char === '(' || char === ')'
+    let formatted = ''
+    let blank = name.length > 0 && isWhitespace(name[0])
+    for (let char of name.toLowerCase()) {
+        if (replacements[char]) {
+            formatted += replacements[char]
+            blank = false
+        } else if (isWhitespace(char)) {
+            if (!blank) {
+                if (seperator) formatted += seperator
+                blank = true
+            }
+        } else if ((char >= 'a' && char <= 'z') || (char >= '0' && char <= '9')) {
+            formatted += char
+            blank = false
+        } else if (char.charCodeAt(0) > 127) {
+            const normalized = char.normalize('NFD')
+            if (char !== normalized) formatted += normalized[0]
+        }
+    }
+    if (blank && seperator) {
+        return formatted.slice(0, -1)
+    }
+    return formatted
+}
+
 export const SURREAL_DB_SERVICE = 'surrealDbService';
 
 export default {
@@ -330,6 +358,6 @@ export default {
         const router = app.config.globalProperties.$router
         const surrealDbService = addSurrealInitializer(new SurrealDbService(router))
         app.config.globalProperties.$surrealDbService = surrealDbService
-        app.provide('surrealDbService', surrealDbService)
+        app.provide(SURREAL_DB_SERVICE, surrealDbService)
     }
 }

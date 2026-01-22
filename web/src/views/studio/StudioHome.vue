@@ -29,7 +29,7 @@
 
 <script lang="ts" setup>
 import { resource } from '@/core/resource';
-import type { SurrealDbService } from '@/services/surrealdb.service';
+import { SURREAL_DB_SERVICE, type SurrealDbService } from '@/services/surrealdb.service';
 import { surql } from 'surrealdb';
 import { inject } from 'vue';
 
@@ -44,7 +44,7 @@ type Amounts = {
     users: number
 }
 
-const surrealdb = inject('surrealDbService') as SurrealDbService
+const surrealdb = inject(SURREAL_DB_SERVICE) as SurrealDbService
 
 const user = surrealdb.getUserAsRef()
 

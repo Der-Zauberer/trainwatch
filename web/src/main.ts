@@ -22,6 +22,7 @@ import StudioJouneyView from './views/studio/StudioJouneyView.vue'
 import StudioTimetableView from './views/studio/StudioTimetableView.vue'
 import JourneyDetailsVue from './views/public/JourneyDetailsVue.vue'
 import ProfileView from './views/public/ProfileView.vue'
+import dbTimetableService from './services/db-timetable.service'
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -66,6 +67,7 @@ const router = createRouter({
     app.use(router)
     app.use(i18n)
     app.use(surrealdbService)
+    app.use(dbTimetableService)
     app.mount('#app')
 
 })()
