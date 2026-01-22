@@ -27,7 +27,8 @@ DEFINE FUNCTION OVERWRITE fn::search::n_word_edge_ngram($name: string) {
 };
 
 DEFINE FUNCTION OVERWRITE fn::search::search($name: string) {
-    RETURN SELECT VALUE entries.{id, name} AS result FROM ONLY type::thing('search', fn::search::normalize($name, ''));
+    LET $result = SELECT VALUE entries.{id, name} AS result FROM ONLY type::thing('search', fn::search::normalize($name, ''));
+    RETURN IF $result != NONE { $result } ELSE { [] }
 };
 
 DEFINE FUNCTION OVERWRITE fn::user::has_permission($user: record<user>, $permissions: string) {
