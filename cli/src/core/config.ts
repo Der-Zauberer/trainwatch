@@ -9,6 +9,7 @@ export type Config = {
         address: string
         namespace: string
         databse: string
+        access: string
         username: string
         password: string
     }
@@ -23,6 +24,7 @@ const EMPTY_CONFIG: Config = {
         address: '',
         namespace: '',
         databse: '',
+        access: '',
         username: '',
         password: ''
     }

@@ -15,8 +15,11 @@ export async function importGtfs(directory: string) {
         namespace: config.surrealdb.namespace,
         database: config.surrealdb.databse,
         auth: {
-            username: config.surrealdb.username,
-		    password: config.surrealdb.password
+            access: config.surrealdb.access,
+            variables: {
+                username: config.surrealdb.username,
+		        password: config.surrealdb.password
+            }
         }
     }
 

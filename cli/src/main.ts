@@ -4,6 +4,7 @@ import { Commands, executeCommand, test, Test } from "./core/cli"
 import { beginnScoreMatching, extractIds, normalize, nWordEdgeNgram } from "./core/search"
 import { CSV } from "./core/csv"
 import { importGtfs } from "./commands/gtfs.command"
+import { importStops } from "./commands/import.command"
 
 const coreTests: Test[] = [
     {
@@ -109,6 +110,13 @@ const commands: Commands = {
             execute: downloadApiDBRisStationsPlatform,
             usage: 'download DB/RIS/Stations [file]',
             description: 'Downloads platforms for already downloaded stops from the DB Ris::Stations API to a file'
+        }
+    },
+    import: {
+        stops: {
+            execute: importStops,
+            usage: 'import stops [file]',
+            description: 'Uploads stops toim surrealdb'
         }
     },
     gtfs: {
