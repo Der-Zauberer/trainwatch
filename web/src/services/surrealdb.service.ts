@@ -20,6 +20,13 @@ export const config: SurrealDbConfig = {
             access: 'user'
         },
         {
+            name: 'girc',
+            address: 'wss://derzauberer-06c3cc37l9t95bs5baeq4gtut8.aws-euw1.surreal.cloud',
+            namespace: 'trainwatch.derzauberer.eu',
+            database: 'gric',
+            access: 'user'
+        },
+        {
             name: 'local',
             address: 'ws://localhost:8080/rpc',
             namespace: 'pis.derzauberer.eu',
