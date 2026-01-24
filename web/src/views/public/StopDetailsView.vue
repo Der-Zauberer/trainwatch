@@ -68,7 +68,7 @@
 				</div>
 			</swd-card>
 
-			<div class="sources" v-if="stop.value.sources.length">
+			<div class="sources" v-if="stop.value.sources?.length">
 				<swd-card class="sources__headline top-item">
 					<h5>{{ $t('entity.source.source', stop.value.sources.length) }}</h5>
 				</swd-card>
@@ -183,7 +183,7 @@ const dbBoard = resource<BoardLine[], unknown>({
 })
 
 function getServices(stop: Stop) {
-	return Object.entries(stop.services).filter(entry => Boolean(entry[1])).map(entry => entry[0])
+	return Object.entries(stop.services || []).filter(entry => Boolean(entry[1])).map(entry => entry[0])
 }
 
 </script>

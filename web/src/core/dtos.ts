@@ -58,12 +58,12 @@ export class StopEditDto extends Filterable<StopEditDto> {
 
     filterBeforeSubmit(): Partial<StopEditDto> {
         const partial: Partial<StopEditDto> = Object.assign({}, this)
-        if (isEmpty(this.location)) delete partial.location;
-        if (isEmpty(this.address)) delete partial.address;
-        if (isEmpty(this.open)) delete partial.open;
-        if (isEmpty(this.services)) delete partial.services;
-        if (isEmpty(this.ids)) delete partial.ids;
-        if (isEmpty(this.sources)) delete partial.sources;
+        if (isEmpty(this.location)) delete partial.location
+        if (isEmpty(this.address)) delete partial.address
+        if (isEmpty(this.open)) delete partial.open
+        if (isEmpty(this.services)) delete partial.services
+        if (isEmpty(this.ids)) delete partial.ids
+        if (isEmpty(this.sources)) delete partial.sources
         return partial
     }
 }
@@ -97,7 +97,7 @@ export class OperatorEditDto extends Filterable<OperatorEditDto> {
 
     filterBeforeSubmit(): Partial<OperatorEditDto> {
         const partial: Partial<OperatorEditDto> = Object.assign({}, this)
-        if (isEmpty(this.address)) delete partial.address;
+        if (isEmpty(this.address)) delete partial.address
         return partial
     }
 }

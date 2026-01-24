@@ -34,10 +34,10 @@
 
         <h6>{{ $t('entity.role.role', 0) }}</h6>
         <div class="input-array" v-for="(role, index) in edit.value.roles" :key="index">
-            <InputRecordComponent :label="$t('entity.role.role')" v-model="edit.value.roles[index]" type="role" :required="true" :to="{ name: 'studio_role_edit', params: { id: edit.value.roles[index].id.toString() } }"/>
+            <InputRecordComponent :label="$t('entity.role.role')" v-model="edit.value.roles[index]" type="role" :required="true" :to="edit.value.roles[index] ? { name: 'studio_role_edit', params: { id: edit.value.roles[index].id.toString() } } : undefined"/>
             <button class="grey-color" @click.prevent="edit.value.roles.splice(index, 1);"><swd-icon class="delete-icon"></swd-icon></button>
         </div>
-        <button class="grey-color" @click.prevent="{}"><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>
+        <button class="grey-color" @click.prevent="edit.value.roles.push(undefined as unknown as RecordId<'role'>)"><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>
         <h6>{{ $t('entity.user.permissions') }}</h6>
         <div class="input-array" v-for="(permission, index) in edit.value.permissions" :key="index">
             <InputComponent :label="$t('entity.user.permissions')" v-model="edit.value.permissions[index]"/>

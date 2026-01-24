@@ -95,7 +95,7 @@ export type Stop = Entity<'stop'> & {
         ril?: string[],
         stada?: string
     }
-    sources: Source[]
+    sources?: Source[]
 }
 
 export type Type = Entity<'type'> & {

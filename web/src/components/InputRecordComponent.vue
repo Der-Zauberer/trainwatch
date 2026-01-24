@@ -3,10 +3,10 @@
         <div class="input-bar">
             <swd-input @click="focusSearch()" class="dropdown-input" :class="to ? 'left-item' : ''">
                 <label :for="toId(id)">{{ label }}</label>
-                <input :id="toId(id)" readonly :value="(record.value || model || '').toString()">
+                <input :id="toId(id)" readonly :value="(record.value || '').toString()">
                 <swd-icon :class="record.loading ? 'loading-spinner-icon' : 'down-icon'" swd-input-icon></swd-icon>
             </swd-input>
-            <input hidden @input="model = records.value?.find(record => record.id.toString() === ($event.target as HTMLInputElement).value)?.id as unknown as RecordId; parameter.search = '';">
+            <input hidden @input="model = records.value?.find(record => record.id.toString() === ($event.target as HTMLInputElement).value)?.id as unknown as RecordId | undefined; parameter.search = '';">
             <RouterLink v-if="to" :to="to" class="button right-item grey-color input-bar__link"><swd-icon class="external-icon"></swd-icon></RouterLink>
         </div>
         <swd-dropdown-content class="dropdown-content">
@@ -15,8 +15,8 @@
             </swd-input>
             <swd-loading-spinner :loading="records.loading">
                 <swd-selection class="bottom-item" @filter.prevent>
-                    <a v-for="record of records.value" :key="record.id.toString()" :value="record.id.toString()" @click="model = record.id">
-                        {{ record.name }} 
+                    <a v-for="record of records.value" :key="record.id.toString()" :value="record.id.toString()" :display="record.name">
+                        {{ record.name }}
                         <swd-subtitle>{{ record.id.toString() }}</swd-subtitle>
                     </a>
                     <div v-if="records.empty" style="height: 60px;"></div>
@@ -75,7 +75,7 @@ import type { RouteLocationRaw } from 'vue-router';
 const surrealdb = inject('surrealDbService') as SurrealDbService
 
 const props = defineProps<{ id?: string, label: string, type: string, required: boolean, to?: RouteLocationRaw}>()
-const model = defineModel<RecordId>()
+const model = defineModel<RecordId | undefined>()
 
 const search = useTemplateRef('search')
 
@@ -92,7 +92,7 @@ const records = resource({
 
 const record = resource({
     parameter: { model },
-    loader: async (parameter) => await surrealdb.query<[{ name: string }[]]>(surql`SELECT name FROM ${parameter.model.value};`).then(result => result[0][0].name)
+    loader: async (parameter) => parameter.model ? await surrealdb.query<[{ name: string }[]]>(surql`SELECT name FROM ${parameter.model.value};`).then(result => result[0][0].name) : undefined
 })
 
 </script>

@@ -38,7 +38,7 @@
             </swd-input>
 
             <div v-if="editConnects.value" class="stops_vertical">
-                <InputRecordComponent :label="$t('entity.stop.stop')" v-model="stop.out" type="stop" :required="true"  :to="stop.out.id ? { name: 'studio_stop_edit', params: { id: stop.out.id.toString() } } : undefined"/>
+                <InputRecordComponent :id="`${$t('entity.stop.stop')}-${stop.id.id.toString()}`" :label="$t('entity.stop.stop')" v-model="stop.out" type="stop" :required="true" :to="stop.out.id ? { name: 'studio_stop_edit', params: { id: stop.out.id.toString() } } : undefined"/>
                 <button class="grey-color" @click="connectsToRemove.push(editConnects.value.splice(editConnects.value.indexOf(stop), 1)[0])"><swd-icon class="delete-icon"></swd-icon></button>
             </div>
         </div>
@@ -73,7 +73,7 @@ import InputComponent from '@/components/InputComponent.vue';
 import { resource } from '@/core/resource';
 import type { Connects, Line, Parameter } from '@/core/types';
 import { RecordId, surql } from 'surrealdb';
-import { inject, reactive } from 'vue';
+import { inject, reactive, toRaw } from 'vue';
 import DesignationChipComponent from '@/components/DesignationChipComponent.vue';
 import { useRoute, useRouter } from 'vue-router';
 import EditFormComponent, { type EditActions } from '@/components/EditFormComponent.vue';
@@ -105,7 +105,7 @@ const editConnects = resource({
     parameter: { edit },
     loader: async () => {
         if (!edit.value?.id) return []
-        return await surrealdb.query<Connects[][][]>(surql`SELECT VALUE ->connects.* FROM ${edit.value.id};`).then(result => result[0][0].sort((a, b) => a.departure.time.getTime() - b.departure.time.getTime()))
+        return await surrealdb.query<Connects[][][]>(surql`SELECT VALUE ->connects.* FROM ${edit.value.id};`).then(result => result[0][0].sort((a, b) => a.departure.time.getTime() - b.departure.time.getTime())) || []
     }
 })
 
@@ -114,8 +114,9 @@ const connectsToRemove: Connects[] = []
 
 const actions: EditActions = {
     save: async (id?: RecordId) => {
+        console.log(id, toRaw(edit.value), toRaw(connectsToAdd), toRaw(connectsToRemove), toRaw(editConnects.value?.filter(connects => !connectsToAdd.includes(toRaw(connects)))))
         await surrealdb.query(surql`
-            BEGIN TRANSACTION;
+            --BEGIN TRANSACTION;
 
             IF ${id === undefined} {
                 INSERT INTO line ${edit.value?.filterBeforeSubmit()};
@@ -133,11 +134,11 @@ const actions: EditActions = {
                 DELETE $connects.id;
             };
 
-            FOR $connects IN ${editConnects.value?.filter(connects => !connectsToAdd.includes(connects))} {
+            FOR $connects IN ${editConnects.value?.filter(connects => !connectsToAdd.includes(toRaw(connects)))} {
                 UPDATE $connects.id CONTENT $connects;
             };
 
-            COMMIT TRANSACTION;
+            --COMMIT TRANSACTION;
         `);
     },
     delete: async (id: RecordId) => await surrealdb.delete(id),

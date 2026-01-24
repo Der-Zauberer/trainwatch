@@ -13,12 +13,12 @@
         <div class="grid-cols-sm-2 grid-cols-1">
             <InputComponent :label="$t('entity.general.id')" :disabled="$route.params.id !== 'new'" v-model="edit.value.id.id"/>
             <InputComponent :label="$t('entity.general.name')" v-model="edit.value.name"/>
-            <InputComponent :label="$t('entity.stop.score')" type="number" v-model="edit.value.score"/>
+            <InputComponent :label="$t('entity.stop.score')" type="number" v-model.number="edit.value.score"/>
         </div>
         <h6>{{ $t('entity.location.location') }}</h6>
         <div class="grid-cols-sm-2 grid-cols-1">
-            <InputComponent :label="$t('entity.location.latitude')" type="number" step="any" v-model="edit.value.location.latitude"/>
-            <InputComponent :label="$t('entity.location.longitude')" type="number" step="any" v-model="edit.value.location.longitude"/>
+            <InputComponent :label="$t('entity.location.latitude')" type="number" step="any" v-model.number="edit.value.location.latitude"/>
+            <InputComponent :label="$t('entity.location.longitude')" type="number" step="any" v-model.number="edit.value.location.longitude"/>
         </div>
         <h6>{{ $t('entity.address.address') }}</h6>
         <div class="grid-cols-sm-2 grid-cols-1">
@@ -42,10 +42,10 @@
         </div>
         <h6>{{ $t('entity.stop.platforms.platforms') }}</h6>
         <div class="input-array" v-for="(platform, index) in edit.value.platforms" :key="index">
-            <InputComponent :label="$t('entity.general.name')" v-model="edit.value.platforms[index].name"/>
-            <InputComponent :label="$t('entity.stop.platforms.length') + ' (m)'" type="number" step="any" v-model="edit.value.platforms[index].height"/>
-            <InputComponent :label="$t('entity.stop.platforms.height') + ' (mm)'" type="number" v-model="edit.value.platforms[index].length"/>
-            <InputComponent :label="$t('entity.stop.platforms.linkedPlatforms')" v-model="edit.value.platforms[index].linkedPlatforms"/>
+            <InputComponent :id="`${$t('entity.general.name')}-${index}`" :label="$t('entity.general.name')" v-model="edit.value.platforms[index].name"/>
+            <InputComponent :id="`${$t('entity.stop.platforms.length')}-${index}`" :label="$t('entity.stop.platforms.length') + ' (m)'" type="number" step="any" v-model.number="edit.value.platforms[index].height"/>
+            <InputComponent :id="`${$t('entity.stop.platforms.height')}-${index}`" :label="$t('entity.stop.platforms.height') + ' (mm)'" type="number" v-model.number="edit.value.platforms[index].length"/>
+            <InputComponent :id="`${$t('entity.stop.platforms.linkedPlatforms')}-${index}`" :label="$t('entity.stop.platforms.linkedPlatforms')" :value="edit.value.platforms[index].linkedPlatforms.toString()" @input="edit.value.platforms[index].linkedPlatforms = ($event.target as HTMLInputElement).value.split(/\s*,\s*/)"/>
             <button class="grey-color" @click.prevent="edit.value.platforms.splice(index, 1);"><swd-icon class="delete-icon"></swd-icon></button>
         </div>
         <button class="grey-color" @click.prevent="edit.value.platforms.push({ name: '', height: 0, length: 0, linkedPlatforms: [] })"><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>

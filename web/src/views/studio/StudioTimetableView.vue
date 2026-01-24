@@ -25,8 +25,8 @@ import { TimetableEditDto } from '@/core/dtos'
 import { resource } from '@/core/resource'
 import type { Parameter, Timetable } from '@/core/types'
 import { SURREAL_DB_SERVICE, type SurrealDbService } from '@/services/surrealdb.service'
-import { RecordId } from 'surrealdb'
-import { inject, reactive } from 'vue'
+import { RecordId, Table } from 'surrealdb'
+import { inject, reactive, toRaw } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 

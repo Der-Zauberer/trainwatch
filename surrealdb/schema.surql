@@ -92,7 +92,7 @@ DEFINE FIELD OVERWRITE open.thursday ON TABLE stop TYPE option<string> VALUE (IF
 DEFINE FIELD OVERWRITE open.friday ON TABLE stop TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
 DEFINE FIELD OVERWRITE open.saturday ON TABLE stop TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
 DEFINE FIELD OVERWRITE open.sunday ON TABLE stop TYPE option<string> VALUE (IF $value == '' { NONE } ELSE { $value });
-DEFINE FIELD OVERWRITE services ON TABLE stop TYPE object;
+DEFINE FIELD OVERWRITE services ON TABLE stop TYPE object DEFAULT {};
 DEFINE FIELD OVERWRITE services.parking ON TABLE stop TYPE bool DEFAULT false;
 DEFINE FIELD OVERWRITE services.localPublicTransport ON TABLE stop TYPE bool DEFAULT false;
 DEFINE FIELD OVERWRITE services.carRental ON TABLE stop TYPE bool DEFAULT false;
@@ -110,7 +110,7 @@ DEFINE FIELD OVERWRITE ids ON TABLE stop TYPE option<object>;
 DEFINE FIELD OVERWRITE ids.uic ON TABLE stop TYPE option<string>;
 DEFINE FIELD OVERWRITE ids.ril ON TABLE stop TYPE option<array<string>>;
 DEFINE FIELD OVERWRITE ids.stada ON TABLE stop TYPE option<string>;
-DEFINE FIELD OVERWRITE sources ON TABLE stop TYPE array<object> DEFAULT [];
+DEFINE FIELD OVERWRITE sources ON TABLE stop TYPE option<array<object>>;
 DEFINE FIELD OVERWRITE sources[*].name ON TABLE stop TYPE string;
 DEFINE FIELD OVERWRITE sources[*].license ON TABLE stop TYPE string;
 DEFINE FIELD OVERWRITE sources[*].url ON TABLE stop TYPE string;
