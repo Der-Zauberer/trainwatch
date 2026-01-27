@@ -53,7 +53,9 @@
             "general": "General",
             "id": "Id | Ids",
             "name": "Name",
-            "description": "Description"
+            "type": "Type",
+            "description": "Description",
+            "content": "Content"
         },
         "traffic": {
             "from": "from",
@@ -165,6 +167,13 @@
         },
         "journey": {
             "journey": "Journey"
+        },
+        "information": {
+            "information": "Information",
+            "INFORMATION": "Information",
+            "WARNING": "Warning",
+            "DISRUPTION": "Disruption",
+            "CLEARANCE": "Clearance"
         },
         "role": {
             "role": "Role | Roles",

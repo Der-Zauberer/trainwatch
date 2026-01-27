@@ -34,6 +34,7 @@
     <RouterLink :to="{ name: 'studio_route' }" :selected="isRoute(['studio_route', 'studio_route_edit'])">{{ $t('entity.route.route', 0) }}</RouterLink>
     <RouterLink :to="{ name: 'studio_line' }" :selected="isRoute(['studio_line', 'studio_line_edit'])">{{ $t('entity.line.line', 0) }}</RouterLink>
     <RouterLink :to="{ name: 'studio_journey' }" :selected="isRoute(['studio_journey','studio_journey_edit'])">{{ $t('entity.journey.journey', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_information' }" :selected="isRoute(['studio_information','studio_information_edit'])">{{ $t('entity.information.information', 0) }}</RouterLink>
     <RouterLink :to="{ name: 'studio_role' }" :selected="isRoute(['studio_role','studio_role_edit'])">{{ $t('entity.role.role', 0) }}</RouterLink>
     <RouterLink :to="{ name: 'studio_user' }" :selected="isRoute(['studio_user', 'studio_user_edit'])">{{ $t('entity.user.user', 0) }}</RouterLink>
   </swd-navigation>

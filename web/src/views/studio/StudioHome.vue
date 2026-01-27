@@ -12,6 +12,7 @@
                     <div class="margin-bottom"><span>{{ amounts.value?.routes || 0 }}</span><swd-subtitle>{{ $t('entity.route.route', 0) }}</swd-subtitle></div>
                     <div class="margin-bottom"><span>{{ amounts.value?.lines || 0 }}</span><swd-subtitle>{{ $t('entity.line.line', 0) }}</swd-subtitle></div>
                     <div class="margin-bottom"><span>{{ amounts.value?.journeys || 0 }}</span><swd-subtitle>{{ $t('entity.journey.journey', 0) }}</swd-subtitle></div>
+                    <div class="margin-bottom"><span>{{ amounts.value?.information || 0 }}</span><swd-subtitle>{{ $t('entity.information.information', 0) }}</swd-subtitle></div>
                     <div class="margin-bottom"><span>{{ amounts.value?.roles || 0 }}</span><swd-subtitle>{{ $t('entity.role.role', 0) }}</swd-subtitle></div>
                     <div class="margin-bottom"><span>{{ amounts.value?.users || 0 }}</span><swd-subtitle>{{ $t('entity.user.user', 0) }}</swd-subtitle></div>
                 </swd-card>
@@ -40,6 +41,7 @@ type Amounts = {
     routes: number
     lines: number
     journeys: number
+    information: number
     roles: number
     users: number
 }
@@ -56,6 +58,7 @@ RETURN {
     routes: (SELECT count() FROM route GROUP ALL)[0].count || 0,
     lines: (SELECT count() FROM line GROUP ALL)[0].count || 0,
     journeys: (SELECT count() FROM journey GROUP ALL)[0].count || 0,
+    information: (SELECT count() FROM information GROUP ALL)[0].count || 0,
     roles: (SELECT count() FROM role GROUP ALL)[0].count || 0,
     users: (SELECT count() FROM user GROUP ALL)[0].count || 0,
 }`

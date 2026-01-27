@@ -12,6 +12,13 @@ export enum Classification {
     LONG_DISTANCE,
 }
 
+export enum InformationType {
+    INFORMATION,
+    WARNING,
+    DISRUPTION,
+    CLEARANCE
+}
+
 export type HttpError = {
     statusCode: number
     message: string
@@ -210,6 +217,12 @@ export type Visits = {
             time: Date
         }
     }
+}
+
+export type Information = Entity<'informatiion'> & {
+    type: 'INFORMATION' | 'WARNING' | 'DISRUPTION' | 'CLEARANCE'
+    description: string
+    content?: string
 }
 
 export type Role = Entity<'role'> & {

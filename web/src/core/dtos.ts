@@ -149,6 +149,19 @@ export class JourneyEditDto extends Filterable<JourneyEditDto> {
     }
 }
 
+export class InformationEditDto extends Filterable<RouteEditDto> {
+    id: RecordId<'information'> = new RecordId('information', '')
+    name?: string
+    type: 'INFORMATION' | 'WARNING' | 'DISRUPTION' | 'CLEARANCE' = 'INFORMATION'
+    description?: string
+    content?: string
+
+    constructor(initial?: object) {
+        super()
+        if (initial) Object.assign(this, initial)
+    }
+}
+
 export class RoleEditDto extends Filterable<RoleEditDto> {
     id: RecordId<'role'> = new RecordId('role', '')
     name?: string

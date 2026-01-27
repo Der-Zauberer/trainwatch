@@ -23,6 +23,7 @@ import StudioTimetableView from './views/studio/StudioTimetableView.vue'
 import JourneyDetailsVue from './views/public/JourneyDetailsVue.vue'
 import ProfileView from './views/public/ProfileView.vue'
 import dbTimetableService from './services/db-timetable.service'
+import StudioInformation from './views/studio/StudioInformation.vue'
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -49,6 +50,8 @@ const router = createRouter({
         { path: '/studio/line/:id', name: 'studio_line_edit', component: StudioLineView, beforeEnter: auth() },
         { path: '/studio/journey', name: 'studio_journey', component: StudioJouneyView, beforeEnter: auth() },
         { path: '/studio/journey/:id', name: 'studio_journey_edit', component: StudioJouneyView, beforeEnter: auth() },
+        { path: '/studio/information', name: 'studio_information', component: StudioInformation, beforeEnter: auth() },
+        { path: '/studio/information/:id', name: 'studio_information_edit', component: StudioInformation, beforeEnter: auth() },
         { path: '/studio/role', name: 'studio_role', component: StudioRoleView, beforeEnter: auth() },
         { path: '/studio/role/:id', name: 'studio_role_edit', component: StudioRoleView, beforeEnter: auth() },
         { path: '/studio/user', name: 'studio_user', component: StudioUserView, beforeEnter: auth() },
