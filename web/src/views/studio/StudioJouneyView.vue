@@ -15,7 +15,7 @@
     <EditFormComponent v-if="edit.value" :type="'role'" :value="edit.value" :actions="actions">
         <h6>{{ $t('entity.general.general') }}</h6>
         <div class="grid-cols-sm-2 grid-cols-1">
-            <InputComponent :label="$t('entity.general.id')" :disabled="$route.params.id !== 'new'" v-model="edit.value.id.id" :required="true"/>
+            <InputComponent :label="$t('entity.general.id')" :disabled="$route.params.id !== 'new'" :modelValue="edit.value.id.id" @update:modelValue="edit.value.id = markRaw(new RecordId('journey', $event))" :required="true"/>
             <InputRecordComponent :label="$t('entity.line.line')" v-model="edit.value.line" type="line" :required="true" :to="edit.value.line?.id ? { name: 'studio_line_edit', params: { id: edit.value.line?.id.toString() } } : undefined"/>
         </div>
         <div class="stops" v-for="stop of editVisits.value" :key="stop.id.id.toString()">
@@ -70,7 +70,7 @@ import { resource } from '@/core/resource';
 import type { Connects, Journey, Parameter, Visits } from '@/core/types';
 import { SURREAL_DB_SERVICE, type SurrealDbService } from '@/services/surrealdb.service';
 import { RecordId, surql } from 'surrealdb';
-import { inject, reactive } from 'vue';
+import { inject, markRaw, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 const route = useRoute()
@@ -81,7 +81,7 @@ const parameter =  reactive<Parameter>({ search: '', page: 1, size: 100, count: 
 const journeys = resource({
     parameter,
 	loader: async (parameter) => {
-        const [result, count] = await surrealdb.query<[Journey[], number]>(`SELECT *, line.*, line.route.*, line.route.designations.{type.*, number}, line.route.timetable.* FROM journey ${parameter.search ? 'WHERE name CONTAINS $search' : ''} START ($page - 1) * $size LIMIT $size; (SELECT count() FROM journey ${parameter.search ? 'WHERE name CONTAINS $search' : ''} GROUP ALL)[0].count`, parameter)
+        const [result, count] = await surrealdb.up().then(() => surrealdb.query<[Journey[], number]>(`SELECT *, line.*, line.route.*, line.route.designations.{type.*, number}, line.route.timetable.* FROM journey ${parameter.search ? 'WHERE name CONTAINS $search' : ''} START ($page - 1) * $size LIMIT $size; (SELECT count() FROM journey ${parameter.search ? 'WHERE name CONTAINS $search' : ''} GROUP ALL)[0].count`, parameter))
         parameter.count = count
         return result
     }
@@ -89,20 +89,20 @@ const journeys = resource({
 
 const edit = resource({
     parameter: { route },
-	loader: async (parameter) => new JourneyEditDto(parameter.route.params.id === 'new' ? {} : await surrealdb.select<Journey>(new RecordId('journey', parameter.route.params.id)))
+	loader: async (parameter) => new JourneyEditDto(parameter.route.params.id === 'new' ? {} : await surrealdb.up().then(() => surrealdb.select<Journey>(new RecordId('journey', parameter.route.params.id))))
 })
 
 const editVisits = resource({
     parameter: { edit },
     loader: async () => {
         if (!edit.value?.id) return []
-        return await surrealdb.query<Visits[][][]>(surql`SELECT VALUE (SELECT *, sceduled.* FROM ->visits) FROM ${edit.value.id};`).then(result => result[0][0].sort((a, b) => a.sceduled.departure.time.getTime() - b.sceduled.departure.time.getTime()))
+        return await surrealdb.up().then(() => surrealdb.query<Visits[][][]>(surql`SELECT VALUE (SELECT *, sceduled.* FROM ->visits) FROM ${edit.value!.id};`).then(result => result[0][0].sort((a, b) => a.sceduled.departure.time.getTime() - b.sceduled.departure.time.getTime())))
     }
 })
 
 const actions: EditActions = {
     save: async (id?: RecordId) => {
-        await surrealdb.query(surql`
+        await surrealdb.up().then(() => surrealdb.query(surql`
             BEGIN TRANSACTION;
 
             IF ${id === undefined} {
@@ -127,9 +127,9 @@ const actions: EditActions = {
             };
 
             COMMIT TRANSACTION;       
-        `)
+        `))
     },
-    delete: async (id: RecordId) => await surrealdb.delete(id),
+    delete: async (id: RecordId) => await surrealdb.up().then(() => surrealdb.delete(id)),
     close: () => (router.back(), journeys.reload())
 }
 

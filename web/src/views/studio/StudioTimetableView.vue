@@ -11,7 +11,7 @@
     <EditFormComponent v-if="edit.value" :type="'timetable'" :value="edit.value" :actions="actions">
         <h6>{{ $t('entity.general.general') }}</h6>
         <div class="grid-cols-sm-2 grid-cols-1">
-            <InputComponent :label="$t('entity.general.id')" :disabled="$route.params.id !== 'new'" v-model="edit.value.id.id" :required="true"/>
+            <InputComponent :label="$t('entity.general.id')" :disabled="$route.params.id !== 'new'" :modelValue="edit.value.id.id" @update:modelValue="edit.value.id = markRaw(new RecordId('timetable', $event))" :required="true"/>
             <InputComponent :label="$t('entity.general.name')" v-model="edit.value.name" :required="true"/>
         </div>
     </EditFormComponent>
@@ -25,8 +25,8 @@ import { TimetableEditDto } from '@/core/dtos'
 import { resource } from '@/core/resource'
 import type { Parameter, Timetable } from '@/core/types'
 import { SURREAL_DB_SERVICE, type SurrealDbService } from '@/services/surrealdb.service'
-import { RecordId, Table } from 'surrealdb'
-import { inject, reactive, toRaw } from 'vue'
+import { RecordId } from 'surrealdb'
+import { inject, markRaw, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 
@@ -38,7 +38,7 @@ const parameter = reactive<Parameter>({ search: '', page: 1, size: 100, count: 0
 const timetables = resource({
     parameter,
 	loader: async (parameter) => {
-        const [result, count] = await surrealdb.query<[Timetable[], number]>(`SELECT * FROM timetable ${parameter.search ? 'WHERE name.lowercase().starts_with($search.lowercase())' : ''} START ($page - 1) * $size LIMIT $size; (SELECT count() FROM route ${parameter.search ? 'WHERE name CONTAINS $search' : ''} GROUP ALL)[0].count`, parameter)
+        const [result, count] = await surrealdb.up().then(() => surrealdb.query<[Timetable[], number]>(`SELECT * FROM timetable ${parameter.search ? 'WHERE name.lowercase().starts_with($search.lowercase())' : ''} START ($page - 1) * $size LIMIT $size; (SELECT count() FROM route ${parameter.search ? 'WHERE name CONTAINS $search' : ''} GROUP ALL)[0].count`, parameter))
         parameter.count = count
         return result
     }
@@ -46,12 +46,12 @@ const timetables = resource({
 
 const edit = resource({
     parameter: { route },
-	loader: async (parameter) => new TimetableEditDto(parameter.route.params.id === 'new' ? {} : await surrealdb.select<Timetable>(new RecordId('timetable', parameter.route.params.id)))
+	loader: async (parameter) => new TimetableEditDto(parameter.route.params.id === 'new' ? {} : await surrealdb.up().then(() => surrealdb.select<Timetable>(new RecordId('timetable', parameter.route.params.id))))
 })
 
 const actions: EditActions = {
-    save: async (id?: RecordId) => id === undefined ? await surrealdb.insert(edit.value?.filterBeforeSubmit()) : await surrealdb.update(id, edit.value?.filterBeforeSubmit()),
-    delete: async (id: RecordId) => await surrealdb.delete(id),
+    save: async (id?: RecordId) => surrealdb.up().then(async () => id === undefined ? await surrealdb.insert(edit.value?.filterBeforeSubmit() as any) : await surrealdb.update(id).content(edit.value?.filterBeforeSubmit() as any)),
+    delete: async (id: RecordId) => await surrealdb.up().then(() => surrealdb.delete(id)),
     close: () => (router.back(), timetables.reload())
 }
 

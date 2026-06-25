@@ -11,7 +11,7 @@
     <EditFormComponent v-if="edit.value" :type="'operator'" :value="edit.value" :actions="actions">
         <h6>{{ $t('entity.general.general') }}</h6>
         <div class="grid-cols-sm-2 grid-cols-1">
-            <InputComponent :label="$t('entity.general.id')" :disabled="$route.params.id !== 'new'" v-model="edit.value.id.id" :required="true"/>
+            <InputComponent :label="$t('entity.general.id')" :disabled="$route.params.id !== 'new'" :modelValue="edit.value.id.id" @update:modelValue="edit.value.id = markRaw(new RecordId('operator', $event))" :required="true"/>
             <InputComponent :label="$t('entity.general.name')" v-model="edit.value.name" :required="true"/>
             <InputComponent :label="$t('entity.operator.website')" v-model="edit.value.website"/>
         </div>
@@ -37,7 +37,7 @@ import { resource } from '@/core/resource';
 import type { Operator, Parameter } from '@/core/types';
 import { SURREAL_DB_SERVICE, type SurrealDbService } from '@/services/surrealdb.service';
 import { RecordId } from 'surrealdb';
-import { inject, reactive } from 'vue';
+import { inject, markRaw, reactive, toRaw } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 const route = useRoute()
@@ -48,7 +48,7 @@ const parameter = reactive<Parameter>({ search: '', page: 1, size: 100, count: 0
 const operators = resource({
     parameter,
 	loader: async (parameter) => {
-        const [result, count] = await surrealdb.query<[Operator[], number]>(`SELECT * FROM operator ${parameter.search ? 'WHERE name.lowercase().starts_with($search.lowercase())' : ''} START ($page - 1) * $size LIMIT $size; (SELECT count() FROM operator ${parameter.search ? 'WHERE name CONTAINS $search' : ''} GROUP ALL)[0].count`, parameter)
+        const [result, count] = await surrealdb.up().then(() => surrealdb.query<[Operator[], number]>(`SELECT * FROM operator ${parameter.search ? 'WHERE name.lowercase().starts_with($search.lowercase())' : ''} START ($page - 1) * $size LIMIT $size; (SELECT count() FROM operator ${parameter.search ? 'WHERE name CONTAINS $search' : ''} GROUP ALL)[0].count`, parameter))
         parameter.count = count
         return result
     }
@@ -56,12 +56,12 @@ const operators = resource({
 
 const edit = resource({
     parameter: { route },
-	loader: async (parameter) => new OperatorEditDto(parameter.route.params.id === 'new' ? {} : await surrealdb.select(new RecordId('operator', parameter.route.params.id)))
+	loader: async (parameter) => new OperatorEditDto(parameter.route.params.id === 'new' ? {} : await surrealdb.up().then(() => surrealdb.select(new RecordId('operator', parameter.route.params.id))))
 })
 
 const actions: EditActions = {
-    save: async (id?: RecordId) => id === undefined ? await surrealdb.insert(edit.value?.filterBeforeSubmit()) : await surrealdb.update(id, edit.value?.filterBeforeSubmit()),
-    delete: async (id: RecordId) => await surrealdb.delete(id),
+    save: async (id?: RecordId) => surrealdb.up().then(async () => id === undefined ? await surrealdb.insert(edit.value?.filterBeforeSubmit() as any) : await surrealdb.update(id).content(edit.value?.filterBeforeSubmit() as any)),
+    delete: async (id: RecordId) => await surrealdb.up().then(() => surrealdb.delete(id)),
     close: () => (router.back(), operators.reload())
 }
 

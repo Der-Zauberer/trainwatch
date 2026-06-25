@@ -36,7 +36,7 @@ const parameter = reactive({ name: '' })
 
 const results = resource({
     parameter,
-    loader: (parameter) => !parameter.name ? [] : surrealdb.query<Entity<'stop'>[]>('fn::search::search($name)', { name: parameter.name }).then(result => result.flat().splice(0, 20))
+    loader: (parameter) => !parameter.name ? [] : surrealdb.up().then(() => surrealdb.query<Entity<'stop'>[]>('fn::search::search($name)', { name: parameter.name }).then(result => result.flat().splice(0, 20)))
 })
 
 watch(props, async () => props.name ? parameter.name = props.name : {})

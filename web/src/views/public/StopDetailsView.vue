@@ -164,12 +164,12 @@ function updateWindowWidth() {
 
 const stop = resource({
 	parameter: { route },
-	loader: (parameter) => parameter.route.params.id ? surrealdb.select<Stop>(new RecordId('stop', parameter.route.params.id)) : undefined
+	loader: (parameter) => parameter.route.params.id ? surrealdb.up().then(() => surrealdb.select<Stop>(new RecordId('stop', parameter.route.params.id))) : undefined
 })
 
 const lines = resource({
 	parameter: { route },
-	loader: (parameter) => parameter.route.params.id ?  surrealdb.query<BoardLine[][]>(`fn::line::board(stop:${parameter.route.params.id});`).then(response => response.flat()) : undefined
+	loader: (parameter) => parameter.route.params.id ? surrealdb.up().then(() => surrealdb.query<BoardLine[][]>(`fn::line::board(stop:${parameter.route.params.id});`).then(response => response.flat())) : undefined
 })
 
 const board = resource<BoardLine[], unknown>({

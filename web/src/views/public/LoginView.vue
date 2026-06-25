@@ -88,17 +88,17 @@ const error = ref<string>()
 async function login() {
     loading.value = true
     try {
-        if (profile.value !== profiles.default.name) await surrealdb.autoConnect(config.profiles.find(current => profile.value == current.name))
+        if (profile.value !== profiles.default.name) await surrealdb.up(config.profiles.find(current => profile.value == current.name))
         await surrealdb.signin(toRaw(credentials))
         await surrealdb.redirectPostLogin('/studio')
         error.value = undefined
     } catch (exception) {
-        const dbError = parseCustomSurrealDbError(exception as Error)
-        if (dbError.success && dbError.key === 'error.user.password.change.required') {
+        const key = parseCustomSurrealDbError(exception as Error).key
+        if (key === 'error.user.password.change.required') {
             change.value = { username: credentials.username, old: '', new: '', repeat: '' }
             error.value = undefined
         } else {
-            error.value = dbError.success ? t(dbError.key) : dbError.key
+            error.value = key ? t(key) : key
         }
     } finally {
         loading.value = false
@@ -112,8 +112,8 @@ async function changePassword(credentials: PasswordChangeRequest) {
         await surrealdb.redirectPostLogin('/studio')
         change.value = undefined
     } catch (exception) {
-        const dbError = parseCustomSurrealDbError(exception as Error)
-        error.value = dbError.success ? t(dbError.key) : dbError.key
+        const key = parseCustomSurrealDbError(exception as Error).key
+        error.value = key ? t(key) : key
     } finally {
         loading.value = false
     }

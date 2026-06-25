@@ -20,7 +20,7 @@ const surrealdb = inject(SURREAL_DB_SERVICE) as SurrealDbService
 
 const line = resource({
     parameter: route,
-    loader: (parameter) => surrealdb.query<LineStops[]>('fn::line::stops($id)', { id: new RecordId('line', parameter.params.id) }).then(results => results[0])
+    loader: (parameter) => surrealdb.up().then(() => surrealdb.query<LineStops[]>('fn::line::stops($id)', { id: new RecordId('line', parameter.params.id) }).then(results => results[0]))
 })
 
 </script>

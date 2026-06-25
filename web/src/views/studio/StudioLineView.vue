@@ -15,7 +15,7 @@
     <EditFormComponent v-if="edit.value" :type="'line'" :value="edit.value" :actions="actions">
         <h6>{{ $t('entity.general.general') }}</h6>
         <div class="grid-cols-sm-2 grid-cols-1">
-            <InputComponent :label="$t('entity.general.id')" :disabled="$route.params.id !== 'new'" v-model="edit.value.id.id" :required="true"/>
+            <InputComponent :label="$t('entity.general.id')" :disabled="$route.params.id !== 'new'" :modelValue="edit.value.id.id" @update:modelValue="edit.value.id = markRaw(new RecordId('line', $event))" :required="true"/>
             <InputRecordComponent :label="$t('entity.route.route')" v-model="edit.value.route" type="route" :required="true" :to="edit.value.route?.id ? { name: 'studio_route_edit', params: { id: edit.value.route?.id.toString() } }: undefined" />
         </div>
 
@@ -73,7 +73,7 @@ import InputComponent from '@/components/InputComponent.vue';
 import { resource } from '@/core/resource';
 import type { Connects, Line, Parameter } from '@/core/types';
 import { RecordId, surql } from 'surrealdb';
-import { inject, reactive, toRaw } from 'vue';
+import { inject, markRaw, reactive, toRaw } from 'vue';
 import DesignationChipComponent from '@/components/DesignationChipComponent.vue';
 import { useRoute, useRouter } from 'vue-router';
 import EditFormComponent, { type EditActions } from '@/components/EditFormComponent.vue';
@@ -90,7 +90,7 @@ const parameter = reactive<Parameter>({ search: '', page: 1, size: 100, count: 0
 const lines = resource({
     parameter,
 	loader: async (parameter) => {
-        const [result, count] = await surrealdb.query<[Line[], number]>(`SELECT *, route.*, route.designations.{type.*, number}, route.timetable.* FROM line ${parameter.search ? 'WHERE name CONTAINS $search' : ''} START ($page - 1) * $size LIMIT $size; (SELECT count() FROM line ${parameter.search ? 'WHERE name CONTAINS $search' : ''} GROUP ALL)[0].count`, parameter)
+        const [result, count] = await surrealdb.up().then(() => surrealdb.query<[Line[], number]>(`SELECT *, route.*, route.designations.{type.*, number}, route.timetable.* FROM line ${parameter.search ? 'WHERE name CONTAINS $search' : ''} START ($page - 1) * $size LIMIT $size; (SELECT count() FROM line ${parameter.search ? 'WHERE name CONTAINS $search' : ''} GROUP ALL)[0].count`, parameter))
         parameter.count = count
         return result
     }
@@ -98,14 +98,14 @@ const lines = resource({
 
 const edit = resource({
     parameter: { route },
-	loader: async (parameter) => new LineEditDto(parameter.route.params.id === 'new' ? {} : await surrealdb.select<Line>(new RecordId('line', parameter.route.params.id)))
+	loader: async (parameter) => new LineEditDto(parameter.route.params.id === 'new' ? {} : await surrealdb.up().then(() => surrealdb.select<Line>(new RecordId('line', parameter.route.params.id))))
 })
 
 const editConnects = resource({
     parameter: { edit },
     loader: async () => {
         if (!edit.value?.id) return []
-        return await surrealdb.query<Connects[][][]>(surql`SELECT VALUE ->connects.* FROM ${edit.value.id};`).then(result => result[0][0].sort((a, b) => a.departure.time.getTime() - b.departure.time.getTime())) || []
+        return await surrealdb.up().then(() => surrealdb.query<Connects[][][]>(surql`SELECT VALUE ->connects.* FROM ${edit.value!.id};`)).then(result => result[0][0].sort((a, b) => a.departure.time.getTime() - b.departure.time.getTime())) || []
     }
 })
 
@@ -115,7 +115,7 @@ const connectsToRemove: Connects[] = []
 const actions: EditActions = {
     save: async (id?: RecordId) => {
         console.log(id, toRaw(edit.value), toRaw(connectsToAdd), toRaw(connectsToRemove), toRaw(editConnects.value?.filter(connects => !connectsToAdd.includes(toRaw(connects)))))
-        await surrealdb.query(surql`
+        await surrealdb.up().then(() => surrealdb.query(surql`
             --BEGIN TRANSACTION;
 
             IF ${id === undefined} {
@@ -139,9 +139,9 @@ const actions: EditActions = {
             };
 
             --COMMIT TRANSACTION;
-        `);
+        `));
     },
-    delete: async (id: RecordId) => await surrealdb.delete(id),
+    delete: async (id: RecordId) => await surrealdb.up().then(() => surrealdb.delete(id)),
     close: () => (router.back(), lines.reload())
 }
 

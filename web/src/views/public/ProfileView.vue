@@ -31,8 +31,6 @@
 
 <script setup lang="ts">
 import InputComponent from '@/components/InputComponent.vue';
-import { resource } from '@/core/resource';
-import { type User } from '@/core/types';
 import { parseCustomSurrealDbError, SURREAL_DB_SERVICE, type PasswordChangeRequest, type SurrealDbService } from '@/services/surrealdb.service';
 import { inject, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -40,10 +38,7 @@ import { useI18n } from 'vue-i18n';
 const surrealdb = inject(SURREAL_DB_SERVICE) as SurrealDbService
 const { t } = useI18n();
 
-const profile = resource({
-    loader: () => surrealdb.info<User>()
-})
-
+const profile = surrealdb.getUser()
 const password = reactive<PasswordChangeRequest & { error?: string } & { success?: boolean }>({ username: '' , old: '', new: '', repeat: '' })
 
 async function changePassword() {
@@ -55,8 +50,8 @@ async function changePassword() {
         delete password.error
         password.success = true
     } catch (exception) {
-        const dbError = parseCustomSurrealDbError(exception as Error)
-        password.error = dbError.success ? t(dbError.key) : dbError.key
+        const key = parseCustomSurrealDbError(exception as Error).key
+        password.error = key ? t(key) : key
         password.success = false
     }
 }

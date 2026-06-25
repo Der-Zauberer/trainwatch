@@ -1,7 +1,7 @@
 import type { BoardLine, Type } from "@/core/types";
-import { RecordId } from "surrealdb";
-import type { App } from "vue"
-import surrealdbService, { normalize, SurrealDbService } from "./surrealdb.service";
+import { RecordId, Table } from "surrealdb";
+import { markRaw, type App } from "vue"
+import { normalize, SurrealDbService } from "./surrealdb.service";
 
 export class DbTimetableService {
 
@@ -17,7 +17,7 @@ export class DbTimetableService {
             .then(async response => {
                 const board: BoardLine[] = []
                 const station = { id: uic, name: response.querySelector('timetable')!.getAttribute('station')!.replace(/(?!\s)\(/g, ' (') }
-                const types = new Map(await this.surrealDbService.select<Type>('type').then(result => result.map(type => [type.id.id, type])))
+                const types = new Map(await this.surrealDbService.select<Type>(new Table('type')).then(result => result.map(type => [type.id.id, type])))
                 for (const element of response.querySelector('timetable')!.children) {
                     const general = element.querySelector('tl')!
                     const arrival = element.querySelector('ar')
@@ -26,31 +26,31 @@ export class DbTimetableService {
                         ...(arrival ? arrival.getAttribute('ppth')!.split('|').map(element => ({ name: element.replace(/(?!\s)\(/g, ' (') })) : []),
                         station,
                         ...(departure ? departure.getAttribute('ppth')!.split('|').map(element => ({ name: element.replace(/(?!\s)\(/g, ' (') })) : [])
-                    ].map(station => ({ id: new RecordId('stop', normalize(station.name, '_')), name: station.name }))
+                    ].map(station => ({ id: markRaw(new RecordId('stop', normalize(station.name, '_'))), name: station.name }))
                     const line = (departure ? departure : arrival)!.getAttribute('l')
                     const type = general.getAttribute('c')
                     const classification = type !== 'SBB' ? type : (line || type).replace(/\d/g, '')
 
                     board.push({
-                        id: new RecordId('connects', 'unknwn'),
+                        id: markRaw(new RecordId('connects', 'unknwn')),
                         line: {
-                            id: new RecordId('line', 'unknown'),
+                            id: markRaw(new RecordId('line', 'unknown')),
                             route: {
-                                id: new RecordId('route', 'unknown'),
+                                id: markRaw(new RecordId('route', 'unknown')),
                                 name: 'unknown',
                                 operator: {
-                                    id: new RecordId('operator', 'unknown'),
+                                    id: markRaw(new RecordId('operator', 'unknown')),
                                     name: 'unknown'
                                 },
                                 timetable: {
-                                    id: new RecordId('timetable', 'unknown'),
+                                    id: markRaw(new RecordId('timetable', 'unknown')),
                                     name: 'DB Timetale API'
                                 },
                                 designations: [
                                     {
                                         number: (line || '').replace(/\D/g, ''),
-                                        type: types.get(classification?.toLowerCase()!) || {
-                                            id: new RecordId('type', 'unknown'),
+                                        type: types.get(classification?.toLowerCase()!) ?? {
+                                            id: markRaw(new RecordId('type', 'unknown')),
                                             name: classification || '',
                                             description: '',
                                             classification: 'LONG_DISTANCE',

@@ -1,5 +1,6 @@
 import { RecordId } from "surrealdb"
 import type { Address, Color, Location,  Source } from "./types"
+import { markRaw } from "vue"
 
 export abstract class Filterable<T> {
 
@@ -9,7 +10,7 @@ export abstract class Filterable<T> {
 }
 
 export class StopEditDto extends Filterable<StopEditDto> {
-    id: RecordId<'stop'> = new RecordId('stop', '')
+    id: RecordId<'stop'> = markRaw(new RecordId('stop', ''))
     name?: string
     score?: number
     platforms: {
@@ -69,7 +70,7 @@ export class StopEditDto extends Filterable<StopEditDto> {
 }
 
 export class TypeEditDto extends Filterable<TypeEditDto> {
-    id: RecordId<'type'> = new RecordId('type', '')
+    id: RecordId<'type'> = markRaw(new RecordId('type', ''))
     name?: string
     description?: string
     priority?: number
@@ -84,7 +85,7 @@ export class TypeEditDto extends Filterable<TypeEditDto> {
 }
 
 export class OperatorEditDto extends Filterable<OperatorEditDto> {
-    id: RecordId<'operator'> = new RecordId('operator', '')
+    id: RecordId<'operator'> = markRaw(new RecordId('operator', ''))
     name?: string
     address: Partial<Address> = {}
     website?: string
@@ -103,7 +104,7 @@ export class OperatorEditDto extends Filterable<OperatorEditDto> {
 }
 
 export class TimetableEditDto extends Filterable<TimetableEditDto> {
-    id: RecordId<'timetable'> = new RecordId('timetable', '')
+    id: RecordId<'timetable'> = markRaw(new RecordId('timetable', ''))
     name?: string
 
     constructor(initial?: object) {
@@ -113,7 +114,7 @@ export class TimetableEditDto extends Filterable<TimetableEditDto> {
 }
 
 export class RouteEditDto extends Filterable<RouteEditDto> {
-    id: RecordId<'route'> = new RecordId('route', '')
+    id: RecordId<'route'> = markRaw(new RecordId('route', ''))
     name?: string
     timetable?: RecordId<'route'>
     designations: {
@@ -130,7 +131,7 @@ export class RouteEditDto extends Filterable<RouteEditDto> {
 }
 
 export class LineEditDto extends Filterable<RouteEditDto> {
-    id: RecordId<'line'> = new RecordId('line', '')
+    id: RecordId<'line'> = markRaw(new RecordId('line', ''))
     route?: RecordId<'route'>
 
     constructor(initial?: object) {
@@ -140,7 +141,7 @@ export class LineEditDto extends Filterable<RouteEditDto> {
 }
 
 export class JourneyEditDto extends Filterable<JourneyEditDto> {
-    id: RecordId<'journey'> = new RecordId('journey', '')
+    id: RecordId<'journey'> = markRaw(new RecordId('journey', ''))
     line?: RecordId<'line'>
 
     constructor(initial?: object) {
@@ -150,7 +151,7 @@ export class JourneyEditDto extends Filterable<JourneyEditDto> {
 }
 
 export class InformationEditDto extends Filterable<RouteEditDto> {
-    id: RecordId<'information'> = new RecordId('information', '')
+    id: RecordId<'information'> = markRaw(new RecordId('information', ''))
     name?: string
     type: 'INFORMATION' | 'WARNING' | 'DISRUPTION' | 'CLEARANCE' = 'INFORMATION'
     description?: string
@@ -163,7 +164,7 @@ export class InformationEditDto extends Filterable<RouteEditDto> {
 }
 
 export class RoleEditDto extends Filterable<RoleEditDto> {
-    id: RecordId<'role'> = new RecordId('role', '')
+    id: RecordId<'role'> = markRaw(new RecordId('role', ''))
     name?: string
     permissions: string[] = []
 
@@ -174,7 +175,7 @@ export class RoleEditDto extends Filterable<RoleEditDto> {
 }
 
 export class UserEditDto extends Filterable<UserEditDto> {
-    id: RecordId<'user'> = new RecordId('user', '')
+    id: RecordId<'user'> = markRaw(new RecordId('user', ''))
     name?: string
     email?: string
     password?: string

@@ -79,7 +79,8 @@ swd-loading-spinner::after {
 </style>
 
 <script setup lang="ts">
-import  { RecordId, SurrealDbError } from 'surrealdb';
+import { parseCustomSurrealDbError } from '@/services/surrealdb.service';
+import  { RecordId } from 'surrealdb';
 import { reactive, ref, useTemplateRef } from 'vue';
 import { useRoute } from 'vue-router';
 
@@ -99,7 +100,7 @@ async function remove() {
         await props.actions.delete(new RecordId(props.type, route.params.id))
         await props.actions.close()
     } catch (exception: unknown) {
-        error.value = (exception as SurrealDbError).message
+        error.value = parseCustomSurrealDbError(exception as Error).key
     }
     loading.delete = false
 }
@@ -116,7 +117,7 @@ async function save() {
         await props.actions.save(route.params.id === 'new' ? undefined : new RecordId(props.type, route.params.id))
         await props.actions.close()
     } catch (exception: unknown) {
-        error.value = (exception as SurrealDbError).message
+        error.value = parseCustomSurrealDbError(exception as Error).key
     }
     loading.save = false
 }

@@ -156,7 +156,7 @@ INSERT IGNORE INTO type [
     { id: 'ec', name: 'EC', description: 'Eurocity', priority: 1, vehicle: 'TRAIN', classification: 'LONG_DISTANCE', color: { text: '#ffff00', background: '#0000ff' }},
     { id: 'ece', name: 'ECE', description: 'Eurocity Express', priority: 0, vehicle: 'TRAIN', classification: 'LONG_DISTANCE', color: { text: '#ffff00', background: '#0000ff' }},
     { id: 'en', name: 'EN', description: 'EuroNight', priority: 10, vehicle: 'TRAIN', classification: 'LONG_DISTANCE', color: { text: '#ffffff', background: '#0000ff' }},
-    { id: 'fex',name: 'FEX', description: 'Airport Express', vehicle: 'TRAIN', priority: 21,classification: 'REGIONAL',color: { text: '#ffffff', background: '#ff0000' }},
+    { id: 'fex',name: 'FEX', description: 'Airport Express', vehicle: 'TRAIN', priority: 21,classification: 'REGIONAL', color: { text: '#ffffff', background: '#ff0000' }},
     { id: 'd',name: 'D', description: 'Express', priority: 8, vehicle: 'TRAIN', classification: 'LONG_DISTANCE', color: { text: '#ffffff', background: '#7f7f7f' }},
     { id: 'dn',name: 'DN', description: 'Night Express', priority: 8, vehicle: 'TRAIN', classification: 'LONG_DISTANCE', color: { text: '#ffffff', background: '#0000ff' }},
     { id: 'ic',name: 'IC', description: 'Intercity', priority: 7, vehicle: 'TRAIN', classification: 'LONG_DISTANCE', color: { text: '#ff0000', background: '#ffffff' }},
@@ -436,7 +436,7 @@ DEFINE EVENT OVERWRITE _password_change_request ON TABLE _password_change_reques
 };
 
 DEFINE FUNCTION OVERWRITE fn::user::has_permission($user: record<user>, $permissions: string) {
-    RETURN array::includes($user.permissions, $permissions) || array::includes($user.roles.map(|$role| $role.permissions).flatten(), $permissions)
+    RETURN set::includes($user.permissions, $permissions) || set::includes($user.roles.map(|$role| $role.permissions).flatten(), $permissions)
 };
 
 INSERT IGNORE INTO user [
@@ -445,14 +445,14 @@ INSERT IGNORE INTO user [
         name: 'admin',
         email: 'admin@trainwatch.derzauberer.eu',
         password: 'admin',
-        roles: [role:admin],
-        permissions: [],
+        roles: <set>[role:admin],
+        permissions: <set>[],
         account: {
 			enabled: true,
             expiry: NONE
 		},
         credentials: {
-			chnage: false,
+			change: false,
             expiry: NONE
 		}
     },
@@ -461,14 +461,14 @@ INSERT IGNORE INTO user [
         name: 'guest',
         email: 'guest@trainwatch.derzauberer.eu',
         password: 'guest',
-        roles: [],
-        permissions: [],
+        roles: <set>[],
+        permissions: <set>[],
         account: {
 			enabled: false,
             expiry: NONE
 		},
         credentials: {
-			chnage: false,
+			change: false,
             expiry: NONE
 		}
     }

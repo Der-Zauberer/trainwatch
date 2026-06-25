@@ -9,7 +9,7 @@
 <script setup lang="ts">
 import LineComponent from '@/components/LineComponent.vue';
 import { resource } from '@/core/resource';
-import type {  JourneyStops, LineStops } from '@/core/types';
+import type { JourneyStops, LineStops } from '@/core/types';
 import { SURREAL_DB_SERVICE, type SurrealDbService } from '@/services/surrealdb.service';
 import { RecordId } from 'surrealdb';
 import { inject } from 'vue';
@@ -20,7 +20,7 @@ const surrealdb = inject(SURREAL_DB_SERVICE) as SurrealDbService
 
 const journey = resource({
     parameter: route,
-    loader: (parameter) => surrealdb.query<JourneyStops[]>('fn::journey::stops($id)', { id: new RecordId('journey', parameter.params.id) }).then(results => results[0])
+    loader: (parameter) => surrealdb.up().then(() => surrealdb.query<JourneyStops[]>('fn::journey::stops($id)', { id: new RecordId('journey', parameter.params.id) }).then(results => results[0]))
 })
 
 function journeyToLine(journey: JourneyStops): LineStops {

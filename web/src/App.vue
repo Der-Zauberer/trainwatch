@@ -8,13 +8,13 @@
     <div class="width-100"></div>
     <RouterLink to="/login" v-if="!user">{{ $t('page.login') }}</RouterLink>
 
-    <swd-dropdown v-if="user">
-      <a>{{ user.name }}</a>
+    <swd-dropdown v-if="user.value">
+      <a>{{ user.value.name }}</a>
       <swd-dropdown-content>
         <swd-selection>
           <div>
-            <span>{{ user.name }}</span>
-            <swd-subtitle>{{ user.email }}</swd-subtitle>
+            <span>{{ user.value.name }}</span>
+            <swd-subtitle>{{ user.value.email }}</swd-subtitle>
           </div>
           <RouterLink to="/profile">{{ $t('page.profile') }}</RouterLink>
           <RouterLink to="/studio">{{ $t('page.studio') }}</RouterLink>
@@ -58,15 +58,14 @@ swd-dropdown swd-selection div {
 </style>
 
 <script setup lang="ts">
-import { inject, type Ref } from 'vue';
+import { inject } from 'vue';
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import type { SurrealDbService } from './services/surrealdb.service';
-import type { User } from './core/types';
 
 const route = useRoute()
 const surrealdb = inject('surrealDbService') as SurrealDbService
 
-const user : Ref<User | undefined> = surrealdb.getUserAsRef()
+const user = surrealdb.getUser()
 
 function isRoute(names: string[]): boolean | undefined {
   return names.includes((route.name || '').toString()) || undefined

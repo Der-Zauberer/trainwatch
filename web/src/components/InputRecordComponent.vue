@@ -87,12 +87,12 @@ const parameter = reactive({ search: '' })
 
 const records = resource({
     parameter,
-    loader: (parameter) => surrealdb.query<{ id: RecordId, name: string }[][]>(`SELECT id, name FROM ${props.type} ${ parameter.search ? 'WHERE fn::search::normalize(name) CONTAINS fn::search::normalize($search)' : '' } LIMIT 25;`, parameter).then(result => result[0])
+    loader: (parameter) => surrealdb.up().then(() => surrealdb.query<{ id: RecordId, name: string }[][]>(`SELECT id, name FROM ${props.type} ${ parameter.search ? 'WHERE fn::search::normalize(name) CONTAINS fn::search::normalize($search)' : '' } LIMIT 25;`, parameter).then(result => result[0]))
 })
 
 const record = resource({
     parameter: { model },
-    loader: async (parameter) => parameter.model ? await surrealdb.query<[{ name: string }[]]>(surql`SELECT name FROM ${parameter.model.value};`).then(result => result[0][0].name) : undefined
+    loader: async (parameter) => parameter.model ? await surrealdb.up().then(() => surrealdb.query<[{ name: string }[]]>(surql`SELECT name FROM ${parameter.model.value};`).then(result => result[0][0].name)) : undefined
 })
 
 </script>

@@ -1,5 +1,5 @@
 <template>
-	<RouterLink v-for="line of Array.isArray(line) ? line : [line]" :key="line.id.id.toString()" :to="{ name: 'line', params: { id: line.line.id.id.toString() } }">
+	<RouterLink v-for="line of Array.isArray(props.line) ? props.line : [props.line]" :key="line.id.id.toString()" :to="{ name: 'line', params: { id: line.id.id.toString()} }">
 		<swd-card class="swd-card-hover">
 			<div class="flex margin-0">
 				<div>{{ dateToTime(arrival ? line.arrival.time : line.departure.time) }}</div>

@@ -20,7 +20,7 @@
 
             <swd-card-ghost>
                 <h3>Welcome back</h3>
-                <p class="primary-color">{{ user?.name }}</p>
+                <p class="primary-color">{{ user?.value?.name }}</p>
             </swd-card-ghost>
 
         </div>
@@ -48,21 +48,21 @@ type Amounts = {
 
 const surrealdb = inject(SURREAL_DB_SERVICE) as SurrealDbService
 
-const user = surrealdb.getUserAsRef()
+const user = surrealdb.getUser()
 
 const QUARRY = surql`
 RETURN {
-    stops: (SELECT count() FROM stop GROUP ALL)[0].count || 0,
-    operator: (SELECT count() FROM operator GROUP ALL)[0].count || 0,
-    types: (SELECT count() FROM type GROUP ALL)[0].count || 0,
-    routes: (SELECT count() FROM route GROUP ALL)[0].count || 0,
-    lines: (SELECT count() FROM line GROUP ALL)[0].count || 0,
-    journeys: (SELECT count() FROM journey GROUP ALL)[0].count || 0,
-    information: (SELECT count() FROM information GROUP ALL)[0].count || 0,
-    roles: (SELECT count() FROM role GROUP ALL)[0].count || 0,
-    users: (SELECT count() FROM user GROUP ALL)[0].count || 0,
+    stops: count(SELECT id FROM stop),
+    operator: count(SELECT id FROM operator),
+    types: count(SELECT id FROM type ),
+    routes: count(SELECT id FROM route),
+    lines: count(SELECT id FROM line),
+    journeys: count(SELECT id FROM journey),
+    information: count(SELECT id FROM information),
+    roles: count(SELECT id FROM role),
+    users: count(SELECT id FROM user)
 }`
 
-const amounts = resource({ loader: () => surrealdb.query<Amounts[]>(QUARRY).then(results => results[0]) })
+const amounts = resource({ loader: () => surrealdb.up().then(() => surrealdb.query<Amounts[]>(QUARRY).then(results => results[0])) })
 
 </script>
