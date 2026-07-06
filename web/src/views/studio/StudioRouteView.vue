@@ -21,12 +21,14 @@
             <InputRecordComponent :label="$t('entity.operator.operator')" v-model="edit.value.operator" type="operator" :required="true" :to="edit.value.operator?.id ? { name: 'studio_operator_edit', params: { id: edit.value.operator?.id.toString() } } : undefined"/>
         </div>
         <h6>{{ $t('entity.route.designations.designations', 0) }}</h6>
-        <div class="input-array" v-for="(designation, index) in edit.value.designations" :key="index">
-            <InputRecordComponent :label="$t('entity.type.type')" v-model="designation.type" type="type" :required="true" :to="designation.type?.id ? { name: 'studio_type_edit', params: { id: designation.type?.id.toString() } } : undefined"/>
-            <InputComponent :label="$t('entity.route.designations.number')" v-model="designation.number" :required="true"/>
-            <button class="grey-color" @click.prevent="edit.value.designations.splice(index, 1);"><swd-icon class="delete-icon"></swd-icon></button>
-        </div>
-        <button class="grey-color" @click.prevent="edit.value.designations.push({ type: undefined, number: '' })"><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>
+        <InputTableComponent :header="[ $t('entity.type.type'), $t('entity.route.designations.number'), '' ]">
+            <div v-for="(designation, index) in edit.value.designations" :key="index">
+                <InputRecordComponent :label="$t('entity.type.type')" v-model="designation.type" type="type" :required="true" :to="designation.type?.id ? { name: 'studio_type_edit', params: { id: designation.type?.id.toString() } } : undefined"/>
+                <InputComponent :label="$t('entity.route.designations.number')" v-model="designation.number" :required="true"/>
+                <button class="grey-color" @click.prevent="edit.value.designations.splice(index, 1);"><swd-icon class="delete-icon"></swd-icon></button>
+            </div>
+        </InputTableComponent>
+        <button class="float-right grey-color" @click.prevent="edit.value.designations.push({ type: undefined, number: '' })"><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>
     </EditFormComponent>
 </template>
 
@@ -35,14 +37,6 @@
     margin: 0;
     --theme-element-spacing: calc(var(--theme-inner-element-spacing) / 2)
 }
-
-.input-array {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr) fit-content(0);
-    gap: var(--theme-inner-element-spacing);
-    margin-bottom: var(--theme-element-spacing);
-    align-items: center;
-}
 </style>
 
 <script setup lang="ts">
@@ -50,6 +44,7 @@ import DesignationChipComponent from '@/components/DesignationChipComponent.vue'
 import EditFormComponent, { type EditActions } from '@/components/EditFormComponent.vue';
 import InputComponent from '@/components/InputComponent.vue';
 import InputRecordComponent from '@/components/InputRecordComponent.vue';
+import InputTableComponent from '@/components/InputTableComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
 import { RouteEditDto } from '@/core/dtos';
 import { resource } from '@/core/resource';

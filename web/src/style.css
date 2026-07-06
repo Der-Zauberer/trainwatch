@@ -23,3 +23,8 @@
 h5 {
     font-weight: normal;
 }
+
+/* Default Overwrites */
+
+.float-right { float: left }
+.float-right { float: right }

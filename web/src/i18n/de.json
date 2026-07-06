@@ -67,7 +67,7 @@
             "time": "Zeit",
             "arrivaltime": "Ankunftszeit",
             "departuretime": "Abfahrtszeit",
-            "arrivalplatform": "Ankunftskleis",
+            "arrivalplatform": "Ankunftsgleis",
             "departureplatform": "Abfahrtsgleis"
         },
         "vehicle": {

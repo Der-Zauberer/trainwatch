@@ -37,7 +37,7 @@
     display: flex;
     align-items: center;
     background: var(--theme-element-secondary-color);
-    height: round(3.2em, 1px);
+    height: 100%;
 }
 
 .input-bar .input-bar__link swd-icon {

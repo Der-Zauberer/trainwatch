@@ -205,6 +205,7 @@ export type Visits = {
     id: RecordId<'visits'>
     in: RecordId<'journey'>
     out: RecordId<'stop'>
+    name: string
     canceled: boolean
     sceduled: Connects
     realtime: {

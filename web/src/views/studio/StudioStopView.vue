@@ -41,33 +41,24 @@
             <InputComponent :label="$t('entity.stop.open.sunday')" v-model="edit.value.open.sunday"/>
         </div>
         <h6>{{ $t('entity.stop.platforms.platforms') }}</h6>
-        <div class="input-array" v-for="(platform, index) in edit.value.platforms" :key="index">
-            <InputComponent :id="`${$t('entity.general.name')}-${index}`" :label="$t('entity.general.name')" v-model="edit.value.platforms[index].name"/>
-            <InputComponent :id="`${$t('entity.stop.platforms.length')}-${index}`" :label="$t('entity.stop.platforms.length') + ' (m)'" type="number" step="any" v-model.number="edit.value.platforms[index].height"/>
-            <InputComponent :id="`${$t('entity.stop.platforms.height')}-${index}`" :label="$t('entity.stop.platforms.height') + ' (mm)'" type="number" v-model.number="edit.value.platforms[index].length"/>
-            <InputComponent :id="`${$t('entity.stop.platforms.linkedPlatforms')}-${index}`" :label="$t('entity.stop.platforms.linkedPlatforms')" :value="edit.value.platforms[index].linkedPlatforms.toString()" @input="edit.value.platforms[index].linkedPlatforms = ($event.target as HTMLInputElement).value.split(/\s*,\s*/)"/>
-            <button class="grey-color" @click.prevent="edit.value.platforms.splice(index, 1);"><swd-icon class="delete-icon"></swd-icon></button>
-        </div>
-        <button class="grey-color" @click.prevent="edit.value.platforms.push({ name: '', height: 0, length: 0, linkedPlatforms: [] })"><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>
+        <InputTableComponent :header="[$t('entity.general.name'), $t('entity.stop.platforms.length'), $t('entity.stop.platforms.height'), $t('entity.stop.platforms.linkedPlatforms'), '' ]">
+            <div v-for="(platform, index) in edit.value.platforms" :key="index">
+                <InputComponent :id="`${$t('entity.general.name')}-${index}`" :label="$t('entity.general.name')" v-model="edit.value.platforms[index].name"/>
+                <InputComponent :id="`${$t('entity.stop.platforms.length')}-${index}`" :label="$t('entity.stop.platforms.length') + ' (m)'" type="number" step="any" v-model.number="edit.value.platforms[index].height"/>
+                <InputComponent :id="`${$t('entity.stop.platforms.height')}-${index}`" :label="$t('entity.stop.platforms.height') + ' (mm)'" type="number" v-model.number="edit.value.platforms[index].length"/>
+                <InputComponent :id="`${$t('entity.stop.platforms.linkedPlatforms')}-${index}`" :label="$t('entity.stop.platforms.linkedPlatforms')" :value="edit.value.platforms[index].linkedPlatforms.toString()" @input="edit.value.platforms[index].linkedPlatforms = ($event.target as HTMLInputElement).value.split(/\s*,\s*/)"/>
+                <button class="grey-color" @click.prevent="edit.value.platforms.splice(index, 1);"><swd-icon class="delete-icon"></swd-icon></button>
+            </div>
+        </InputTableComponent>
+        <button class="float-right grey-color" @click.prevent="edit.value.platforms.push({ name: '', height: 0, length: 0, linkedPlatforms: [] })"><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>
     </EditFormComponent>
 
 </template>
 
-<style scoped>
-
-.input-array {
-    display: grid;
-    grid-template-columns: auto repeat(3, fit-content(200px)) fit-content(0);
-    gap: var(--theme-inner-element-spacing);
-    margin-bottom: var(--theme-element-spacing);
-    align-items: center;
-}
-
-</style>
-
 <script setup lang="ts">
 import EditFormComponent, { type EditActions } from '@/components/EditFormComponent.vue';
 import InputComponent from '@/components/InputComponent.vue';
+import InputTableComponent from '@/components/InputTableComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
 import { StopEditDto } from '@/core/dtos';
 import { resource } from '@/core/resource';

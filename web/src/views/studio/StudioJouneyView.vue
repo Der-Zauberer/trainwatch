@@ -18,28 +18,29 @@
             <InputComponent :label="$t('entity.general.id')" :disabled="$route.params.id !== 'new'" :modelValue="edit.value.id.id" @update:modelValue="edit.value.id = markRaw(new RecordId('journey', $event))" :required="true"/>
             <InputRecordComponent :label="$t('entity.line.line')" v-model="edit.value.line" type="line" :required="true" :to="edit.value.line?.id ? { name: 'studio_line_edit', params: { id: edit.value.line?.id.toString() } } : undefined"/>
         </div>
-        <div class="stops" v-for="stop of editVisits.value" :key="stop.id.id.toString()">
-            <swd-input>
-                <label>{{ $t('entity.traffic.arrivaltime') }}</label>
-                <input :value="dateToTime(stop.realtime.arrival.time)" @input="stop.realtime.arrival.time = timeToDate(($event.target as HTMLInputElement).value)" type="time">
-                <div style="height: round(.5em, 1px)"></div>
-                <label>{{ $t('entity.traffic.departuretime') }}</label>
-                <input :value="dateToTime(stop.realtime.departure.time)" @input="stop.realtime.departure.time = timeToDate(($event.target as HTMLInputElement).value)"  type="time">
-            </swd-input>
-
-            <swd-input>
-                <label>{{ $t('entity.traffic.arrivalplatform') }}</label>
-                <input v-model="stop.realtime.arrival.platform">
-                <div style="height: round(.5em, 1px)"></div>
-                <label>{{ $t('entity.traffic.departureplatform') }}</label>
-                <input v-model="stop.realtime.departure.platform">
-            </swd-input>
-
-            <swd-input>
-                <label>{{ $t('entity.traffic.canceled') }}</label>
-                <input v-model="stop.canceled" type="checkbox">
-            </swd-input>
-        </div>
+        <InputTableComponent :header="[ $t('entity.stop.stop'), `${$t('entity.traffic.arrivaltime')}/ ${$t('entity.traffic.departuretime')}`, `${$t('entity.traffic.arrivalplatform')}/ ${$t('entity.traffic.departureplatform')}`, $t('entity.traffic.canceled') ]" columns="auto fit-content(0) fit-content(0) fit-content(0)">
+            <div v-for="stop of editVisits.value" :key="stop.sceduled.departure">
+                <InputComponent :label="$t('entity.stop.stop')" :value="stop.name" disabled/>
+                <swd-input>
+                    <label>{{ $t('entity.traffic.arrivaltime') }}</label>
+                    <input :value="dateToTime(stop.realtime.arrival.time)" @input="stop.realtime.arrival.time = timeToDate(($event.target as HTMLInputElement).value)" type="time">
+                    <div style="height: round(.5em, 1px)"></div>
+                    <label>{{ $t('entity.traffic.departuretime') }}</label>
+                    <input :value="dateToTime(stop.realtime.departure.time)" @input="stop.realtime.departure.time = timeToDate(($event.target as HTMLInputElement).value)"  type="time">
+                </swd-input>
+                <swd-input>
+                    <label>{{ $t('entity.traffic.arrivalplatform') }}</label>
+                    <input v-model="stop.realtime.arrival.platform">
+                    <div style="height: round(.5em, 1px)"></div>
+                    <label>{{ $t('entity.traffic.departureplatform') }}</label>
+                    <input v-model="stop.realtime.departure.platform">
+                </swd-input>
+                <swd-input>
+                    <label>{{ $t('entity.traffic.canceled') }}</label>
+                    <input v-model="stop.canceled" type="checkbox">
+                </swd-input>
+            </div>
+        </InputTableComponent>
     </EditFormComponent>
 </template>
 
@@ -48,14 +49,6 @@
     margin: 0;
     --theme-element-spacing: calc(var(--theme-inner-element-spacing) / 2)
 }
-
-.stops {
-    display: grid;
-    gap: var(--theme-inner-element-spacing);
-    grid-template-columns: fit-content(150px) fit-content(150px) auto;
-    vertical-align: middle;
-    margin-bottom: var(--theme-element-spacing);
-}
 </style>
 
 <script setup lang="ts">
@@ -63,6 +56,7 @@ import DesignationChipComponent from '@/components/DesignationChipComponent.vue'
 import EditFormComponent, { type EditActions } from '@/components/EditFormComponent.vue';
 import InputComponent from '@/components/InputComponent.vue';
 import InputRecordComponent from '@/components/InputRecordComponent.vue';
+import InputTableComponent from '@/components/InputTableComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
 import { JourneyEditDto } from '@/core/dtos';
 import { dateToTime, timeToDate } from '@/core/functions';
@@ -96,7 +90,7 @@ const editVisits = resource({
     parameter: { edit },
     loader: async () => {
         if (!edit.value?.id) return []
-        return await surrealdb.up().then(() => surrealdb.query<Visits[][][]>(surql`SELECT VALUE (SELECT *, sceduled.* FROM ->visits) FROM ${edit.value!.id};`).then(result => result[0][0].sort((a, b) => a.sceduled.departure.time.getTime() - b.sceduled.departure.time.getTime())))
+        return await surrealdb.up().then(() => surrealdb.query<Visits[][][]>(surql`SELECT VALUE (SELECT *, sceduled.*, out.name AS name FROM ->visits) FROM ${edit.value!.id};`).then(result => result[0][0].sort((a, b) => a.sceduled.departure.time.getTime() - b.sceduled.departure.time.getTime())))
     }
 })
 

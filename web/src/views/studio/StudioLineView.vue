@@ -20,29 +20,28 @@
         </div>
 
         <h6>{{ $t('entity.stop.stop', 0) }}</h6>
-        <div class="stops" v-for="stop of editConnects.value" :key="stop.id.id.toString()">
-            <swd-input>
-                <label>{{ $t('entity.traffic.arrivaltime') }}</label>
-                <input :value="dateToTime(stop.arrival.time)" @input="stop.arrival.time = timeToDate(($event.target as HTMLInputElement).value)" type="time">
-                <div style="height: round(.5em, 1px)"></div>
-                <label>{{ $t('entity.traffic.departuretime') }}</label>
-                <input :value="dateToTime(stop.departure.time)" @input="stop.departure.time = timeToDate(($event.target as HTMLInputElement).value)"  type="time">
-            </swd-input>
-            
-            <swd-input>
-                <label>{{ $t('entity.traffic.arrivalplatform') }}</label>
-                <input v-model="stop.arrival.platform">
-                <div style="height: round(.5em, 1px)"></div>
-                <label>{{ $t('entity.traffic.departureplatform') }}</label>
-                <input v-model="stop.departure.platform">
-            </swd-input>
 
-            <div v-if="editConnects.value" class="stops_vertical">
-                <InputRecordComponent :id="`${$t('entity.stop.stop')}-${stop.id.id.toString()}`" :label="$t('entity.stop.stop')" v-model="stop.out" type="stop" :required="true" :to="stop.out.id ? { name: 'studio_stop_edit', params: { id: stop.out.id.toString() } } : undefined"/>
-                <button class="grey-color" @click="connectsToRemove.push(editConnects.value.splice(editConnects.value.indexOf(stop), 1)[0])"><swd-icon class="delete-icon"></swd-icon></button>
+        <InputTableComponent :header="[ `${$t('entity.traffic.arrivaltime')}/ ${$t('entity.traffic.departuretime')}`, `${$t('entity.traffic.arrivalplatform')}/ ${$t('entity.traffic.departureplatform')}`, $t('entity.stop.stop'), '' ]" columns="fit-content(0) fit-content(0) auto fit-content(0)">
+            <div v-for="(stop, index) of editConnects.value?.map(stop => toRaw(stop))" :key="index">
+                <swd-input>
+                    <label>{{ $t('entity.traffic.arrivaltime') }}</label>
+                    <input :value="dateToTime(stop.arrival.time)" @input="stop.arrival.time = timeToDate(($event.target as HTMLInputElement).value)" type="time">
+                    <div style="height: round(.5em, 1px)"></div>
+                    <label>{{ $t('entity.traffic.departuretime') }}</label>
+                    <input :value="dateToTime(stop.departure.time)" @input="stop.departure.time = timeToDate(($event.target as HTMLInputElement).value)"  type="time">
+                </swd-input>
+                <swd-input>
+                    <label>{{ $t('entity.traffic.arrivalplatform') }}</label>
+                    <input v-model="stop.arrival.platform">
+                    <div style="height: round(.5em, 1px)"></div>
+                    <label>{{ $t('entity.traffic.departureplatform') }}</label>
+                    <input v-model="stop.departure.platform">
+                </swd-input>
+                <InputRecordComponent :label="$t('entity.stop.stop')" v-model="stop.out" type="stop" :required="true" :to="stop.out.id ? { name: 'studio_stop_edit', params: { id: stop.out.id.toString() } } : undefined"/>
+                <button class="grey-color" @click="connectsToRemove.push(editConnects.value!.splice(editConnects.value!.indexOf(stop), 1)[0])"><swd-icon class="delete-icon"></swd-icon></button>
             </div>
-        </div>
-        <button class="grey-color" @click.prevent="editConnects.value?.push(createEmptyConnects(edit.value.id))"><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>
+        </InputTableComponent>
+        <button class="float-right grey-color" @click.prevent="editConnects.value?.push(createEmptyConnects(edit.value.id))"><swd-icon class="add-icon"></swd-icon> {{ $t('action.add') }}</button>
     </EditFormComponent>
 </template>
 
@@ -50,20 +49,6 @@
 .flex {
     margin: 0;
     --theme-element-spacing: calc(var(--theme-inner-element-spacing) / 2)
-}
-
-.stops {
-    display: grid;
-    gap: var(--theme-inner-element-spacing);
-    grid-template-columns: fit-content(150px) fit-content(150px) auto;
-    vertical-align: middle;
-    margin-bottom: var(--theme-element-spacing);
-}
-
-.stops .stops_vertical {
-    display: flex;
-    flex-direction: column;
-    gap: var(--theme-inner-element-spacing);
 }
 </style>
 
@@ -81,6 +66,7 @@ import { LineEditDto } from '@/core/dtos';
 import InputRecordComponent from '@/components/InputRecordComponent.vue';
 import { generateGUID, SURREAL_DB_SERVICE, type SurrealDbService } from '@/services/surrealdb.service';
 import { dateToTime, timeToDate } from '@/core/functions';
+import InputTableComponent from '@/components/InputTableComponent.vue';
 
 const route = useRoute()
 const router = useRouter()
