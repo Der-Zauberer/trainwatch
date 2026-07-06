@@ -2,25 +2,14 @@
 -- functions --
 ---------------
 
+DEFINE ANALYZER OVERWRITE name_analyzer TOKENIZERS blank, class FILTERS lowercase, ascii, edgengram(1,20);
+
 DEFINE FUNCTION OVERWRITE fn::search::normalize($name: string, $seperator: option<string>) {
     LET $result = $name.lowercase().replace('ä', 'ae').replace('ö', 'oe').replace('ü', 'ue').slug();
     IF ($seperator != NONE && $seperator != '-') {
         RETURN string::replace($result, '-', $seperator);
     };
     RETURN $result;
-};
-
-DEFINE FUNCTION OVERWRITE fn::search::trails($name: string) {
-    LET $word = string::split($name, ' ');
-
-    RETURN array::map(array::range(0, array::len($word)), |$index| {
-        array::join(array::slice($word, $index, array::len($word)), ' ')
-    });
-};
-
-DEFINE FUNCTION OVERWRITE fn::search::extract_ids($object: option<object>) {
-    IF $object == NONE { RETURN [] };
-    RETURN $object.values().flatten().map(|$id| type::string($id));
 };
 
 ----------
@@ -82,52 +71,25 @@ DEFINE FIELD OVERWRITE sources[*].license ON TABLE stop TYPE string;
 DEFINE FIELD OVERWRITE sources[*].url ON TABLE stop TYPE string;
 DEFINE FIELD OVERWRITE sources[*].updated ON TABLE stop TYPE string;
 
-DEFINE TABLE OVERWRITE stop_search SCHEMAFULL
-	PERMISSIONS
-		FOR select FULL,
-        FOR create, update, delete WHERE fn::user::has_permission($auth, 'studio.stop');
-DEFINE FIELD OVERWRITE id ON TABLE stop_search TYPE string;
-DEFINE FIELD OVERWRITE token ON TABLE stop_search TYPE string;
-DEFINE FIELD OVERWRITE stop ON TABLE stop_search TYPE record<stop> REFERENCE ON DELETE CASCADE;
-DEFINE FIELD OVERWRITE score ON TABLE stop_search TYPE int;
+DEFINE INDEX IF NOT EXISTS stop_name_index ON stop FIELDS name FULLTEXT ANALYZER name_analyzer BM25(1.2,0.75);
+DEFINE INDEX OVERWRITE stop_ril_index ON stop FIELDS ids.ril;
+DEFINE INDEX OVERWRITE stop_stada_index ON stop FIELDS ids.stada;
+DEFINE INDEX OVERWRITE stop_uic_index ON stop FIELDS ids.uic;
 
-DEFINE INDEX userEmailIndex ON TABLE stop_search COLUMNS token;
-
-DEFINE EVENT OVERWRITE stop_update ON TABLE stop WHEN $before.name != $after.name || $before.ids != $after.ids THEN {
-    IF $before THEN {
-        DELETE $before<~stop_search
-    } END;
-    IF $after THEN {
-        LET $search = fn::search::normalize($after.name, ' ');
-        FOR $token IN fn::search::trails(fn::search::normalize($after.name, ' ')) {
-            LET $score = IF string::starts_with($search, $token) { 10 } ELSE { 20 };
-            INSERT INTO stop_search { token: $token, stop: $after.id, score: $after.score + $score }
-        };
-        FOR $id IN fn::search::extract_ids($stop.ids) {
-            INSERT INTO stop_search { token: $id, stop: $after.id, score: $after.score }
-        };
-    } END;
-};
-
-DEFINE FUNCTION OVERWRITE fn::stop::index() {
-    DELETE stop_search;
-    FOR $stop IN (SELECT id, name, score, ids FROM stop) {
-        LET $search = fn::search::normalize($stop.name, ' ');
-        FOR $token IN fn::search::trails(fn::search::normalize($stop.name, ' ')) {
-            LET $score = IF string::starts_with($search, $token) { 10 } ELSE { 20 };
-            INSERT INTO stop_search { token: $token, stop: $stop.id, score: $stop.score + $score }
-        };
-        FOR $id IN fn::search::extract_ids($stop.ids) {
-            INSERT INTO stop_search { token: $id, stop: $stop.id, score: $stop.score }
-        };
-    };
-};
-
-DEFINE FUNCTION OVERWRITE fn::search::search($name: string) {
-    array::distinct(array::flatten([ 
-        (SELECT stop, score FROM stop_search WHERE token = $name ORDER BY score).stop, 
-        (SELECT stop, score FROM stop_search WHERE string::starts_with(token, string::lowercase($name)) ORDER BY score).stop, 
-    ]));
+DEFINE FUNCTION OVERWRITE fn::stop::search($search: string) {
+    RETURN array::distinct(array::flatten([
+        (SELECT id FROM type::record('stop', $search)),
+        (SELECT id FROM stop WHERE $search IN ids.ril),
+        (SELECT id FROM stop WHERE $search = ids.stada),
+        (SELECT id FROM stop WHERE $search = ids.uic),
+        (
+            SELECT *, (IF string::starts_with(string::lowercase(name), string::lowercase($search)) { true } ELSE { false }) AS starts_width_name
+            OMIT starts_width_name, score
+            FROM stop 
+            WHERE name @1@ $search
+            ORDER BY starts_width_name DESC, score ASC
+        )
+    ]))
 };
 
 ----------
@@ -156,7 +118,7 @@ INSERT IGNORE INTO type [
     { id: 'ec', name: 'EC', description: 'Eurocity', priority: 1, vehicle: 'TRAIN', classification: 'LONG_DISTANCE', color: { text: '#ffff00', background: '#0000ff' }},
     { id: 'ece', name: 'ECE', description: 'Eurocity Express', priority: 0, vehicle: 'TRAIN', classification: 'LONG_DISTANCE', color: { text: '#ffff00', background: '#0000ff' }},
     { id: 'en', name: 'EN', description: 'EuroNight', priority: 10, vehicle: 'TRAIN', classification: 'LONG_DISTANCE', color: { text: '#ffffff', background: '#0000ff' }},
-    { id: 'fex',name: 'FEX', description: 'Airport Express', vehicle: 'TRAIN', priority: 21,classification: 'REGIONAL', color: { text: '#ffffff', background: '#ff0000' }},
+    { id: 'fex',name: 'FEX', description: 'Airport Express', vehicle: 'TRAIN', priority: 21,classification: 'REGIONAL',color: { text: '#ffffff', background: '#ff0000' }},
     { id: 'd',name: 'D', description: 'Express', priority: 8, vehicle: 'TRAIN', classification: 'LONG_DISTANCE', color: { text: '#ffffff', background: '#7f7f7f' }},
     { id: 'dn',name: 'DN', description: 'Night Express', priority: 8, vehicle: 'TRAIN', classification: 'LONG_DISTANCE', color: { text: '#ffffff', background: '#0000ff' }},
     { id: 'ic',name: 'IC', description: 'Intercity', priority: 7, vehicle: 'TRAIN', classification: 'LONG_DISTANCE', color: { text: '#ff0000', background: '#ffffff' }},
@@ -436,7 +398,7 @@ DEFINE EVENT OVERWRITE _password_change_request ON TABLE _password_change_reques
 };
 
 DEFINE FUNCTION OVERWRITE fn::user::has_permission($user: record<user>, $permissions: string) {
-    RETURN set::includes($user.permissions, $permissions) || set::includes($user.roles.map(|$role| $role.permissions).flatten(), $permissions)
+    RETURN set::any($user.permissions, $permissions) || set::any($user.roles.map(|$role| $role.permissions).flatten(), $permissions)
 };
 
 INSERT IGNORE INTO user [
