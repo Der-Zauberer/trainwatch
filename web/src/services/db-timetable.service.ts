@@ -1,11 +1,11 @@
 import type { BoardLine, Type } from "@/core/types";
 import { RecordId, Table } from "surrealdb";
-import { markRaw, type App } from "vue"
+import { inject, markRaw, type App } from "vue"
 import { normalize, SurrealDbService } from "./surrealdb.service";
 
 export class DbTimetableService {
 
-    constructor(private surrealDbService: SurrealDbService) {}
+    constructor(private surreal: SurrealDbService) {}
 
     async getTimetableBoard(uic: string, date: Date = new Date()): Promise<BoardLine[]> {
         const dateString = date.toISOString().split('T')[0].replace(/-/g, '').substring(2)
@@ -17,7 +17,7 @@ export class DbTimetableService {
             .then(async response => {
                 const board: BoardLine[] = []
                 const station = { id: uic, name: response.querySelector('timetable')!.getAttribute('station')!.replace(/(?!\s)\(/g, ' (') }
-                const types = new Map(await this.surrealDbService.select<Type>(new Table('type')).then(result => result.map(type => [type.id.id, type])))
+                const types = new Map(await this.surreal.select<Type>(new Table('type')).then(result => result.map(type => [type.id.id, type])))
                 for (const element of response.querySelector('timetable')!.children) {
                     const general = element.querySelector('tl')!
                     const arrival = element.querySelector('ar')
@@ -91,7 +91,11 @@ export class DbTimetableService {
 
 }
 
-export const DB_TIMETABLE_SERVICE = 'dbTimetableService';
+const DB_TIMETABLE_SERVICE = 'dbTimetableService'
+
+export function useDbTimeTableService(): DbTimetableService {
+    return inject(DB_TIMETABLE_SERVICE) as DbTimetableService
+}
 
 export default {
     install(app: App) {

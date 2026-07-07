@@ -1,16 +1,32 @@
 <template>
 
 	<div class="container-sm" style="padding-bottom: 0;">
-		<SearchComponent :name="stop.value?.name" :placeholder="$t('action.search')" @search="router.push({ name: 'stop-details', params: { id: $event } })"/>
+
+		<swd-dropdown>
+			<swd-input>
+				<input id="search-input" v-model="parameter.name" :placeholder="$t('action.search')">
+				<input hidden @select="router.push({ name: 'stop-details', params: { id: ($event.target as HTMLInputElement).value } })">
+				<swd-icon class="search-icon" swd-input-icon/>
+				<swd-icon class="close-icon" swd-input-reset-icon hidden/>
+				<div v-if="search.loading" class="progress-bar"></div>
+			</swd-input>
+			<swd-dropdown-content>
+				<swd-selection onfilter="event.preventDefault();">
+					<a v-for="result of search.value" :key="result.id.id.toString()" v-bind:value="result.id.id">{{ result.name }}</a>
+				</swd-selection>
+			</swd-dropdown-content>
+    	</swd-dropdown>
 	</div>
 
 	<div v-if="stop.error || lines.error" class="container-xl">
 		<swd-card class="red-color">
-			{{ stop.error || lines.error }}
+			{{ search.error || stop.error || lines.error }}
 		</swd-card>
 	</div>
 
-	<div class="container-xl grid-cols-md-2 grid-cols-1" v-if="stop.value">
+	<swd-loading-spinner v-if="stop.status === 'LOADING'" loading="true" class="container-xl"></swd-loading-spinner>
+
+	<div class="container-xl grid-cols-md-2 grid-cols-1" v-if="stop.value && stop.status !== 'LOADING'">
 
 		<div class="grid-cols-1">
 
@@ -118,25 +134,51 @@
 .sources .sources__body a {
 	max-width: 100%;
 }
+
+.progress-bar {
+  position: absolute;
+  left: 0;
+  bottom: calc(var(--theme-border-width) / -1);
+  overflow: hidden;
+  width: 100%;
+  height: var(--theme-border-width);
+  border-radius: 0 0 var(--theme-border-radius) var(--theme-border-radius);
+  background: var(--theme-element-secondary-color);
+}
+
+.progress-bar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: var(--theme-primary-color);
+  border-radius: inherit;
+  animation: bar-animation 0.8s linear infinite;
+}
+
+@keyframes bar-animation {
+  from { transform: translateX(-150%) }
+  to { transform: translateX(300%) }
+}
+
 </style>
 
 <script setup lang="ts">
-import BoardLineComponent from '@/components/BoardLineComponent.vue';
-import SearchComponent from '@/components/SearchComponent.vue';
-import { resource } from '@/core/resource';
-import type { Stop, BoardLine } from '@/core/types';
-import { DB_TIMETABLE_SERVICE, DbTimetableService } from '@/services/db-timetable.service';
-import { SURREAL_DB_SERVICE, type SurrealDbService } from '@/services/surrealdb.service';
+import BoardLineComponent from '@/components/BoardLineComponent.vue'
+import { resource } from '@/core/resource'
+import type { Stop, BoardLine, Entity } from '@/core/types'
+import { useDbTimeTableService } from '@/services/db-timetable.service'
+import { useSurrealDbService } from '@/services/surrealdb.service'
 import { RecordId } from 'surrealdb';
-import { inject, onMounted, onUnmounted, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { onMounted, onUnmounted, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 enum Board { DEPARTURE, ARRIVAL, STOP }
 
 const route = useRoute()
 const router = useRouter()
-const surrealdb = inject(SURREAL_DB_SERVICE) as SurrealDbService
-const dbTimetableService = inject(DB_TIMETABLE_SERVICE) as DbTimetableService
+const surreal = useSurrealDbService()
+const timetable = useDbTimeTableService()
 
 const isMobileView = ref<boolean>(window.innerWidth < 768)
 const boardView = ref<Board>(Board.DEPARTURE)
@@ -162,14 +204,21 @@ function updateWindowWidth() {
 	}
 }
 
+const parameter = reactive({ name: '' })
+
+const search = resource({
+    parameter,
+    loader: (parameter) => !parameter.name ? [] : surreal.up().then(() => surreal.query<Entity<'stop'>[]>('fn::stop::search($name).{id, name}', { name: parameter.name }).then(result => result.flat().splice(0, 20)))
+})
+
 const stop = resource({
 	parameter: { route },
-	loader: (parameter) => parameter.route.params.id ? surrealdb.up().then(() => surrealdb.select<Stop>(new RecordId('stop', parameter.route.params.id))) : undefined
+	loader: (parameter) => parameter.route.params.id ? surreal.up().then(() => surreal.select<Stop>(new RecordId('stop', parameter.route.params.id))) : undefined
 })
 
 const lines = resource({
 	parameter: { route },
-	loader: (parameter) => parameter.route.params.id ? surrealdb.up().then(() => surrealdb.query<BoardLine[][]>(`fn::line::board(stop:${parameter.route.params.id});`).then(response => response.flat())) : undefined
+	loader: (parameter) => parameter.route.params.id ? surreal.up().then(() => surreal.query<BoardLine[][]>(`fn::line::board(stop:${parameter.route.params.id});`).then(response => response.flat())) : undefined
 })
 
 const board = resource<BoardLine[], unknown>({
@@ -179,7 +228,7 @@ const board = resource<BoardLine[], unknown>({
 
 const dbBoard = resource<BoardLine[], unknown>({
 	parameter: { stop },
-	loader: () => stop.value?.ids?.uic ? dbTimetableService.getTimetableBoard(stop.value.ids.uic) : undefined
+	loader: () => stop.value?.ids?.uic ? timetable.getTimetableBoard(stop.value.ids.uic) : undefined
 })
 
 function getServices(stop: Stop) {

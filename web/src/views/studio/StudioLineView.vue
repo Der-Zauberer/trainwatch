@@ -53,30 +53,30 @@
 </style>
 
 <script setup lang="ts">
-import TableComponent from '@/components/TableComponent.vue';
-import InputComponent from '@/components/InputComponent.vue';
-import { resource } from '@/core/resource';
-import type { Connects, Line, Parameter } from '@/core/types';
-import { RecordId, surql } from 'surrealdb';
-import { inject, markRaw, reactive, toRaw } from 'vue';
-import DesignationChipComponent from '@/components/DesignationChipComponent.vue';
-import { useRoute, useRouter } from 'vue-router';
-import EditFormComponent, { type EditActions } from '@/components/EditFormComponent.vue';
-import { LineEditDto } from '@/core/dtos';
-import InputRecordComponent from '@/components/InputRecordComponent.vue';
-import { generateGUID, SURREAL_DB_SERVICE, type SurrealDbService } from '@/services/surrealdb.service';
-import { dateToTime, timeToDate } from '@/core/functions';
-import InputTableComponent from '@/components/InputTableComponent.vue';
+import TableComponent from '@/components/TableComponent.vue'
+import InputComponent from '@/components/InputComponent.vue'
+import { resource } from '@/core/resource'
+import type { Connects, Line, Parameter } from '@/core/types'
+import { RecordId, surql } from 'surrealdb'
+import { markRaw, reactive, toRaw } from 'vue'
+import DesignationChipComponent from '@/components/DesignationChipComponent.vue'
+import { useRoute, useRouter } from 'vue-router'
+import EditFormComponent, { type EditActions } from '@/components/EditFormComponent.vue'
+import { LineEditDto } from '@/core/dtos'
+import InputRecordComponent from '@/components/InputRecordComponent.vue'
+import { generateGUID, useSurrealDbService } from '@/services/surrealdb.service'
+import { dateToTime, timeToDate } from '@/core/functions'
+import InputTableComponent from '@/components/InputTableComponent.vue'
 
 const route = useRoute()
 const router = useRouter()
-const surrealdb = inject(SURREAL_DB_SERVICE) as SurrealDbService
+const surreal = useSurrealDbService()
 
 const parameter = reactive<Parameter>({ search: '', page: 1, size: 100, count: 0 })
 const lines = resource({
     parameter,
 	loader: async (parameter) => {
-        const [result, count] = await surrealdb.up().then(() => surrealdb.query<[Line[], number]>(`SELECT *, route.*, route.designations.{type.*, number}, route.timetable.* FROM line ${parameter.search ? 'WHERE name CONTAINS $search' : ''} START ($page - 1) * $size LIMIT $size; (SELECT count() FROM line ${parameter.search ? 'WHERE name CONTAINS $search' : ''} GROUP ALL)[0].count`, parameter))
+        const [result, count] = await surreal.up().then(() => surreal.query<[Line[], number]>(`SELECT *, route.*, route.designations.{type.*, number}, route.timetable.* FROM line ${parameter.search ? 'WHERE name CONTAINS $search' : ''} START ($page - 1) * $size LIMIT $size; (SELECT count() FROM line ${parameter.search ? 'WHERE name CONTAINS $search' : ''} GROUP ALL)[0].count`, parameter))
         parameter.count = count
         return result
     }
@@ -84,14 +84,14 @@ const lines = resource({
 
 const edit = resource({
     parameter: { route },
-	loader: async (parameter) => new LineEditDto(parameter.route.params.id === 'new' ? {} : await surrealdb.up().then(() => surrealdb.select<Line>(new RecordId('line', parameter.route.params.id))))
+	loader: async (parameter) => new LineEditDto(parameter.route.params.id === 'new' ? {} : await surreal.up().then(() => surreal.select<Line>(new RecordId('line', parameter.route.params.id))))
 })
 
 const editConnects = resource({
     parameter: { edit },
     loader: async () => {
         if (!edit.value?.id) return []
-        return await surrealdb.up().then(() => surrealdb.query<Connects[][][]>(surql`SELECT VALUE ->connects.* FROM ${edit.value!.id};`)).then(result => result[0][0].sort((a, b) => a.departure.time.getTime() - b.departure.time.getTime())) || []
+        return await surreal.up().then(() => surreal.query<Connects[][][]>(surql`SELECT VALUE ->connects.* FROM ${edit.value!.id};`)).then(result => result[0][0].sort((a, b) => a.departure.time.getTime() - b.departure.time.getTime())) || []
     }
 })
 
@@ -101,7 +101,7 @@ const connectsToRemove: Connects[] = []
 const actions: EditActions = {
     save: async (id?: RecordId) => {
         console.log(id, toRaw(edit.value), toRaw(connectsToAdd), toRaw(connectsToRemove), toRaw(editConnects.value?.filter(connects => !connectsToAdd.includes(toRaw(connects)))))
-        await surrealdb.up().then(() => surrealdb.query(surql`
+        await surreal.up().then(() => surreal.query(surql`
             --BEGIN TRANSACTION;
 
             IF ${id === undefined} {
@@ -127,7 +127,7 @@ const actions: EditActions = {
             --COMMIT TRANSACTION;
         `));
     },
-    delete: async (id: RecordId) => await surrealdb.up().then(() => surrealdb.delete(id)),
+    delete: async (id: RecordId) => await surreal.up().then(() => surreal.delete(id)),
     close: () => (router.back(), lines.reload())
 }
 

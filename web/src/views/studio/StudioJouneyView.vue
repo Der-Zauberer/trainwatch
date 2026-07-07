@@ -19,7 +19,7 @@
             <InputRecordComponent :label="$t('entity.line.line')" v-model="edit.value.line" type="line" :required="true" :to="edit.value.line?.id ? { name: 'studio_line_edit', params: { id: edit.value.line?.id.toString() } } : undefined"/>
         </div>
         <InputTableComponent :header="[ $t('entity.stop.stop'), `${$t('entity.traffic.arrivaltime')}/ ${$t('entity.traffic.departuretime')}`, `${$t('entity.traffic.arrivalplatform')}/ ${$t('entity.traffic.departureplatform')}`, $t('entity.traffic.canceled') ]" columns="auto fit-content(0) fit-content(0) fit-content(0)">
-            <div v-for="stop of editVisits.value" :key="stop.sceduled.departure">
+            <div v-for="stop of editVisits.value" :key="stop.sceduled.departure.time.toISOString()">
                 <InputComponent :label="$t('entity.stop.stop')" :value="stop.name" disabled/>
                 <swd-input>
                     <label>{{ $t('entity.traffic.arrivaltime') }}</label>
@@ -52,24 +52,24 @@
 </style>
 
 <script setup lang="ts">
-import DesignationChipComponent from '@/components/DesignationChipComponent.vue';
-import EditFormComponent, { type EditActions } from '@/components/EditFormComponent.vue';
-import InputComponent from '@/components/InputComponent.vue';
-import InputRecordComponent from '@/components/InputRecordComponent.vue';
-import InputTableComponent from '@/components/InputTableComponent.vue';
-import TableComponent from '@/components/TableComponent.vue';
-import { JourneyEditDto } from '@/core/dtos';
-import { dateToTime, timeToDate } from '@/core/functions';
-import { resource } from '@/core/resource';
-import type { Connects, Journey, Parameter, Visits } from '@/core/types';
-import { SURREAL_DB_SERVICE, type SurrealDbService } from '@/services/surrealdb.service';
-import { RecordId, surql } from 'surrealdb';
-import { inject, markRaw, reactive } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import DesignationChipComponent from '@/components/DesignationChipComponent.vue'
+import EditFormComponent, { type EditActions } from '@/components/EditFormComponent.vue'
+import InputComponent from '@/components/InputComponent.vue'
+import InputRecordComponent from '@/components/InputRecordComponent.vue'
+import InputTableComponent from '@/components/InputTableComponent.vue'
+import TableComponent from '@/components/TableComponent.vue'
+import { JourneyEditDto } from '@/core/dtos'
+import { dateToTime, timeToDate } from '@/core/functions'
+import { resource } from '@/core/resource'
+import type { Connects, Journey, Parameter, Visits } from '@/core/types'
+import { useSurrealDbService } from '@/services/surrealdb.service'
+import { RecordId, surql } from 'surrealdb'
+import { markRaw, reactive } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
 const router = useRouter()
-const surrealdb = inject(SURREAL_DB_SERVICE) as SurrealDbService
+const surrealdb = useSurrealDbService()
 
 const parameter =  reactive<Parameter>({ search: '', page: 1, size: 100, count: 0 })
 const journeys = resource({

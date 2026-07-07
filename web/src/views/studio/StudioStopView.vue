@@ -56,28 +56,27 @@
 </template>
 
 <script setup lang="ts">
-import EditFormComponent, { type EditActions } from '@/components/EditFormComponent.vue';
-import InputComponent from '@/components/InputComponent.vue';
-import InputTableComponent from '@/components/InputTableComponent.vue';
-import TableComponent from '@/components/TableComponent.vue';
-import { StopEditDto } from '@/core/dtos';
-import { resource } from '@/core/resource';
-import type { Parameter, Stop } from '@/core/types';
-import { SURREAL_DB_SERVICE, type SurrealDbService } from '@/services/surrealdb.service';
-import { RecordId } from 'surrealdb';
-import { inject, markRaw, reactive } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-
-const surrealdb = inject(SURREAL_DB_SERVICE) as SurrealDbService
+import EditFormComponent, { type EditActions } from '@/components/EditFormComponent.vue'
+import InputComponent from '@/components/InputComponent.vue'
+import InputTableComponent from '@/components/InputTableComponent.vue'
+import TableComponent from '@/components/TableComponent.vue'
+import { StopEditDto } from '@/core/dtos'
+import { resource } from '@/core/resource'
+import type { Parameter, Stop } from '@/core/types'
+import { useSurrealDbService } from '@/services/surrealdb.service'
+import { RecordId } from 'surrealdb'
+import { markRaw, reactive } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
 const router = useRouter()
+const surreal = useSurrealDbService()
 
 const parameter = reactive<Parameter>({ search: '', page: 1, size: 100, count: 0 })
 const stops = resource({
     parameter,
 	loader: async (parameter) => {
-        const [result, count] = await surrealdb.up().then(() => surrealdb.query<[Stop[], number]>(`SELECT * FROM stop ${parameter.search ? 'WHERE name.lowercase().starts_with($search.lowercase())' : ''} START ($page - 1) * $size LIMIT $size; (SELECT count() FROM stop ${parameter.search ? 'WHERE name CONTAINS $search' : ''} GROUP ALL)[0].count`, parameter))
+        const [result, count] = await surreal.up().then(() => surreal.query<[Stop[], number]>(`SELECT * FROM stop ${parameter.search ? 'WHERE name.lowercase().starts_with($search.lowercase())' : ''} START ($page - 1) * $size LIMIT $size; (SELECT count() FROM stop ${parameter.search ? 'WHERE name CONTAINS $search' : ''} GROUP ALL)[0].count`, parameter))
         parameter.count = count
         return result
     }
@@ -85,12 +84,12 @@ const stops = resource({
 
 const edit = resource({
     parameter: { route },
-	loader: async (parameter) => new StopEditDto(parameter.route.params.id === 'new' ? {} : await surrealdb.up().then(() => surrealdb.select(new RecordId('stop', parameter.route.params.id))))
+	loader: async (parameter) => new StopEditDto(parameter.route.params.id === 'new' ? {} : await surreal.up().then(() => surreal.select(new RecordId('stop', parameter.route.params.id))))
 })
 
 const actions: EditActions = {
-    save: async (id?: RecordId) => surrealdb.up().then(async () => id === undefined ? await surrealdb.insert(edit.value?.filterBeforeSubmit() as any) : await surrealdb.update(id).content(edit.value?.filterBeforeSubmit() as any)),
-    delete: async (id: RecordId) => await surrealdb.up().then(() => surrealdb.delete(id)),
+    save: async (id?: RecordId) => surreal.up().then(async () => id === undefined ? await surreal.insert(edit.value?.filterBeforeSubmit() as any) : await surreal.update(id).content(edit.value?.filterBeforeSubmit() as any)),
+    delete: async (id: RecordId) => await surreal.up().then(() => surreal.delete(id)),
     close: () => (router.back(), stops.reload())
 }
 

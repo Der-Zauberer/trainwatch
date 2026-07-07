@@ -78,13 +78,13 @@ DEFINE INDEX OVERWRITE stop_uic_index ON stop FIELDS ids.uic;
 
 DEFINE FUNCTION OVERWRITE fn::stop::search($search: string) {
     RETURN array::distinct(array::flatten([
-        (SELECT id FROM type::record('stop', $search)),
-        (SELECT id FROM stop WHERE $search IN ids.ril),
-        (SELECT id FROM stop WHERE $search = ids.stada),
-        (SELECT id FROM stop WHERE $search = ids.uic),
+        (SELECT * FROM type::record('stop', $search)),
+        (SELECT * FROM stop WHERE $search IN ids.ril),
+        (SELECT * FROM stop WHERE $search = ids.stada),
+        (SELECT * FROM stop WHERE $search = ids.uic),
         (
             SELECT *, (IF string::starts_with(string::lowercase(name), string::lowercase($search)) { true } ELSE { false }) AS starts_width_name
-            OMIT starts_width_name, score
+            OMIT starts_width_name
             FROM stop 
             WHERE name @1@ $search
             ORDER BY starts_width_name DESC, score ASC

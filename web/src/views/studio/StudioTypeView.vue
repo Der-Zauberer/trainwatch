@@ -38,20 +38,20 @@ import { TypeEditDto } from '@/core/dtos';
 import { enumToArray } from '@/core/functions';
 import { resource } from '@/core/resource';
 import { Classification, Vehicle, type Parameter, type Type } from '@/core/types';
-import { SURREAL_DB_SERVICE, type SurrealDbService } from '@/services/surrealdb.service';
+import { useSurrealDbService } from '@/services/surrealdb.service';
 import { RecordId } from 'surrealdb';
-import { inject, markRaw, reactive } from 'vue';
+import { markRaw, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 const route = useRoute()
 const router = useRouter()
-const surrealdb = inject(SURREAL_DB_SERVICE) as SurrealDbService
+const surreal = useSurrealDbService()
 
 const parameter = reactive<Parameter>({ search: '', page: 1, size: 100, count: 0 })
 const types = resource({
     parameter,
 	loader: async (parameter) => {
-        const [result, count] = await surrealdb.up().then(() => surrealdb.query<[Type[], number]>(`SELECT * FROM type ${parameter.search ? 'WHERE name.lowercase().starts_with($search.lowercase())' : 'ORDER BY priority'} START ($page - 1) * $size LIMIT $size; (SELECT count() FROM type ${parameter.search ? 'WHERE name CONTAINS $search' : ''} GROUP ALL)[0].count`, parameter))
+        const [result, count] = await surreal.up().then(() => surreal.query<[Type[], number]>(`SELECT * FROM type ${parameter.search ? 'WHERE name.lowercase().starts_with($search.lowercase())' : 'ORDER BY priority'} START ($page - 1) * $size LIMIT $size; (SELECT count() FROM type ${parameter.search ? 'WHERE name CONTAINS $search' : ''} GROUP ALL)[0].count`, parameter))
         parameter.count = count
         return result
     }
@@ -59,12 +59,12 @@ const types = resource({
 
 const edit = resource({
     parameter: { route },
-	loader: async (parameter) => new TypeEditDto(parameter.route.params.id === 'new' ? {} : await surrealdb.up().then(() => surrealdb.select(new RecordId('type', parameter.route.params.id))))
+	loader: async (parameter) => new TypeEditDto(parameter.route.params.id === 'new' ? {} : await surreal.up().then(() => surreal.select(new RecordId('type', parameter.route.params.id))))
 })
 
 const actions: EditActions = {
-    save: async (id?: RecordId) => surrealdb.up().then(async () => id === undefined ? await surrealdb.insert(edit.value?.filterBeforeSubmit() as any) : await surrealdb.update(id).content(edit.value?.filterBeforeSubmit() as any)),
-    delete: async (id: RecordId) => await surrealdb.up().then(() => surrealdb.delete(id)),
+    save: async (id?: RecordId) => surreal.up().then(async () => id === undefined ? await surreal.insert(edit.value?.filterBeforeSubmit() as any) : await surreal.update(id).content(edit.value?.filterBeforeSubmit() as any)),
+    delete: async (id: RecordId) => await surreal.up().then(() => surreal.delete(id)),
     close: () => (router.back(), types.reload())
 }
 

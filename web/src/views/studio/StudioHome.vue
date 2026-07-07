@@ -29,10 +29,9 @@
 </template>
 
 <script lang="ts" setup>
-import { resource } from '@/core/resource';
-import { SURREAL_DB_SERVICE, type SurrealDbService } from '@/services/surrealdb.service';
-import { surql } from 'surrealdb';
-import { inject } from 'vue';
+import { resource } from '@/core/resource'
+import { useSurrealDbService } from '@/services/surrealdb.service'
+import { surql } from 'surrealdb'
 
 type Amounts = {
     stops: number
@@ -46,9 +45,8 @@ type Amounts = {
     users: number
 }
 
-const surrealdb = inject(SURREAL_DB_SERVICE) as SurrealDbService
-
-const user = surrealdb.getUser()
+const surreal = useSurrealDbService()
+const user = surreal.getUser()
 
 const QUARRY = surql`
 RETURN {
@@ -63,6 +61,6 @@ RETURN {
     users: count(SELECT id FROM user)
 }`
 
-const amounts = resource({ loader: () => surrealdb.up().then(() => surrealdb.query<Amounts[]>(QUARRY).then(results => results[0])) })
+const amounts = resource({ loader: () => surreal.up().then(() => surreal.query<Amounts[]>(QUARRY).then(results => results[0])) })
 
 </script>

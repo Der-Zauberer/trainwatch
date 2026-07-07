@@ -1,21 +1,14 @@
 <template>
     <swd-card-outline class="grid-cols-1">
 
-        <div class="flex flex-space-between">
-            <h3>{{ t('action.login') }}</h3>
-            <button v-if="!loading && !change" class="ghost" :aria-label="t('entity.user.username')"  @click="settings = !settings"><swd-icon class="settings-icon"></swd-icon></button>
-        </div>
+        <h3>{{ t('action.login') }}</h3>
 
         <swd-loading-spinner loading="true" v-if="loading"></swd-loading-spinner>
 
-        <form v-if="!loading && !change && settings" @submit.prevent="settings = false; login()">
+        <form v-if="!loading && !change" @submit.prevent="login()">
             <InputDropdownComponent :label="t('action.selectServer')" v-model="profile">
                 <a v-for="profile in config.profiles" :value="profile.name">{{ profile.name }}</a>
             </InputDropdownComponent>
-        </form>
-
-        <form v-if="!loading && !change && !settings" @submit.prevent="login()">
-
             <InputComponent :label="t('entity.user.username')" v-model.lazy="credentials.username" :invalid="!!error"/>
             <InputComponent :label="t('entity.user.password')" v-model.lazy="credentials.password" type="password" :invalid="error !== undefined"/>
 
@@ -68,19 +61,18 @@ form * { margin: 0 }
 </style>
 
 <script setup lang="ts">
-import InputComponent from '@/components/InputComponent.vue';
-import InputDropdownComponent from '@/components/InputDropdownComponent.vue';
-import { config, parseCustomSurrealDbError, SURREAL_DB_SERVICE, type PasswordChangeRequest, type SurrealDbService } from '@/services/surrealdb.service';
-import { inject, ref, reactive, toRaw } from 'vue';
-import { useI18n } from 'vue-i18n';
+import InputComponent from '@/components/InputComponent.vue'
+import InputDropdownComponent from '@/components/InputDropdownComponent.vue'
+import { config, parseCustomSurrealDbError, useSurrealDbService, type PasswordChangeRequest } from '@/services/surrealdb.service'
+import { ref, reactive, toRaw } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-const surrealdb = inject(SURREAL_DB_SERVICE) as SurrealDbService
+const surreal = useSurrealDbService()
 const { t } = useI18n()
-const profiles = surrealdb.getProfile()
+const profiles = surreal.getProfile()
 
 const credentials = reactive({ username: '', password: '' })
 const profile = ref<string>(profiles.default.name)
-const settings = ref<boolean>(false)
 const change = ref<PasswordChangeRequest | undefined>()
 const loading = ref<boolean>()
 const error = ref<string>()
@@ -88,9 +80,9 @@ const error = ref<string>()
 async function login() {
     loading.value = true
     try {
-        if (profile.value !== profiles.default.name) await surrealdb.up(config.profiles.find(current => profile.value == current.name))
-        await surrealdb.signin(toRaw(credentials))
-        await surrealdb.redirectPostLogin('/studio')
+        if (profile.value !== profiles.default.name) await surreal.up(config.profiles.find(current => profile.value == current.name))
+        await surreal.signin(toRaw(credentials))
+        await surreal.redirectPostLogin('/studio')
         error.value = undefined
     } catch (exception) {
         const key = parseCustomSurrealDbError(exception as Error).key
@@ -108,8 +100,8 @@ async function login() {
 async function changePassword(credentials: PasswordChangeRequest) {
     loading.value = true
     try {
-        await surrealdb.changePassword(credentials)
-        await surrealdb.redirectPostLogin('/studio')
+        await surreal.changePassword(credentials)
+        await surreal.redirectPostLogin('/studio')
         change.value = undefined
     } catch (exception) {
         const key = parseCustomSurrealDbError(exception as Error).key

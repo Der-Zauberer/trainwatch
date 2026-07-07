@@ -7,20 +7,19 @@
 </template>
 
 <script setup lang="ts">
-import LineComponent from '@/components/LineComponent.vue';
-import { resource } from '@/core/resource';
-import type { LineStops } from '@/core/types';
-import { SURREAL_DB_SERVICE, type SurrealDbService } from '@/services/surrealdb.service';
-import { RecordId } from 'surrealdb';
-import { inject } from 'vue';
-import { useRoute } from 'vue-router';
+import LineComponent from '@/components/LineComponent.vue'
+import { resource } from '@/core/resource'
+import type { LineStops } from '@/core/types'
+import { useSurrealDbService } from '@/services/surrealdb.service'
+import { RecordId } from 'surrealdb'
+import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const surrealdb = inject(SURREAL_DB_SERVICE) as SurrealDbService
+const surreal = useSurrealDbService()
 
 const line = resource({
     parameter: route,
-    loader: (parameter) => surrealdb.up().then(() => surrealdb.query<LineStops[]>('fn::line::stops($id)', { id: new RecordId('line', parameter.params.id) }).then(results => results[0]))
+    loader: (parameter) => surreal.up().then(() => surreal.query<LineStops[]>('fn::line::stops($id)', { id: new RecordId('line', parameter.params.id) }).then(results => results[0]))
 })
 
 </script>

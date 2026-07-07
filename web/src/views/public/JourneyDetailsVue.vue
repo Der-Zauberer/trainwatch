@@ -10,17 +10,16 @@
 import LineComponent from '@/components/LineComponent.vue';
 import { resource } from '@/core/resource';
 import type { JourneyStops, LineStops } from '@/core/types';
-import { SURREAL_DB_SERVICE, type SurrealDbService } from '@/services/surrealdb.service';
+import { useSurrealDbService } from '@/services/surrealdb.service';
 import { RecordId } from 'surrealdb';
-import { inject } from 'vue';
 import { useRoute } from 'vue-router';
 
 const route = useRoute()
-const surrealdb = inject(SURREAL_DB_SERVICE) as SurrealDbService
+const surreal = useSurrealDbService()
 
 const journey = resource({
     parameter: route,
-    loader: (parameter) => surrealdb.up().then(() => surrealdb.query<JourneyStops[]>('fn::journey::stops($id)', { id: new RecordId('journey', parameter.params.id) }).then(results => results[0]))
+    loader: (parameter) => surreal.up().then(() => surreal.query<JourneyStops[]>('fn::journey::stops($id)', { id: new RecordId('journey', parameter.params.id) }).then(results => results[0]))
 })
 
 function journeyToLine(journey: JourneyStops): LineStops {

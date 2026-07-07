@@ -6,7 +6,7 @@
     <RouterLink to="/">{{ $t('page.home') }}</RouterLink>
     <RouterLink :to="{ name: 'stop' }">{{ $t('entity.stop.stop', 0) }}</RouterLink>
     <div class="width-100"></div>
-    <RouterLink to="/login" v-if="!user">{{ $t('page.login') }}</RouterLink>
+    <RouterLink to="/login" v-if="!user.value">{{ $t('page.login') }}</RouterLink>
 
     <swd-dropdown v-if="user.value">
       <a>{{ user.value.name }}</a>
@@ -18,7 +18,7 @@
           </div>
           <RouterLink to="/profile">{{ $t('page.profile') }}</RouterLink>
           <RouterLink to="/studio">{{ $t('page.studio') }}</RouterLink>
-          <a @click="surrealdb.invalidate(); surrealdb.redirectPostInvalidate()">{{ $t('page.logout') }}</a>
+          <a @click="surreal.invalidate(); surreal.redirectPostInvalidate()">{{ $t('page.logout') }}</a>
         </swd-selection>
       </swd-dropdown-content>
     </swd-dropdown>
@@ -26,17 +26,17 @@
   </swd-menu>
 
   <swd-navigation navigation-collapse-md v-if="$route.path.startsWith('/studio')">
-    <RouterLink :to="{ name: 'studio' }" :selected="isRoute(['studio'])">{{ $t('page.dashboard') }}</RouterLink>
-    <RouterLink :to="{ name: 'studio_stop' }" :selected="isRoute(['studio_stop', 'studio_stop_edit'])">{{ $t('entity.stop.stop', 0) }}</RouterLink>
-    <RouterLink :to="{ name: 'studio_operator' }" :selected="isRoute(['studio_operator', 'studio_operator_edit'])">{{ $t('entity.operator.operator', 0) }}</RouterLink>
-    <RouterLink :to="{ name: 'studio_type' }" :selected="isRoute(['studio_type', 'studio_type_edit'])">{{ $t('entity.type.type', 0) }}</RouterLink>
-    <RouterLink :to="{ name: 'studio_timetable' }" :selected="isRoute(['studio_timetable', 'studio_timetable_edit'])">{{ $t('entity.timetable.timetable', 0) }}</RouterLink>
-    <RouterLink :to="{ name: 'studio_route' }" :selected="isRoute(['studio_route', 'studio_route_edit'])">{{ $t('entity.route.route', 0) }}</RouterLink>
-    <RouterLink :to="{ name: 'studio_line' }" :selected="isRoute(['studio_line', 'studio_line_edit'])">{{ $t('entity.line.line', 0) }}</RouterLink>
-    <RouterLink :to="{ name: 'studio_journey' }" :selected="isRoute(['studio_journey','studio_journey_edit'])">{{ $t('entity.journey.journey', 0) }}</RouterLink>
-    <RouterLink :to="{ name: 'studio_information' }" :selected="isRoute(['studio_information','studio_information_edit'])">{{ $t('entity.information.information', 0) }}</RouterLink>
-    <RouterLink :to="{ name: 'studio_role' }" :selected="isRoute(['studio_role','studio_role_edit'])">{{ $t('entity.role.role', 0) }}</RouterLink>
-    <RouterLink :to="{ name: 'studio_user' }" :selected="isRoute(['studio_user', 'studio_user_edit'])">{{ $t('entity.user.user', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio' }" :selected="isRoute('studio')">{{ $t('page.dashboard') }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_stop' }" :selected="isRoute('studio_stop', 'studio_stop_edit')">{{ $t('entity.stop.stop', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_operator' }" :selected="isRoute('studio_operator', 'studio_operator_edit')">{{ $t('entity.operator.operator', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_type' }" :selected="isRoute('studio_type', 'studio_type_edit')">{{ $t('entity.type.type', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_timetable' }" :selected="isRoute('studio_timetable', 'studio_timetable_edit')">{{ $t('entity.timetable.timetable', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_route' }" :selected="isRoute('studio_route', 'studio_route_edit')">{{ $t('entity.route.route', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_line' }" :selected="isRoute('studio_line', 'studio_line_edit')">{{ $t('entity.line.line', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_journey' }" :selected="isRoute('studio_journey','studio_journey_edit')">{{ $t('entity.journey.journey', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_information' }" :selected="isRoute('studio_information','studio_information_edit')">{{ $t('entity.information.information', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_role' }" :selected="isRoute('studio_role','studio_role_edit')">{{ $t('entity.role.role', 0) }}</RouterLink>
+    <RouterLink :to="{ name: 'studio_user' }" :selected="isRoute('studio_user', 'studio_user_edit')">{{ $t('entity.user.user', 0) }}</RouterLink>
   </swd-navigation>
 
   <swd-navigation-content navigation-collapse-md :style="$route.path.startsWith('/studio') ? '' : 'margin-left: 0'">
@@ -58,16 +58,15 @@ swd-dropdown swd-selection div {
 </style>
 
 <script setup lang="ts">
-import { inject } from 'vue';
 import { RouterLink, RouterView, useRoute } from 'vue-router'
-import type { SurrealDbService } from './services/surrealdb.service';
+import { useSurrealDbService } from './services/surrealdb.service'
 
 const route = useRoute()
-const surrealdb = inject('surrealDbService') as SurrealDbService
+const surreal = useSurrealDbService()
 
-const user = surrealdb.getUser()
+const user = surreal.getUser()
 
-function isRoute(names: string[]): boolean | undefined {
+function isRoute(...names: string[]): boolean | undefined {
   return names.includes((route.name || '').toString()) || undefined
 }
 

@@ -67,12 +67,12 @@ swd-loading-spinner {
 
 <script setup lang="ts">
 import { resource } from '@/core/resource';
-import type { SurrealDbService } from '@/services/surrealdb.service';
+import { useSurrealDbService } from '@/services/surrealdb.service';
 import { surql, type RecordId } from 'surrealdb';
 import { inject, reactive, useTemplateRef } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
 
-const surrealdb = inject('surrealDbService') as SurrealDbService
+const surreal = useSurrealDbService()
 
 const props = defineProps<{ id?: string, label: string, type: string, required: boolean, to?: RouteLocationRaw}>()
 const model = defineModel<RecordId | undefined>()
@@ -87,12 +87,12 @@ const parameter = reactive({ search: '' })
 
 const records = resource({
     parameter,
-    loader: (parameter) => surrealdb.up().then(() => surrealdb.query<{ id: RecordId, name: string }[][]>(`SELECT id, name FROM ${props.type} ${ parameter.search ? 'WHERE fn::search::normalize(name) CONTAINS fn::search::normalize($search)' : '' } LIMIT 25;`, parameter).then(result => result[0]))
+    loader: (parameter) => surreal.up().then(() => surreal.query<{ id: RecordId, name: string }[][]>(`SELECT id, name FROM ${props.type} ${ parameter.search ? 'WHERE fn::search::normalize(name) CONTAINS fn::search::normalize($search)' : '' } LIMIT 25;`, parameter).then(result => result[0]))
 })
 
 const record = resource({
     parameter: { model },
-    loader: async (parameter) => parameter.model ? await surrealdb.up().then(() => surrealdb.query<[{ name: string }[]]>(surql`SELECT name FROM ${parameter.model.value};`).then(result => result[0][0].name)) : undefined
+    loader: async (parameter) => parameter.model ? await surreal.up().then(() => surreal.query<[{ name: string }[]]>(surql`SELECT name FROM ${parameter.model.value};`).then(result => result[0][0].name)) : undefined
 })
 
 </script>
