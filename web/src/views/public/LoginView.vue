@@ -48,7 +48,7 @@ swd-card-outline {
 }
 
 swd-loading-spinner {
-    height: calc(3 * var(--theme-inner-element-spacing) + round(2.2em, 1px) + 2 * 58px) !important;
+    height: calc(3 * var(--theme-inner-element-spacing) + round(2.2em, 1px) + 3 * 58px) !important;
 }
 
 form { display: contents }
