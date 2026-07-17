@@ -169,7 +169,7 @@ import { resource } from '@/core/resource'
 import type { Stop, BoardLine, Entity } from '@/core/types'
 import { useDbTimeTableService } from '@/services/db-timetable.service'
 import { useSurrealDbService } from '@/services/surrealdb.service'
-import { RecordId } from 'surrealdb';
+import { RecordId, surql } from 'surrealdb';
 import { onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -208,7 +208,25 @@ const parameter = reactive({ name: '' })
 
 const search = resource({
     parameter,
-    loader: (parameter) => !parameter.name ? [] : surreal.up().then(() => surreal.query<Entity<'stop'>[]>('fn::stop::search($name).{id, name}', { name: parameter.name }).then(result => result.flat().splice(0, 20)))
+    loader: (parameter) => {
+		const query = surql`
+			array::distinct(array::flatten([
+				(SELECT * FROM type::record('stop', ${parameter.name})),
+				(SELECT * FROM stop WHERE ${parameter.name} IN ids.ril),
+				(SELECT * FROM stop WHERE ${parameter.name} = ids.stada),
+				(SELECT * FROM stop WHERE ${parameter.name} = ids.uic),
+				(
+					SELECT *, (IF string::starts_with(string::lowercase(name), string::lowercase(${parameter.name})) { true } ELSE { false }) AS starts_width_name
+					OMIT starts_width_name
+					FROM stop 
+					WHERE name @1@ ${parameter.name}
+					ORDER BY starts_width_name DESC, score ASC
+					LIMIT 20
+				)
+			])).{id, name}
+		`;
+		return !parameter.name ? [] : surreal.up().then(() => surreal.query<[Entity<'stop'>[]]>(query).then(result => result[0]))
+	}
 })
 
 const stop = resource({
